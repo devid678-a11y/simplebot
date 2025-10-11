@@ -13,6 +13,7 @@ const PORT = process.env.PORT || 3000
 console.log('🔍 Проверяем токен бота...')
 console.log('BOT_TOKEN из env:', process.env.BOT_TOKEN)
 console.log('BOT_TOKEN финальный:', BOT_TOKEN)
+console.log('🚀 Версия бота: 2.0.0 - Firebase интеграция')
 
 // Инициализация Firebase
 let db = null
