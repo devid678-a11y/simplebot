@@ -343,7 +343,11 @@ if (bot) {
     }
     
     try {
+      console.log('💾 Сохраняем в Firebase коллекцию "events"...')
+      console.log('📄 Данные для сохранения:', JSON.stringify(doc, null, 2))
+      
       const ref = await db.collection('events').add(doc)
+      console.log('✅ Событие сохранено в Firebase с ID:', ref.id)
       
       // Показываем результат парсинга
       let response = `✅ Событие создано: ${ref.id}\n\n`
@@ -358,12 +362,49 @@ if (bot) {
         response += `💰 Цена: ${doc.price}\n`
       }
       response += `\n🔗 Посмотреть в приложении: https://dvizh-eacfa.web.app/`
+      response += `\n\n💡 Событие должно появиться в веб-приложении через несколько секунд`
       
       await ctx.reply(response)
-      console.log('✅ Событие сохранено в Firebase:', ref.id)
     } catch (e) {
       console.error('❌ Ошибка сохранения в Firebase:', e)
-      await ctx.reply('❌ Ошибка при сохранении')
+      console.error('❌ Детали ошибки:', e.message)
+      await ctx.reply(`❌ Ошибка при сохранении: ${e.message}`)
+    }
+  })
+
+  // Команда для тестирования Firebase
+  bot.command('firebase', async (ctx) => {
+    console.log('🔥 Тест Firebase от:', ctx.from.first_name)
+    
+    if (!db) {
+      await ctx.reply('❌ Firebase не подключен')
+      return
+    }
+    
+    try {
+      // Создаем тестовое событие
+      const testEvent = {
+        title: 'Тестовое событие из бота',
+        description: 'Это тестовое событие для проверки Firebase',
+        startAtMillis: Date.now() + 60 * 60 * 1000, // через час
+        isFree: true,
+        price: null,
+        isOnline: false,
+        location: 'Тестовое место',
+        categories: ['test', 'telegram'],
+        source: { type: 'telegram', userId: ctx.from.id },
+        draft: false,
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
+      }
+      
+      console.log('🧪 Создаем тестовое событие в Firebase...')
+      const ref = await db.collection('events').add(testEvent)
+      console.log('✅ Тестовое событие создано:', ref.id)
+      
+      await ctx.reply(`✅ Тестовое событие создано: ${ref.id}\n\n🔗 Проверьте веб-приложение: https://dvizh-eacfa.web.app/`)
+    } catch (e) {
+      console.error('❌ Ошибка тестирования Firebase:', e)
+      await ctx.reply(`❌ Ошибка Firebase: ${e.message}`)
     }
   })
 
