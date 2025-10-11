@@ -14,17 +14,36 @@ console.log('🔍 Проверяем токен бота...')
 console.log('BOT_TOKEN из env:', process.env.BOT_TOKEN)
 console.log('BOT_TOKEN финальный:', BOT_TOKEN)
 
-// Инициализация Firebase (опционально)
+// Инициализация Firebase
 let db = null
 try {
-  const rawJson = process.env.FIREBASE_SERVICE_ACCOUNT || (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64 ? Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString('utf8') : null)
+  // Сначала пробуем из переменных окружения
+  let rawJson = process.env.FIREBASE_SERVICE_ACCOUNT || (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64 ? Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString('utf8') : null)
+  
+  // Если нет в переменных, пробуем инициализировать с project ID
+  if (!rawJson) {
+    console.log('🔑 Пробуем инициализировать Firebase с project ID')
+    try {
+      // Пробуем инициализировать без service account (для тестирования)
+      if (!admin.apps.length) {
+        admin.initializeApp({
+          projectId: 'dvizh-eacfa'
+        })
+      }
+      db = admin.firestore()
+      console.log('✅ Firebase Admin инициализирован с project ID')
+    } catch (e) {
+      console.log('⚠️ Не удалось инициализировать Firebase без service account')
+    }
+  }
+  
   if (rawJson) {
     const serviceAccount = JSON.parse(rawJson)
     if (!admin.apps.length) admin.initializeApp({ credential: admin.credential.cert(serviceAccount) })
     db = admin.firestore()
     console.log('✅ Firebase Admin инициализирован')
   } else {
-    console.log('⚠️ Firebase не настроен (нет FIREBASE_SERVICE_ACCOUNT)')
+    console.log('⚠️ Firebase не настроен')
   }
 } catch (e) {
   console.error('❌ Ошибка инициализации Firebase Admin:', e)
@@ -248,8 +267,8 @@ if (bot) {
     console.log('📱 Получена команда /push от:', ctx.from.first_name, 'ID:', ctx.from.id)
     
     if (!db) {
-      console.log('❌ Firebase не подключен - используем локальное сохранение')
-      // Показываем результат парсинга даже без Firebase
+      console.log('❌ Firebase не подключен - создаем тестовое событие')
+      // Показываем результат парсинга и создаем тестовое событие
       const payload = last.get(ctx.from?.id)
       if (!payload) {
         return ctx.reply('❌ Нет данных. Перешлите пост и повторите /push.')
@@ -258,19 +277,35 @@ if (bot) {
       const parsedEvent = parseEventFromText(payload.text || '')
       console.log('🧠 Результат парсинга:', parsedEvent)
       
-      let response = `✅ Событие обработано (без сохранения в Firebase):\n\n`
-      response += `📝 Заголовок: ${parsedEvent?.title || 'Не определен'}\n`
-      if (parsedEvent?.description && parsedEvent.description !== parsedEvent.title) {
-        response += `📄 Описание: ${parsedEvent.description.slice(0, 100)}...\n`
+      // Создаем тестовое событие в локальной памяти (для демонстрации)
+      const testEvent = {
+        id: `test_${Date.now()}`,
+        title: parsedEvent?.title || 'Тестовое событие',
+        description: parsedEvent?.description || payload.text || '',
+        startAtMillis: Date.now() + 24 * 60 * 60 * 1000, // завтра
+        isFree: parsedEvent?.isFree || true,
+        price: parsedEvent?.price || null,
+        location: parsedEvent?.location || 'Место уточняется',
+        categories: parsedEvent?.categories || ['telegram'],
+        source: { type: 'telegram', userId: ctx.from?.id },
+        draft: true,
+        createdAt: new Date().toISOString()
       }
-      if (parsedEvent?.location && parsedEvent.location !== 'Место уточняется') {
-        response += `📍 Место: ${parsedEvent.location}\n`
+      
+      let response = `✅ Событие обработано (тестовый режим):\n\n`
+      response += `📝 Заголовок: ${testEvent.title}\n`
+      if (testEvent.description && testEvent.description !== testEvent.title) {
+        response += `📄 Описание: ${testEvent.description.slice(0, 100)}...\n`
       }
-      if (parsedEvent?.price) {
-        response += `💰 Цена: ${parsedEvent.price}\n`
+      if (testEvent.location && testEvent.location !== 'Место уточняется') {
+        response += `📍 Место: ${testEvent.location}\n`
       }
-      response += `\n⚠️ Firebase не подключен - событие не сохранено`
+      if (testEvent.price) {
+        response += `💰 Цена: ${testEvent.price}\n`
+      }
+      response += `\n⚠️ Firebase не подключен - событие не сохранено в базу`
       response += `\n🔗 Веб-приложение: https://dvizh-eacfa.web.app/`
+      response += `\n\n💡 Для полной работы добавьте FIREBASE_SERVICE_ACCOUNT в Timeweb Cloud`
       
       await ctx.reply(response)
       return
