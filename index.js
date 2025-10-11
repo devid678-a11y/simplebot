@@ -322,24 +322,23 @@ if (bot) {
     
     console.log('📝 Текст для парсинга:', payload.text?.slice(0, 200))
     
-    // Парсим событие из текста
-    const parsedEvent = parseEventFromText(payload.text || '')
-    console.log('🧠 Результат парсинга:', parsedEvent)
+    // Простое копирование поста без парсинга
+    console.log('📝 Копируем пост без парсинга')
     
     const doc = {
-      title: parsedEvent?.title || (payload.text || 'Событие').split('\n')[0].slice(0, 120),
-      description: parsedEvent?.description || payload.text || '',
+      title: (payload.text || 'Событие').split('\n')[0].slice(0, 120),
+      description: payload.text || '',
       imageUrls: payload.imageIds || [],
       draft: true,
-      startAtMillis: Date.now(), // Добавляем поле для веб-приложения
+      startAtMillis: Date.now() + 24 * 60 * 60 * 1000, // завтра
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       source: { type: 'telegram', userId: ctx.from?.id },
-      // Парсированные поля
-      isFree: parsedEvent?.isFree || true,
-      price: parsedEvent?.price || null,
-      isOnline: parsedEvent?.isOnline || false,
-      location: parsedEvent?.location || 'Место уточняется',
-      categories: parsedEvent?.categories || ['Предложено через Telegram']
+      // Простые поля без парсинга
+      isFree: true,
+      price: null,
+      isOnline: false,
+      location: 'Место уточняется',
+      categories: ['Предложено через Telegram']
     }
     
     try {
@@ -349,18 +348,11 @@ if (bot) {
       const ref = await db.collection('events').add(doc)
       console.log('✅ Событие сохранено в Firebase с ID:', ref.id)
       
-      // Показываем результат парсинга
+      // Простой ответ без парсинга
       let response = `✅ Событие создано: ${ref.id}\n\n`
       response += `📝 Заголовок: ${doc.title}\n`
-      if (doc.description && doc.description !== doc.title) {
-        response += `📄 Описание: ${doc.description.slice(0, 100)}...\n`
-      }
-      if (doc.location && doc.location !== 'Место уточняется') {
-        response += `📍 Место: ${doc.location}\n`
-      }
-      if (doc.price) {
-        response += `💰 Цена: ${doc.price}\n`
-      }
+      response += `📄 Описание: ${doc.description.slice(0, 100)}...\n`
+      response += `📅 Дата: ${new Date(doc.startAtMillis).toLocaleString('ru-RU')}\n`
       response += `\n🔗 Посмотреть в приложении: https://dvizh-eacfa.web.app/`
       response += `\n\n💡 Событие должно появиться в веб-приложении через несколько секунд`
       
