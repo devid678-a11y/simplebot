@@ -65,7 +65,7 @@ if (bot) {
   // Команда /help
   bot.help((ctx) => {
     console.log('📱 Получена команда /help от:', ctx.from.first_name)
-    ctx.reply('🤖 Доступные команды:\n/start - инструкция\n/help - помощь\n/push - предложить событие\n/test - тест парсинга')
+    ctx.reply('🤖 Доступные команды:\n/start - инструкция\n/help - помощь\n/push - предложить событие\n/test - тест парсинга\n/check - проверить сохраненные данные')
   })
 
   // Тестовая команда для проверки парсинга
@@ -97,23 +97,70 @@ if (bot) {
     await ctx.reply(response)
   })
 
+  // Команда для проверки сохраненных данных
+  bot.command('check', async (ctx) => {
+    console.log('🔍 Проверка данных от:', ctx.from.first_name, 'ID:', ctx.from.id)
+    
+    const payload = last.get(ctx.from?.id)
+    console.log('🔍 Данные для пользователя', ctx.from.id, ':', payload)
+    
+    if (!payload) {
+      await ctx.reply('❌ Нет сохраненных данных. Отправьте сообщение или перешлите пост.')
+    } else {
+      let response = '📋 Сохраненные данные:\n\n'
+      response += `📝 Текст: ${payload.text ? payload.text.slice(0, 200) + '...' : 'НЕТ'}\n`
+      response += `🖼️ Изображения: ${payload.imageIds ? payload.imageIds.length : 0}\n\n`
+      response += `💡 Теперь можете использовать /push для создания события`
+      
+      await ctx.reply(response)
+    }
+  })
+
   // Обработка сообщений и постов каналов
   bot.on(['message', 'channel_post', 'edited_message', 'edited_channel_post'], async (ctx) => {
     console.log('📱 Получено сообщение от:', ctx.from?.first_name, 'ID:', ctx.from?.id)
+    console.log('📋 Тип сообщения:', ctx.message ? 'message' : 'channel_post')
+    console.log('🔄 Переслано:', ctx.message?.forward_from || ctx.message?.forward_from_chat)
     
-    const text = (ctx.message?.text || ctx.message?.caption) || (ctx.channelPost?.text || ctx.channelPost?.caption) || ''
-    const photos = ctx.message?.photo || ctx.channelPost?.photo
+    // Получаем текст из разных источников
+    let text = ''
+    let photos = []
+    
+    if (ctx.message) {
+      // Обычное сообщение
+      text = ctx.message.text || ctx.message.caption || ''
+      photos = ctx.message.photo || []
+      
+      // Если это пересланное сообщение, берем оригинальный текст
+      if (ctx.message.forward_from || ctx.message.forward_from_chat) {
+        console.log('📤 Обрабатываем пересланное сообщение')
+        // Для пересланных сообщений текст уже в message.text
+        text = ctx.message.text || ctx.message.caption || ''
+      }
+    } else if (ctx.channelPost) {
+      // Пост из канала
+      text = ctx.channelPost.text || ctx.channelPost.caption || ''
+      photos = ctx.channelPost.photo || []
+    }
+    
     const imageIds = photos ? photos.map(p => `telegram:file_id:${p.file_id || ''}`) : []
     
     console.log('📝 Текст сообщения:', text.slice(0, 200))
     console.log('🖼️ Изображения:', imageIds.length)
+    console.log('📤 Переслано от:', ctx.message?.forward_from?.first_name || ctx.message?.forward_from_chat?.title)
     
-    if (ctx.from?.id) {
+    if (ctx.from?.id && text.trim()) {
       last.set(ctx.from.id, { text, imageIds })
       console.log('💾 Сохранено в last для пользователя:', ctx.from.id)
-      await ctx.telegram.sendMessage(ctx.from.id, text ? `📝 Получено: ${text.slice(0, 1000)}` : '📎 Получено сообщение')
+      
+      let response = `📝 Получено: ${text.slice(0, 1000)}`
+      if (ctx.message?.forward_from || ctx.message?.forward_from_chat) {
+        response += `\n\n📤 Переслано от: ${ctx.message.forward_from?.first_name || ctx.message.forward_from_chat?.title || 'Неизвестно'}`
+      }
+      
+      await ctx.telegram.sendMessage(ctx.from.id, response)
     } else {
-      console.log('⚠️ Нет ctx.from.id')
+      console.log('⚠️ Нет ctx.from.id или пустой текст')
     }
   })
 
