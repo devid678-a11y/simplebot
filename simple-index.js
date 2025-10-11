@@ -44,7 +44,7 @@ bot.command('test', async (ctx) => {
   }
   
   try {
-    const ref = await db.collection('events').add({
+    const ref = await db.collection('telegram_events').add({
       title: 'Тестовое событие',
       description: 'Создано через бота',
       startAtMillis: Date.now() + 3600000,
@@ -78,7 +78,7 @@ bot.command('push', async (ctx) => {
   }
   
   try {
-    const ref = await db.collection('events').add({
+    const ref = await db.collection('telegram_events').add({
       title: data.text.split('\n')[0].slice(0, 100),
       description: data.text,
       startAtMillis: Date.now() + 86400000, // завтра
