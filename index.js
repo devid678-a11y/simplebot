@@ -98,8 +98,15 @@ if (bot) {
       description: payload.text || '',
       imageUrls: payload.imageIds || [],
       draft: true,
+      startAtMillis: Date.now(), // Добавляем поле для веб-приложения
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      source: { type: 'telegram', userId: ctx.from?.id }
+      source: { type: 'telegram', userId: ctx.from?.id },
+      // Дополнительные поля для совместимости с веб-приложением
+      isFree: true, // По умолчанию бесплатно
+      price: 0,
+      isOnline: false, // По умолчанию офлайн
+      location: 'Место уточняется',
+      categories: ['Предложено через Telegram']
     }
     
     try {
