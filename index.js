@@ -65,7 +65,7 @@ if (bot) {
   // Команда /help
   bot.help((ctx) => {
     console.log('📱 Получена команда /help от:', ctx.from.first_name)
-    ctx.reply('🤖 Доступные команды:\n/start - инструкция\n/help - помощь\n/push - предложить событие\n/test - тест парсинга\n/check - проверить сохраненные данные')
+    ctx.reply('🤖 Доступные команды:\n/start - инструкция\n/help - помощь\n/push - предложить событие\n/test - тест парсинга\n/check - проверить сохраненные данные\n/status - статус подключений')
   })
 
   // Тестовая команда для проверки парсинга
@@ -114,6 +114,27 @@ if (bot) {
       
       await ctx.reply(response)
     }
+  })
+
+  // Команда для проверки статуса подключений
+  bot.command('status', async (ctx) => {
+    console.log('📊 Проверка статуса от:', ctx.from.first_name)
+    
+    let response = '📊 Статус системы:\n\n'
+    response += `🤖 Telegram бот: ✅ Работает\n`
+    response += `🔥 Firebase: ${db ? '✅ Подключен' : '❌ НЕ подключен'}\n`
+    response += `🌐 Веб-приложение: https://dvizh-eacfa.web.app/\n\n`
+    
+    if (!db) {
+      response += `⚠️ Для полной работы нужно:\n`
+      response += `1. Добавить FIREBASE_SERVICE_ACCOUNT в Timeweb Cloud\n`
+      response += `2. Перезапустить приложение\n\n`
+      response += `💡 Без Firebase события не сохраняются!`
+    } else {
+      response += `✅ Все системы работают!`
+    }
+    
+    await ctx.reply(response)
   })
 
   // Обработка сообщений и постов каналов
@@ -227,8 +248,32 @@ if (bot) {
     console.log('📱 Получена команда /push от:', ctx.from.first_name, 'ID:', ctx.from.id)
     
     if (!db) {
-      console.log('❌ Firebase не подключен')
-      return ctx.reply('❌ База данных не подключена (нет FIREBASE_SERVICE_ACCOUNT).')
+      console.log('❌ Firebase не подключен - используем локальное сохранение')
+      // Показываем результат парсинга даже без Firebase
+      const payload = last.get(ctx.from?.id)
+      if (!payload) {
+        return ctx.reply('❌ Нет данных. Перешлите пост и повторите /push.')
+      }
+      
+      const parsedEvent = parseEventFromText(payload.text || '')
+      console.log('🧠 Результат парсинга:', parsedEvent)
+      
+      let response = `✅ Событие обработано (без сохранения в Firebase):\n\n`
+      response += `📝 Заголовок: ${parsedEvent?.title || 'Не определен'}\n`
+      if (parsedEvent?.description && parsedEvent.description !== parsedEvent.title) {
+        response += `📄 Описание: ${parsedEvent.description.slice(0, 100)}...\n`
+      }
+      if (parsedEvent?.location && parsedEvent.location !== 'Место уточняется') {
+        response += `📍 Место: ${parsedEvent.location}\n`
+      }
+      if (parsedEvent?.price) {
+        response += `💰 Цена: ${parsedEvent.price}\n`
+      }
+      response += `\n⚠️ Firebase не подключен - событие не сохранено`
+      response += `\n🔗 Веб-приложение: https://dvizh-eacfa.web.app/`
+      
+      await ctx.reply(response)
+      return
     }
     
     const payload = last.get(ctx.from?.id)
