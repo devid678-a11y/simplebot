@@ -34,25 +34,56 @@ bot.start((ctx) => {
 
 // Команда /help
 bot.help((ctx) => {
-  ctx.reply('🤖 Команды:\n/start - начать\n/help - помощь\n/push - создать событие\n/test - тест Firebase')
+  ctx.reply('🤖 Команды:\n/start - начать\n/help - помощь\n/push - создать событие\n/test - тест Firebase\n/status - статус системы')
+})
+
+// Команда /status
+bot.command('status', async (ctx) => {
+  let response = '📊 Статус системы:\n\n'
+  response += `🤖 Telegram бот: ✅ Работает\n`
+  response += `🔥 Firebase: ${db ? '✅ Подключен' : '❌ НЕ подключен'}\n`
+  response += `🌐 Веб-приложение: https://dvizh-eacfa.web.app/\n\n`
+  
+  if (!db) {
+    response += `⚠️ Для работы нужно:\n`
+    response += `1. Добавить FIREBASE_SERVICE_ACCOUNT в Timeweb Cloud\n`
+    response += `2. Перезапустить приложение\n\n`
+    response += `💡 Без Firebase события не сохраняются!`
+  } else {
+    response += `✅ Все системы работают!`
+  }
+  
+  await ctx.reply(response)
 })
 
 // Команда /test
 bot.command('test', async (ctx) => {
+  console.log('🧪 Тест Firebase от:', ctx.from.first_name)
+  
   if (!db) {
+    console.log('❌ Firebase не подключен')
     return ctx.reply('❌ Firebase не подключен')
   }
   
+  console.log('✅ Firebase подключен, создаем тестовое событие...')
+  
   try {
-    const ref = await db.collection('telegram_events').add({
+    const testData = {
       title: 'Тестовое событие',
       description: 'Создано через бота',
       startAtMillis: Date.now() + 3600000,
       isFree: true,
       createdAt: admin.firestore.FieldValue.serverTimestamp()
-    })
-    await ctx.reply(`✅ Тест успешен: ${ref.id}`)
+    }
+    
+    console.log('📄 Данные для сохранения:', JSON.stringify(testData, null, 2))
+    
+    const ref = await db.collection('telegram_events').add(testData)
+    console.log('✅ Тестовое событие создано:', ref.id)
+    
+    await ctx.reply(`✅ Тест успешен: ${ref.id}\n\n🔗 Проверьте Firebase Console: https://console.firebase.google.com/project/dvizh-eacfa/firestore/data`)
   } catch (e) {
+    console.error('❌ Ошибка тестирования Firebase:', e)
     await ctx.reply(`❌ Ошибка: ${e.message}`)
   }
 })
