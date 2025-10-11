@@ -104,7 +104,18 @@ bot.command('test', async (ctx) => {
       description: 'Создано через бота',
       startAtMillis: Date.now() + 3600000,
       isFree: true,
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
+      price: null,
+      isOnline: false,
+      location: 'Тестовое место',
+      categories: ['test', 'telegram'],
+      imageUrls: [],
+      geo: null,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      source: {
+        type: 'telegram',
+        userId: ctx.from.id,
+        username: ctx.from.username || ctx.from.first_name
+      }
     }
     
     console.log('📄 Данные для сохранения:', JSON.stringify(testData, null, 2))
@@ -140,13 +151,27 @@ bot.command('push', async (ctx) => {
   }
   
   try {
-    const ref = await db.collection('telegram_events').add({
+    // Создаем событие с правильными полями для веб-приложения
+    const eventData = {
       title: data.text.split('\n')[0].slice(0, 100),
       description: data.text,
       startAtMillis: Date.now() + 86400000, // завтра
       isFree: true,
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
-    })
+      price: null,
+      isOnline: false,
+      location: 'Место уточняется',
+      categories: ['telegram'],
+      imageUrls: [],
+      geo: null,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      source: {
+        type: 'telegram',
+        userId: ctx.from.id,
+        username: ctx.from.username || ctx.from.first_name
+      }
+    }
+    
+    const ref = await db.collection('telegram_events').add(eventData)
     
     await ctx.reply(`✅ Событие создано: ${ref.id}\n\n🔗 https://dvizh-eacfa.web.app/`)
   } catch (e) {
