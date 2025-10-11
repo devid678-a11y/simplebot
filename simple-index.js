@@ -34,7 +34,7 @@ bot.start((ctx) => {
 
 // Команда /help
 bot.help((ctx) => {
-  ctx.reply('🤖 Команды:\n/start - начать\n/help - помощь\n/push - создать событие\n/test - тест Firebase\n/status - статус системы')
+  ctx.reply('🤖 Команды:\n/start - начать\n/help - помощь\n/push - создать событие\n/test - тест Firebase\n/status - статус системы\n/create - создать коллекцию')
 })
 
 // Команда /status
@@ -54,6 +54,37 @@ bot.command('status', async (ctx) => {
   }
   
   await ctx.reply(response)
+})
+
+// Команда для создания коллекции
+bot.command('create', async (ctx) => {
+  console.log('🏗️ Создание коллекции от:', ctx.from.first_name)
+  
+  if (!db) {
+    return ctx.reply('❌ Firebase не подключен')
+  }
+  
+  try {
+    // Создаем тестовый документ в коллекции telegram_events
+    const testDoc = {
+      title: 'Коллекция создана',
+      description: 'Этот документ создает коллекцию telegram_events',
+      startAtMillis: Date.now(),
+      isFree: true,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdBy: 'bot',
+      version: '1.0'
+    }
+    
+    console.log('🏗️ Создаем коллекцию telegram_events...')
+    const ref = await db.collection('telegram_events').add(testDoc)
+    console.log('✅ Коллекция создана с документом:', ref.id)
+    
+    await ctx.reply(`✅ Коллекция telegram_events создана!\n\n📄 Первый документ: ${ref.id}\n\n🔗 Проверьте: https://console.firebase.google.com/project/dvizh-eacfa/firestore/data`)
+  } catch (e) {
+    console.error('❌ Ошибка создания коллекции:', e)
+    await ctx.reply(`❌ Ошибка: ${e.message}`)
+  }
 })
 
 // Команда /test
