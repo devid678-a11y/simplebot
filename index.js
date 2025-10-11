@@ -1,5 +1,9 @@
 import { Telegraf } from 'telegraf'
 import http from 'http'
+import dotenv from 'dotenv'
+
+// Загружаем переменные окружения из .env файла
+dotenv.config()
 
 // Получаем токен бота из переменных окружения
 const BOT_TOKEN = process.env.BOT_TOKEN
