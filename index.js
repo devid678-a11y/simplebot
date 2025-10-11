@@ -6,8 +6,12 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 // Получаем токен бота из переменных окружения
-const BOT_TOKEN = process.env.BOT_TOKEN
+const BOT_TOKEN = process.env.BOT_TOKEN || '8269219896:AAF3dVeZRJ__AFIOfI1_uyxyKsvmBMNIAg0'
 const PORT = process.env.PORT || 3000
+
+console.log('🔍 Проверяем токен бота...')
+console.log('BOT_TOKEN из env:', process.env.BOT_TOKEN)
+console.log('BOT_TOKEN финальный:', BOT_TOKEN)
 
 if (!BOT_TOKEN) {
   console.error('❌ Ошибка: BOT_TOKEN не установлен!')
