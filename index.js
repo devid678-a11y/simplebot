@@ -81,6 +81,64 @@ if (bot) {
   })
 
   // Команда /push - предложить событие
+  // Функция парсинга события из текста
+  function parseEventFromText(text) {
+    if (!text) return null;
+    const lines = text.split('\n').map(s => s.trim()).filter(Boolean);
+    
+    // Находим заголовок (первая значимая строка)
+    const isBadTitleLine = (s) => {
+      if (!s) return true;
+      const lower = s.toLowerCase();
+      if (s.startsWith('http') || s.includes('://')) return true;
+      if (s.startsWith('#') || s.startsWith('@')) return true;
+      if (/^title\s*:/i.test(s)) return true;
+      if (/^(событие|мероприятие)$/i.test(lower)) return true;
+      return lower.length < 3;
+    };
+    
+    let title = (lines.find(l => !isBadTitleLine(l)) || '').slice(0, 140);
+    if (!title) return null;
+    
+    // Очистка заголовка
+    title = title.replace(/[🤩🎉🏆✔️]/g, '').trim();
+    if (title.startsWith('**') && title.endsWith('**')) {
+      title = title.slice(2, -2).trim();
+    }
+
+    // Описание
+    let description = text.replace(new RegExp('^' + title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*', 'i'), '').trim();
+    if (!description) description = text;
+    if (description.trim().toLowerCase() === title.trim().toLowerCase()) {
+      description = '';
+    }
+    description = description.replace(/[🤩🎉🏆✔️]/g, '').trim();
+    if (description.toLowerCase().includes(title.toLowerCase())) {
+      description = description.replace(new RegExp(title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '').trim();
+    }
+    if (description.length > 240) description = description.slice(0, 240);
+
+    // Цена
+    let price = null;
+    const priceMatch = text.match(/(\d+[\s\u00A0]?₽|\d+\s*руб\.?|бесплатно|вход\s+свободный)/i);
+    if (priceMatch) price = /бесплатно|свободный/i.test(priceMatch[0]) ? 'Бесплатно' : priceMatch[0];
+
+    // Локация
+    let location = null;
+    const locMatch = text.match(/(клуб|бар|парк|музей|театр|площадь|дом культуры|DK|ДК)\s+["«]?(.*?)\b[,\n]/i);
+    if (locMatch) location = locMatch[0].replace(/[,\n]$/,'').trim();
+
+    return {
+      title,
+      description,
+      isOnline: false,
+      isFree: price ? /бесплатно/i.test(price) : false,
+      price: price || null,
+      location: location || null,
+      categories: ['telegram']
+    };
+  }
+
   bot.command('push', async (ctx) => {
     console.log('📱 Получена команда /push от:', ctx.from.first_name)
     
@@ -93,25 +151,43 @@ if (bot) {
       return ctx.reply('❌ Нет данных. Перешлите пост и повторите /push.')
     }
     
+    // Парсим событие из текста
+    const parsedEvent = parseEventFromText(payload.text || '')
+    
     const doc = {
-      title: (payload.text || 'Событие').split('\n')[0].slice(0, 120),
-      description: payload.text || '',
+      title: parsedEvent?.title || (payload.text || 'Событие').split('\n')[0].slice(0, 120),
+      description: parsedEvent?.description || payload.text || '',
       imageUrls: payload.imageIds || [],
       draft: true,
       startAtMillis: Date.now(), // Добавляем поле для веб-приложения
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       source: { type: 'telegram', userId: ctx.from?.id },
-      // Дополнительные поля для совместимости с веб-приложением
-      isFree: true, // По умолчанию бесплатно
-      price: 0,
-      isOnline: false, // По умолчанию офлайн
-      location: 'Место уточняется',
-      categories: ['Предложено через Telegram']
+      // Парсированные поля
+      isFree: parsedEvent?.isFree || true,
+      price: parsedEvent?.price || null,
+      isOnline: parsedEvent?.isOnline || false,
+      location: parsedEvent?.location || 'Место уточняется',
+      categories: parsedEvent?.categories || ['Предложено через Telegram']
     }
     
     try {
       const ref = await db.collection('events').add(doc)
-      await ctx.reply(`✅ Черновик создан: ${ref.id}`)
+      
+      // Показываем результат парсинга
+      let response = `✅ Событие создано: ${ref.id}\n\n`
+      response += `📝 Заголовок: ${doc.title}\n`
+      if (doc.description && doc.description !== doc.title) {
+        response += `📄 Описание: ${doc.description.slice(0, 100)}...\n`
+      }
+      if (doc.location && doc.location !== 'Место уточняется') {
+        response += `📍 Место: ${doc.location}\n`
+      }
+      if (doc.price) {
+        response += `💰 Цена: ${doc.price}\n`
+      }
+      response += `\n🔗 Посмотреть в приложении: https://dvizh-eacfa.web.app/`
+      
+      await ctx.reply(response)
       console.log('✅ Событие сохранено в Firebase:', ref.id)
     } catch (e) {
       console.error('❌ Ошибка сохранения в Firebase:', e)
