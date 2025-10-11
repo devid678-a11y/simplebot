@@ -65,18 +65,55 @@ if (bot) {
   // Команда /help
   bot.help((ctx) => {
     console.log('📱 Получена команда /help от:', ctx.from.first_name)
-    ctx.reply('🤖 Доступные команды:\n/start - инструкция\n/help - помощь\n/push - предложить событие')
+    ctx.reply('🤖 Доступные команды:\n/start - инструкция\n/help - помощь\n/push - предложить событие\n/test - тест парсинга')
+  })
+
+  // Тестовая команда для проверки парсинга
+  bot.command('test', async (ctx) => {
+    console.log('🧪 Тестовая команда от:', ctx.from.first_name)
+    
+    const testText = `Концерт группы "Колыбель для кошки"
+    
+Презентация новых песен в клубе "Рок-н-ролл"
+Вход свободный
+Начало в 20:00`
+    
+    const parsed = parseEventFromText(testText)
+    console.log('🧪 Тест парсинга:', parsed)
+    
+    let response = '🧪 Тест парсинга:\n\n'
+    response += `📝 Текст: ${testText.slice(0, 100)}...\n\n`
+    if (parsed) {
+      response += `✅ Результат:\n`
+      response += `📝 Заголовок: ${parsed.title}\n`
+      response += `📄 Описание: ${parsed.description}\n`
+      response += `📍 Место: ${parsed.location || 'НЕТ'}\n`
+      response += `💰 Цена: ${parsed.price || 'НЕТ'}\n`
+      response += `🆓 Бесплатно: ${parsed.isFree ? 'ДА' : 'НЕТ'}\n`
+    } else {
+      response += `❌ Парсинг не сработал`
+    }
+    
+    await ctx.reply(response)
   })
 
   // Обработка сообщений и постов каналов
   bot.on(['message', 'channel_post', 'edited_message', 'edited_channel_post'], async (ctx) => {
+    console.log('📱 Получено сообщение от:', ctx.from?.first_name, 'ID:', ctx.from?.id)
+    
     const text = (ctx.message?.text || ctx.message?.caption) || (ctx.channelPost?.text || ctx.channelPost?.caption) || ''
     const photos = ctx.message?.photo || ctx.channelPost?.photo
     const imageIds = photos ? photos.map(p => `telegram:file_id:${p.file_id || ''}`) : []
     
+    console.log('📝 Текст сообщения:', text.slice(0, 200))
+    console.log('🖼️ Изображения:', imageIds.length)
+    
     if (ctx.from?.id) {
       last.set(ctx.from.id, { text, imageIds })
+      console.log('💾 Сохранено в last для пользователя:', ctx.from.id)
       await ctx.telegram.sendMessage(ctx.from.id, text ? `📝 Получено: ${text.slice(0, 1000)}` : '📎 Получено сообщение')
+    } else {
+      console.log('⚠️ Нет ctx.from.id')
     }
   })
 
@@ -140,19 +177,26 @@ if (bot) {
   }
 
   bot.command('push', async (ctx) => {
-    console.log('📱 Получена команда /push от:', ctx.from.first_name)
+    console.log('📱 Получена команда /push от:', ctx.from.first_name, 'ID:', ctx.from.id)
     
     if (!db) {
+      console.log('❌ Firebase не подключен')
       return ctx.reply('❌ База данных не подключена (нет FIREBASE_SERVICE_ACCOUNT).')
     }
     
     const payload = last.get(ctx.from?.id)
+    console.log('🔍 Данные для пользователя', ctx.from.id, ':', payload)
+    
     if (!payload) {
+      console.log('❌ Нет данных в last для пользователя:', ctx.from.id)
       return ctx.reply('❌ Нет данных. Перешлите пост и повторите /push.')
     }
     
+    console.log('📝 Текст для парсинга:', payload.text?.slice(0, 200))
+    
     // Парсим событие из текста
     const parsedEvent = parseEventFromText(payload.text || '')
+    console.log('🧠 Результат парсинга:', parsedEvent)
     
     const doc = {
       title: parsedEvent?.title || (payload.text || 'Событие').split('\n')[0].slice(0, 120),
