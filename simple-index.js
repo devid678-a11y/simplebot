@@ -60,6 +60,58 @@ function extractMessageText(msg) {
   return ''
 }
 
+function extractAddress(rawText) {
+  if (!rawText) return null
+  const text = rawText.replace(/\s+/g, ' ').trim()
+  // Кандидаты по строкам
+  const lines = rawText.split(/\r?\n/).map(s => s.trim()).filter(Boolean)
+
+  // 1) Содержит метро "м <станция>" — часто это адресная строка
+  for (const line of lines) {
+    if (/\bм\s+[А-ЯЁA-Z][а-яёa-z\-\s]+/.test(line)) return line
+  }
+
+  // 2) Явные маркеры улиц + номер дома
+  const streetMarkers = /(ул\.|улица|просп\.|проспект|пер\.|переулок|шоссе|ш\.|пл\.|площадь|наб\.|набережная|бульвар|бул\.|проезд|пр-д|аллея)/i
+  for (const line of lines) {
+    if (streetMarkers.test(line) && /\d/.test(line)) return line
+  }
+
+  // 3) Паттерн "Название, 22/1с1" (улица без маркера + номер)
+  const m = text.match(/([А-ЯЁA-Z][^,\n]+?),\s*\d+[\w/\-]*[^,\n]*/)
+  if (m) return m[0]
+
+  // 4) Если в одной строке запятые и цифры
+  for (const line of lines) {
+    if (/,/.test(line) && /\d/.test(line)) return line
+  }
+
+  return null
+}
+
+async function geocodeAddress(address) {
+  try {
+    // Если указано метро, предполагаем Москву
+    let query = address
+    if (/\bм\s+/.test(address) && !/Москва|Moscow/i.test(address)) {
+      query = `Москва, ${address}`
+    }
+    const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&countrycodes=ru&q=${encodeURIComponent(query)}`
+    const res = await fetch(url, { headers: { 'User-Agent': 'dvizh-bot/1.0 (+https://dvizh-eacfa.web.app/)' } })
+    if (!res.ok) return null
+    const data = await res.json()
+    if (Array.isArray(data) && data.length > 0) {
+      const item = data[0]
+      const lat = parseFloat(item.lat)
+      const lon = parseFloat(item.lon)
+      if (isFinite(lat) && isFinite(lon)) return { lat, lng: lon }
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
 function parseRuDateTimeRange(rawText) {
   if (!rawText || typeof rawText !== 'string') return null
   const text = rawText.toLowerCase().replace(/\s+/g, ' ').trim()
@@ -130,6 +182,11 @@ async function saveEventFromText(text, ctx) {
     throw new Error('Firebase не подключен')
   }
   const parsed = parseRuDateTimeRange(text)
+  const address = extractAddress(text)
+  let geo = null
+  if (address) {
+    geo = await geocodeAddress(address)
+  }
   const eventData = {
     title: (text || '').split('\n')[0].slice(0, 100),
     description: text || '',
@@ -138,10 +195,10 @@ async function saveEventFromText(text, ctx) {
     isFree: true,
     price: null,
     isOnline: false,
-    location: 'Место уточняется',
+    location: address || 'Место уточняется',
     categories: ['telegram'],
     imageUrls: [],
-    geo: null,
+    geo,
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
     source: {
       type: 'telegram',
