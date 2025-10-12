@@ -25,6 +25,12 @@ app.get('/', (req, res) => {
 app.get('/health', (req, res) => {
   res.status(200).send('ok')
 })
+// SPA fallback: любые роуты фронта отдаем на index.html
+app.get('*', (req, res) => {
+  // исключим явные файлы из fallback — их отдаст express.static
+  if (path.extname(req.path)) return res.status(404).end()
+  res.sendFile(path.join(distDir, 'index.html'))
+})
 
 // Инициализация Firebase (с вшитым сервисным аккаунтом как fallback)
 let db = null
