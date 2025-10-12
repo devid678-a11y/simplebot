@@ -29,16 +29,21 @@ export default function EventDetail() {
   }, [col, realId])
   if (!event) return <div style={{ padding: 16 }}>Загрузка…</div>
   async function toggleGoing() {
-    const uid = getEffectiveUid()
-    if (!uid || !realId) return
-    const ref = doc(db, col, realId, 'attendees', uid)
-    if (going) {
-      await deleteDoc(ref)
-      await deleteDoc(doc(db, 'users', uid, 'going', id!))
-    } else {
-      await setDoc(ref, { createdAt: Date.now() })
-      // Создаём обратную ссылку для профиля: users/{uid}/going/{eventId}
-      await setDoc(doc(db, 'users', uid, 'going', id!), { createdAt: Date.now(), col })
+    try {
+      const uid = getEffectiveUid()
+      if (!uid || !realId) return
+      const ref = doc(db, col, realId, 'attendees', uid)
+      if (going) {
+        await deleteDoc(ref)
+        await deleteDoc(doc(db, 'users', uid, 'going', id!))
+      } else {
+        await setDoc(ref, { createdAt: Date.now() })
+        // Создаём обратную ссылку для профиля: users/{uid}/going/{eventId}
+        await setDoc(doc(db, 'users', uid, 'going', id!), { createdAt: Date.now(), col })
+      }
+    } catch (e) {
+      console.error('RSVP error', e)
+      try { alert('Не удалось обновить статус. Попробуйте ещё раз.') } catch {}
     }
   }
   return (
@@ -54,7 +59,7 @@ export default function EventDetail() {
         {event.description && <p style={{ marginTop: 12, whiteSpace: 'pre-wrap' }}>{event.description}</p>}
         </div>
       </div>
-      <div style={{ position: 'fixed', left: 0, right: 0, bottom: 72, padding: 16 }}>
+      <div style={{ position: 'fixed', left: 0, right: 0, bottom: 72, padding: 16, zIndex: 20 }}>
         <button onClick={toggleGoing} style={{ width: '100%' }}>{going ? 'Не пойду' : 'Пойду'}</button>
       </div>
     </div>

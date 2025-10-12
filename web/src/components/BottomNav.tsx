@@ -11,7 +11,7 @@ export default function BottomNav() {
     </Link>
   )
   return (
-    <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, padding: 12, background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)' }}>
+    <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, padding: 12, background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)', zIndex: 10 }}>
       <div style={{ display: 'flex', gap: 8 }}>
         {btn('Explore', '/')}
         {btn('Map', '/map')}

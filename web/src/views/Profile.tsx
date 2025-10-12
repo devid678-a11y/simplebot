@@ -53,6 +53,10 @@ export default function Profile() {
         interests: interests || [],
         updatedAt: serverTimestamp()
       }, { merge: true })
+      try { alert('Сохранено') } catch {}
+    } catch (e) {
+      console.error('Profile save error', e)
+      try { alert('Не удалось сохранить профиль') } catch {}
     } finally {
       setSaving(false)
     }
