@@ -2,6 +2,9 @@ import { Telegraf } from 'telegraf'
 import http from 'http'
 import dotenv from 'dotenv'
 import admin from 'firebase-admin'
+import express from 'express'
+import path from 'path'
+import { fileURLToPath } from 'url'
 
 dotenv.config()
 
@@ -9,6 +12,19 @@ const BOT_TOKEN = process.env.BOT_TOKEN || '8269219896:AAF3dVeZRJ__AFIOfI1_uyxyK
 const PORT = process.env.PORT || 3000
 
 console.log('🚀 Запускаем простейшего бота...')
+
+// Express для раздачи фронтенда (web/dist)
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+const app = express()
+const distDir = path.join(__dirname, 'web', 'dist')
+app.use(express.static(distDir))
+app.get('/', (req, res) => {
+  res.sendFile(path.join(distDir, 'index.html'))
+})
+app.get('/health', (req, res) => {
+  res.status(200).send('ok')
+})
 
 // Инициализация Firebase (с вшитым сервисным аккаунтом как fallback)
 let db = null
@@ -377,14 +393,9 @@ bot.command('push', async (ctx) => {
   }
 })
 
-// HTTP сервер
-const server = http.createServer((req, res) => {
-  res.writeHead(200, { 'Content-Type': 'text/plain' })
-  res.end('🤖 Simple Bot is running!')
-})
-
-server.listen(PORT, () => {
-  console.log(`🌐 HTTP сервер на порту ${PORT}`)
+// Запускаем Express (отдаёт фронт и живой маршрут /health)
+const server = app.listen(PORT, () => {
+  console.log(`🌐 HTTP/Express сервер на порту ${PORT}`)
 })
 
 // Запуск бота
