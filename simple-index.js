@@ -60,14 +60,45 @@ function extractMessageText(msg) {
   return ''
 }
 
+function parseRuDateTime(rawText) {
+  if (!rawText || typeof rawText !== 'string') return null
+  const text = rawText.toLowerCase().replace(/\s+/g, ' ').trim()
+  const now = new Date()
+  const defaultHour = 19
+  const defaultMinute = 0
+  const months = { 'января':0,'февраля':1,'марта':2,'апреля':3,'мая':4,'июня':5,'июля':6,'августа':7,'сентября':8,'октября':9,'ноября':10,'декабря':11 }
+  let baseDate = null
+  if (/послезавтра/.test(text)) baseDate = new Date(now.getFullYear(), now.getMonth(), now.getDate()+2, 0,0,0)
+  else if (/завтра/.test(text)) baseDate = new Date(now.getFullYear(), now.getMonth(), now.getDate()+1, 0,0,0)
+  else if (/сегодня/.test(text)) baseDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0,0,0)
+  let d=null,m=null,y=null
+  const m1 = text.match(/\b(\d{1,2})[.\/-](\d{1,2})(?:[.\/-](\d{2,4}))?\b/)
+  if (m1) { d = +m1[1]; m = +m1[2]-1; y = m1[3] ? +m1[3] : now.getFullYear(); if (y<100) y+=2000; baseDate = new Date(y,m,d,0,0,0) }
+  if (!baseDate) {
+    const m2 = text.match(/\b(\d{1,2})\s+(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)(?:\s+(\d{4}))?\b/)
+    if (m2) { d=+m2[1]; m=months[m2[2]]; y=m2[3]?+m2[3]:now.getFullYear(); baseDate = new Date(y,m,d,0,0,0) }
+  }
+  let hh=null, mm=null
+  const t1 = text.match(/(?:\bв\s*)?(\d{1,2})[:.](\d{2})\b/)
+  if (t1) { hh=+t1[1]; mm=+t1[2] }
+  if (!baseDate && hh!==null) {
+    const cand = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh, mm??0, 0)
+    if (cand.getTime()<now.getTime()) cand.setDate(cand.getDate()+1)
+    return cand.getTime()
+  }
+  if (baseDate) { baseDate.setHours(hh??defaultHour, mm??defaultMinute, 0, 0); return baseDate.getTime() }
+  return null
+}
+
 async function saveEventFromText(text, ctx) {
   if (!db) {
     throw new Error('Firebase не подключен')
   }
+  const parsedTs = parseRuDateTime(text)
   const eventData = {
     title: (text || '').split('\n')[0].slice(0, 100),
     description: text || '',
-    startAtMillis: Date.now() + 86400000,
+    startAtMillis: parsedTs ?? (Date.now() + 86400000),
     isFree: true,
     price: null,
     isOnline: false,
