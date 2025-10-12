@@ -261,7 +261,9 @@ async function saveEventFromText(text, ctx, msg) {
 
 // Команда /start
 bot.start((ctx) => {
-  ctx.reply('👋 Привет! Перешлите пост и нажмите /push')
+  ctx.reply('👋 Привет! Перешлите пост, затем нажмите «Предложить». Событие отправится только при наличии даты (в т.ч. сегодня/завтра) или адреса.', {
+    reply_markup: { keyboard: [[{ text: 'Предложить' }]], resize_keyboard: true }
+  })
 })
 
 // Команда /help
@@ -369,14 +371,9 @@ bot.on(['message','channel_post','edited_message','edited_channel_post'], async 
   if (text.startsWith('/')) return // Игнорируем команды
   
   last.set(ctx.from.id, { text })
-  await ctx.reply(`📝 Получено: ${text.slice(0, 100)}...`)
-  try {
-    const ids = await saveEventFromText(text, ctx, m)
-    const suffix = ids.eventsId ? ` / events: ${ids.eventsId}` : ''
-    await ctx.reply(`✅ Событие создано: telegram_events: ${ids.telegramId}${suffix}`)
-  } catch (e) {
-    await ctx.reply(`⚠️ Не удалось сохранить событие: ${e.message}`)
-  }
+  await ctx.reply(`📝 Получено: ${text.slice(0, 200)}...
+
+Нажмите «Предложить», чтобы отправить в приложение. Требуется дата (в т.ч. сегодня/завтра) или адрес.`)
 })
 
 // Команда /push
@@ -390,6 +387,12 @@ bot.command('push', async (ctx) => {
     return ctx.reply('❌ Нет данных. Отправьте сообщение и повторите.')
   }
   
+  // Требование: должна быть дата (в т.ч. «сегодня/завтра») или адрес
+  const eligible = !!(parseRuDateTimeRange(data.text) || extractAddress(data.text))
+  if (!eligible) {
+    return ctx.reply('⚠️ Нужна дата (например: 25 октября, 25.10, сегодня, завтра, 19:00) или адрес (улица/м ...). Дополните сообщение и нажмите «Предложить» снова.')
+  }
+
   try {
     const ids = await saveEventFromText(data.text, ctx, ctx.message)
     const suffix = ids.eventsId ? ` / events: ${ids.eventsId}` : ''
@@ -397,6 +400,14 @@ bot.command('push', async (ctx) => {
   } catch (e) {
     await ctx.reply(`❌ Ошибка: ${e.message}`)
   }
+})
+
+// Кнопка «Предложить» (reply keyboard)
+bot.hears(/^Предложить$/i, async (ctx) => {
+  return bot.handleUpdate({
+    update_id: Date.now(),
+    message: ctx.message
+  }) || ctx.telegram.invoke(() => {}) // no-op
 })
 
 // Запускаем Express (отдаёт фронт и живой маршрут /health)
