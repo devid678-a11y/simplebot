@@ -7,28 +7,37 @@ export default function EventDetail() {
   const { id } = useParams()
   const [event, setEvent] = useState<any>(null)
   const [going, setGoing] = useState<boolean>(false)
+  // Определяем коллекцию по префиксу ID из ленты
+  function resolveCollectionAndId(rawId?: string) {
+    if (!rawId) return { col: 'events', realId: '' }
+    if (rawId.startsWith('telegram_')) return { col: 'telegram_events', realId: rawId.replace(/^telegram_/, '') }
+    if (rawId.startsWith('tg_')) return { col: 'tg-events', realId: rawId.replace(/^tg_/, '') }
+    return { col: 'events', realId: rawId }
+  }
+  const { col, realId } = resolveCollectionAndId(id)
   useEffect(() => {
-    if (!id) return
-    return onSnapshot(doc(db, 'events', id), (d) => setEvent({ id: d.id, ...(d.data()||{}) }))
-  }, [id])
+    if (!realId) return
+    return onSnapshot(doc(db, col, realId), (d) => setEvent({ id: d.id, ...(d.data()||{}) }))
+  }, [col, realId])
   useEffect(() => {
-    if (!id) return
+    if (!realId) return
     const uid = auth.currentUser?.uid
     if (!uid) return
-    // «Пойду» храним в events/{id}/attendees/{uid}
-    return onSnapshot(doc(db, 'events', id, 'attendees', uid), (d) => setGoing(d.exists()))
-  }, [id])
+    // «Пойду» храним в <col>/{realId}/attendees/{uid}
+    return onSnapshot(doc(db, col, realId, 'attendees', uid), (d) => setGoing(d.exists()))
+  }, [col, realId])
   if (!event) return <div style={{ padding: 16 }}>Загрузка…</div>
   async function toggleGoing() {
     const uid = auth.currentUser?.uid
-    if (!uid || !id) return
-    const ref = doc(db, 'events', id, 'attendees', uid)
+    if (!uid || !realId) return
+    const ref = doc(db, col, realId, 'attendees', uid)
     if (going) {
       await deleteDoc(ref)
+      await deleteDoc(doc(db, 'users', uid, 'going', id!))
     } else {
       await setDoc(ref, { createdAt: Date.now() })
       // Создаём обратную ссылку для профиля: users/{uid}/going/{eventId}
-      await setDoc(doc(db, 'users', uid, 'going', id), { createdAt: Date.now() })
+      await setDoc(doc(db, 'users', uid, 'going', id!), { createdAt: Date.now(), col })
     }
   }
   return (
