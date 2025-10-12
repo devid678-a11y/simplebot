@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "503626086902",
+    "project_id": "dvizh-eacfa",
+    "storage_bucket": "dvizh-eacfa.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:503626086902:android:844479cb9838d1ff1cefd7",
+        "android_client_info": {
+          "package_name": "com.company.dvizhtrue"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "503626086902-3kmvafadk8ifm0k73sf48joh8kdc5nrn.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBSrfEka_1RftGgZTmuSOFQ2Avh_2PNiRk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "503626086902-3kmvafadk8ifm0k73sf48joh8kdc5nrn.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

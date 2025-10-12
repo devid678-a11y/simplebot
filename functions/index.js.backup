@@ -1,0 +1,1448 @@
+const functions = require('firebase-functions');
+const admin = require('firebase-admin');
+const axios = require('axios');
+const cheerio = require('cheerio');
+const { Session, cloudApi, serviceClients } = require('@yandex-cloud/nodejs-sdk');
+const { TextGenerationServiceClient } = require('@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/ai/llm/v1alpha/llm_service');
+
+// Инициализация Firebase
+admin.initializeApp();
+const db = admin.firestore();
+
+// Функция для получения правильной базы данных
+function getDatabase() {
+    return admin.firestore();
+}
+
+// YandexGPT конфигурация (из env или functions config)
+function getYandexConfig() {
+    try {
+        const cfg = require('./config');
+        const apiKey = process.env.YANDEX_API_KEY || cfg.yandex.api_key;
+        const folderId = process.env.YANDEX_FOLDER_ID || cfg.yandex.folder_id;
+        const model = process.env.YANDEX_MODEL || cfg.yandex.model;
+
+        if (!apiKey || !folderId || apiKey === 'your_yandex_api_key_here') {
+            console.log('⚠️ YandexGPT не настроен. Используем простое извлечение данных.');
+            return null;
+        }
+
+        return { apiKey, folderId, model };
+    } catch (error) {
+        console.log('⚠️ Ошибка загрузки конфигурации YandexGPT:', error.message);
+        return null;
+    }
+}
+
+// Функция для работы с YandexGPT через сервисный аккаунт
+async function parseTelegramMessageWithSDK(messageText, messageLink = '') {
+    const prompt = `
+Ты - эксперт по анализу сообщений о мероприятиях в Telegram каналах. 
+
+ЗАДАЧА: Проанализируй сообщение и извлеки информацию о конкретном мероприятии.
+
+СООБЩЕНИЕ:
+"${messageText}"
+
+ССЫЛКА: ${messageLink}
+
+ПРАВИЛА АНАЛИЗА:
+1. Ищи ТОЛЬКО конкретные мероприятия с датой, временем и местом
+2. Игнорируй общие новости, анонсы, рекламу, спам
+3. Если информации недостаточно - верни null
+4. Не выдумывай данные - используй только то, что есть в тексте
+5. Будь строгим к качеству данных
+
+ЧТО ИСКАТЬ:
+- Название мероприятия (конкретное, не общее)
+- Дату и время (конкретные, не "скоро" или "в этом месяце")
+- Место проведения (конкретный адрес или локацию)
+- Цену (если указана) или "бесплатно"
+- Тип мероприятия (концерт, выставка, лекция и т.д.)
+
+ФОРМАТ ОТВЕТА (строго JSON):
+{
+    "title": "Точное название из текста",
+    "description": "Краткое описание (до 200 символов)",
+    "date": "2024-09-15 19:00",
+    "location": "Конкретное место из текста",
+    "price": "500 рублей" или "бесплатно" или null,
+    "categories": ["музыка", "концерт"],
+    "confidence": 0.9,
+    "isOnline": false,
+    "isFree": false
+}
+
+Если это НЕ мероприятие или данных недостаточно - верни null.
+`;
+
+    try {
+        const config = getYandexConfig();
+        
+        if (!config) {
+            console.log('❌ YandexGPT не настроен. Парсинг невозможен.');
+            return null;
+        }
+        
+        const { folderId, model } = config;
+        
+        console.log('🤖 Отправляем запрос в YandexGPT через HTTP API (обновлено v5)...');
+        
+        // Используем HTTP API с API ключом напрямую
+        const response = await axios.post(
+            'https://llm.api.cloud.yandex.net/foundationModels/v1/completion',
+            {
+                modelUri: `gpt://${folderId}/${model}`,
+                completionOptions: {
+                    stream: false,
+                    temperature: 0.1,
+                    maxTokens: 1500
+                },
+                messages: [
+                    {
+                        role: 'user',
+                        text: prompt
+                    }
+                ]
+            },
+            {
+                headers: {
+                    'Authorization': `Api-Key AQVNxiHkCODl9-BAnpVhQRW61w5b8APj3bDVE-82`,
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+
+        const result = response.data.result.alternatives[0].message.text;
+        console.log('✅ Получен ответ от YandexGPT:', result);
+        
+        try {
+            // Убираем markdown блоки ``` если есть
+            let jsonText = result.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+            
+            // Проверяем, если ответ null
+            if (jsonText === 'null' || jsonText === '') {
+                console.log('⚠️ YandexGPT вернул null - это не мероприятие');
+                return null;
+            }
+            
+            // Парсим JSON ответ
+            const parsedData = JSON.parse(jsonText);
+            
+            // Если это массив событий, берем первое с высокой уверенностью
+            let parsedEvent;
+            if (Array.isArray(parsedData)) {
+                parsedEvent = parsedData.find(event => event.confidence > 0.7);
+                if (!parsedEvent) {
+                    console.log('⚠️ Низкая уверенность в результате:', parsedData[0]?.confidence);
+                    return null;
+                }
+            } else {
+                parsedEvent = parsedData;
+            }
+            
+            if (parsedEvent && parsedEvent.confidence > 0.7) {
+                // Преобразуем дату в timestamp
+                const dateStr = parsedEvent.date;
+                let startAtMillis = new Date(dateStr).getTime();
+                
+                // Если дата в формате диапазона "с X по Y", берем первую дату
+                if (isNaN(startAtMillis) && dateStr.includes('с ') && dateStr.includes(' по ')) {
+                    const firstDate = dateStr.split('с ')[1]?.split(' по ')[0];
+                    if (firstDate) {
+                        startAtMillis = new Date(firstDate.trim()).getTime();
+                    }
+                }
+                
+                // Если все еще NaN, используем текущее время + 1 день
+                if (isNaN(startAtMillis)) {
+                    startAtMillis = Date.now() + 24 * 60 * 60 * 1000;
+                }
+                
+                return {
+                    title: parsedEvent.title,
+                    description: parsedEvent.description || '',
+                    startAtMillis: startAtMillis,
+                    isOnline: parsedEvent.isOnline || false,
+                    isFree: parsedEvent.isFree || false,
+                    price: parsedEvent.price,
+                    location: parsedEvent.location,
+                    imageUrls: [],
+                    categories: parsedEvent.categories || [],
+                    confidence: parsedEvent.confidence
+                };
+            } else {
+                console.log('⚠️ Низкая уверенность в результате:', parsedEvent.confidence);
+                return null;
+            }
+        } catch (parseError) {
+            console.log('❌ Ошибка парсинга JSON ответа:', parseError.message);
+            return null;
+        }
+        
+    } catch (error) {
+        console.error('❌ Ошибка в parseTelegramMessageWithSDK:', error);
+        return null;
+    }
+}
+
+// Функция для получения IAM-токена сервисного аккаунта
+async function getIamToken() {
+    try {
+        console.log('🤖 Получаем IAM-токен через Yandex Cloud API...');
+        
+        // Используем API ключ для получения IAM-токена
+        const response = await axios.post(
+            'https://iam.api.cloud.yandex.net/iam/v1/tokens',
+            {
+                yandexPassportOauthToken: 'AQVNw_xujlX2tui5in5a-nZ0sTq3wAF_s8xZuEww'
+            },
+            {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+        
+        console.log('✅ IAM-токен получен успешно');
+        return response.data.iamToken;
+    } catch (error) {
+        console.error('❌ Ошибка получения IAM-токена:', error.response?.data || error.message);
+        return null;
+    }
+}
+
+// Telegram Bot API конфигурация
+function getTelegramConfig() {
+    try {
+        const cfg = require('./config');
+        const botToken = process.env.TELEGRAM_BOT_TOKEN || cfg.telegram?.bot_token;
+        
+        if (!botToken || botToken === 'your_telegram_bot_token_here') {
+            console.log('⚠️ Telegram Bot Token не настроен. Используем веб-скраппинг.');
+            return null;
+        }
+        
+        return { botToken };
+    } catch (error) {
+        console.log('⚠️ Ошибка загрузки конфигурации Telegram:', error.message);
+        return null;
+    }
+}
+
+// Удален RSS парсер - используем веб-скраппинг
+
+// Список публичных Telegram каналов для веб-скраппинга
+const TELEGRAM_CHANNELS = [
+    {
+        name: 'На Фанере',
+        username: 'Na_Fanere',
+        url: 'https://t.me/s/Na_Fanere',
+        category: 'events'
+    },
+    {
+        name: 'Газета Завтра Москва',
+        username: 'gzsmsk',
+        url: 'https://t.me/s/gzsmsk',
+        category: 'news'
+    },
+    {
+        name: 'Московский гуляка',
+        username: 'mosgul',
+        url: 'https://t.me/s/mosgul',
+        category: 'events'
+    },
+    {
+        name: 'Фрискидос',
+        username: 'freeskidos',
+        url: 'https://t.me/s/freeskidos',
+        category: 'events'
+    },
+    {
+        name: 'Ноябрь кино',
+        username: 'novembercinema',
+        url: 'https://t.me/s/novembercinema',
+        category: 'cinema'
+    },
+    {
+        name: 'Новости Москвы',
+        username: 'NovostiMoskvbl',
+        url: 'https://t.me/s/NovostiMoskvbl',
+        category: 'news'
+    },
+    {
+        name: 'Только парк',
+        username: 'only_park',
+        url: 'https://t.me/s/only_park',
+        category: 'events'
+    },
+    {
+        name: 'Простая политика',
+        username: 'prostpolitika',
+        url: 'https://t.me/s/prostpolitika',
+        category: 'politics'
+    },
+    {
+        name: 'Циферблат Москва',
+        username: 'ziferblatmost',
+        url: 'https://t.me/s/ziferblatmost',
+        category: 'events'
+    }
+];
+
+
+// Функция для получения списка каналов из Firestore
+async function getMonitoredChannels() {
+    try {
+        const channelsDoc = await admin.firestore().collection('config').doc('telegram_channels').get();
+        if (channelsDoc.exists) {
+            return channelsDoc.data().channels || [];
+        }
+        return [];
+    } catch (error) {
+        console.error('Ошибка получения списка каналов:', error);
+        return [];
+    }
+}
+
+// Функция для добавления канала в мониторинг
+async function addChannelToMonitoring(username, name) {
+    try {
+        const channelsRef = admin.firestore().collection('config').doc('telegram_channels');
+        await channelsRef.set({
+            channels: admin.firestore.FieldValue.arrayUnion({
+                username: username,
+                name: name,
+                addedAt: admin.firestore.FieldValue.serverTimestamp()
+            })
+        }, { merge: true });
+        
+        return { success: true };
+    } catch (error) {
+        console.error('Ошибка добавления канала:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+// Кэш для избежания дублирования событий (временно отключен для тестирования)
+const processedMessages = new Set();
+
+// Функция парсинга сообщения
+async function parseTelegramMessage(messageText, messageLink = '') {
+    console.log('🤖 Парсинг сообщения через YandexGPT...');
+    try {
+        const result = await parseTelegramMessageWithSDK(messageText, messageLink);
+        console.log('✅ YandexGPT результат:', result);
+        return result;
+    } catch (error) {
+        console.log('❌ Ошибка YandexGPT:', error.message);
+        return null;
+    }
+}
+
+// Функция для парсинга Telegram каналов через Bot API
+async function parseTelegramChannelWithBotAPI(channelUsername, limit = 20) {
+    const telegramConfig = getTelegramConfig();
+    
+    if (!telegramConfig) {
+        console.log('⚠️ Telegram Bot API не настроен, используем веб-скраппинг');
+        return await scrapeChannelMessages(`https://t.me/s/${channelUsername}`, limit);
+    }
+    
+    try {
+        console.log(`🤖 Парсинг канала @${channelUsername} через Bot API...`);
+        
+        // Получаем информацию о канале
+        const channelInfo = await axios.get(`https://api.telegram.org/bot${telegramConfig.botToken}/getChat`, {
+            params: { chat_id: `@${channelUsername}` }
+        });
+        
+        if (!channelInfo.data.ok) {
+            console.log(`❌ Канал @${channelUsername} недоступен через Bot API`);
+            return await scrapeChannelMessages(`https://t.me/s/${channelUsername}`, limit);
+        }
+        
+        console.log(`✅ Канал найден: ${channelInfo.data.result.title}`);
+        
+        // Получаем последние сообщения
+        const messages = await axios.get(`https://api.telegram.org/bot${telegramConfig.botToken}/getUpdates`, {
+            params: {
+                offset: -limit,
+                limit: limit,
+                timeout: 30
+            }
+        });
+        
+        if (!messages.data.ok || !messages.data.result.length) {
+            console.log(`⚠️ Нет сообщений от канала @${channelUsername} через Bot API`);
+            return await scrapeChannelMessages(`https://t.me/s/${channelUsername}`, limit);
+        }
+        
+        const channelMessages = messages.data.result
+            .filter(update => update.channel_post && update.channel_post.chat.username === channelUsername)
+            .map(update => ({
+                messageId: update.channel_post.message_id,
+                text: update.channel_post.text || update.channel_post.caption || '',
+                date: new Date(update.channel_post.date * 1000).toISOString(),
+                link: `https://t.me/${channelUsername}/${update.channel_post.message_id}`,
+                messageDate: new Date(update.channel_post.date * 1000).toISOString()
+            }))
+            .slice(0, limit);
+        
+        console.log(`✅ Получено ${channelMessages.length} сообщений через Bot API`);
+        return channelMessages;
+        
+    } catch (error) {
+        console.error(`❌ Ошибка Bot API для @${channelUsername}:`, error.message);
+        console.log('🔄 Fallback на веб-скраппинг');
+        return await scrapeChannelMessages(`https://t.me/s/${channelUsername}`, limit);
+    }
+}
+
+// Простое извлечение данных о мероприятии без YandexGPT
+function extractEventDataSimple(messageText, messageLink) {
+    console.log('Извлекаем данные простым способом...');
+    
+    const text = messageText.toLowerCase();
+    
+    // Проверяем, что это мероприятие
+    const eventKeywords = [
+        'концерт', 'выставка', 'лекция', 'мастер-класс', 'фестиваль', 'конференция', 
+        'семинар', 'встреча', 'показ', 'премьера', 'спектакль', 'перформанс'
+    ];
+    
+    const hasEventKeyword = eventKeywords.some(keyword => text.includes(keyword));
+    if (!hasEventKeyword) {
+        console.log('❌ Не найдено ключевых слов о мероприятии');
+        return null;
+    }
+    
+    // Извлекаем дату
+    const datePatterns = [
+        /(\d{1,2})\s*(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)/i,
+        /(\d{1,2}):(\d{2})/,
+        /(завтра|сегодня|понедельник|вторник|среда|четверг|пятница|суббота|воскресенье)/i
+    ];
+    
+    let hasDate = false;
+    for (const pattern of datePatterns) {
+        if (pattern.test(messageText)) {
+            hasDate = true;
+            break;
+        }
+    }
+    
+    if (!hasDate) {
+        console.log('❌ Не найдена дата/время');
+        return null;
+    }
+    
+    // Извлекаем место
+    const locationPatterns = [
+        /(?:место|адрес|где)[:\s]*([^.\n]+)/i,
+        /(?:в|на)\s+([А-Яа-я\s\d,.-]+)/i
+    ];
+    
+    let location = 'Москва'; // По умолчанию
+    for (const pattern of locationPatterns) {
+        const match = messageText.match(pattern);
+        if (match && match[1]) {
+            location = match[1].trim();
+            break;
+        }
+    }
+    
+    // Извлекаем цену
+    const pricePatterns = [
+        /(\d+)\s*руб/i,
+        /бесплатно/i,
+        /вход\s*свободный/i
+    ];
+    
+    let price = null;
+    let isFree = false;
+    for (const pattern of pricePatterns) {
+        const match = messageText.match(pattern);
+        if (match) {
+            if (match[0].toLowerCase().includes('бесплатно') || match[0].toLowerCase().includes('свободный')) {
+                isFree = true;
+            } else {
+                price = match[0];
+            }
+            break;
+        }
+    }
+    
+    // Извлекаем название (первая строка или заголовок)
+    const lines = messageText.split('\n').filter(line => line.trim().length > 0);
+    const title = lines[0].substring(0, 100); // Берем первые 100 символов
+    
+    // Определяем категории
+    const categories = [];
+    if (text.includes('концерт') || text.includes('музыка')) categories.push('музыка');
+    if (text.includes('выставка') || text.includes('искусство')) categories.push('искусство');
+    if (text.includes('лекция') || text.includes('образование')) categories.push('образование');
+    if (text.includes('кино') || text.includes('фильм')) categories.push('кино');
+    if (text.includes('театр') || text.includes('спектакль')) categories.push('театр');
+    if (text.includes('спорт')) categories.push('спорт');
+    
+    const eventData = {
+        title: title,
+        description: messageText.substring(0, 500),
+        date: new Date().toISOString().split('T')[0] + ' 19:00', // По умолчанию сегодня в 19:00
+        location: location,
+        price: price,
+        categories: categories.length > 0 ? categories : ['событие'],
+        confidence: 0.6,
+        isFree: isFree,
+        isOnline: text.includes('онлайн') || text.includes('online')
+    };
+    
+    console.log('✅ Извлечены данные:', eventData.title);
+    return eventData;
+}
+
+// Cloud Function для парсинга
+exports.parsemessage = functions.https.onCall(async (data, context) => {
+    const { messageText, messageLink } = data;
+    
+    if (!messageText) {
+        throw new functions.https.HttpsError('invalid-argument', 'Текст сообщения обязателен');
+    }
+
+    let parsedEvent;
+    try {
+        parsedEvent = await parseTelegramMessage(messageText, messageLink || '');
+    } catch (e) {
+        console.error('Config or parsing error:', e);
+        throw new functions.https.HttpsError('failed-precondition', 'Ошибка конфигурации YandexGPT или парсинга');
+    }
+    
+    if (parsedEvent && parsedEvent.confidence > 0.7) {
+        // Сохраняем в Firestore (база данных dvizheon)
+        await admin.firestore().collection('events').add({
+            ...parsedEvent,
+            source: 'yandexgpt_parser',
+            telegramUrl: messageLink || '',
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            parsedAt: new Date().toISOString()
+        });
+        
+        return { success: true, event: parsedEvent };
+    }
+    
+    return { success: false, reason: 'Не удалось распознать мероприятие' };
+});
+
+
+// Улучшенная функция для веб-скраппинга сообщений из Telegram канала
+async function scrapeChannelMessages(channelUrl, limit = 20) {
+    try {
+        console.log(`🔍 Парсинг веб-версии канала: ${channelUrl}`);
+        
+        // Получаем HTML страницу канала
+        const response = await axios.get(channelUrl, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Accept-Language': 'ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Connection': 'keep-alive',
+                'Upgrade-Insecure-Requests': '1'
+            },
+            timeout: 10000
+        });
+        
+        const html = response.data;
+        const $ = cheerio.load(html);
+        
+        const messages = [];
+        
+        // Ищем блоки с сообщениями
+        $('.tgme_widget_message').each((index, element) => {
+            if (messages.length >= limit) return false;
+            
+            const $message = $(element);
+            
+            // Извлекаем текст сообщения
+            const textElement = $message.find('.tgme_widget_message_text');
+            if (textElement.length === 0) return;
+            
+            let messageText = textElement.html()
+                .replace(/<[^>]*>/g, '') // Убираем HTML теги
+                .replace(/&quot;/g, '"')
+                .replace(/&amp;/g, '&')
+                .replace(/&lt;/g, '<')
+                .replace(/&gt;/g, '>')
+                .replace(/&nbsp;/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+            
+            if (messageText.length < 50) return; // Пропускаем короткие сообщения
+            
+            // Извлекаем дату
+            const dateElement = $message.find('time');
+            let messageDate = new Date();
+            if (dateElement.length > 0) {
+                const datetime = dateElement.attr('datetime');
+                if (datetime) {
+                    messageDate = new Date(datetime);
+                }
+            }
+            
+            // Извлекаем ссылку на пост
+            let postLink = channelUrl;
+            const linkElement = $message.find('a[href*="t.me/"]').first();
+            if (linkElement.length > 0) {
+                postLink = linkElement.attr('href');
+            } else {
+                // Строим ссылку на основе ID сообщения
+                const messageId = $message.attr('data-post') || index;
+                const channelUsername = channelUrl.match(/t\.me\/s\/([^\/]+)/);
+                if (channelUsername) {
+                    postLink = `https://t.me/${channelUsername[1]}/${messageId}`;
+                }
+            }
+            
+            // Извлекаем ID сообщения из ссылки
+            let messageId = `msg_${index}`;
+            const idMatch = postLink.match(/\/(\d+)$/);
+            if (idMatch) {
+                messageId = idMatch[1];
+            }
+            
+            messages.push({
+                messageId: messageId,
+                text: messageText,
+                date: messageDate,
+                link: postLink
+            });
+        });
+        
+        console.log(`✅ Найдено сообщений в канале: ${messages.length}`);
+        return messages;
+        
+    } catch (error) {
+        console.error(`❌ Ошибка парсинга канала ${channelUrl}:`, error.message);
+        return [];
+    }
+}
+
+// Функция для проверки, является ли сообщение о мероприятии
+function isEventMessage(text) {
+    const eventKeywords = [
+        'концерт', 'выставка', 'лекция', 'мастер-класс', 'фестиваль', 'конференция', 
+        'семинар', 'встреча', 'показ', 'премьера', 'спектакль', 'перформанс',
+        'завтра', 'сегодня', 'января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 
+        'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',
+        'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота', 'воскресенье',
+        'бесплатно', 'вход свободный', 'билеты', 'регистрация', 'запись', 'время:', 'место:'
+    ];
+    
+    // Исключаем общие слова
+    const excludeWords = [
+        'новости', 'события', 'мероприятия', 'анонс', 'обзор', 'информация',
+        'московские', 'москвы', 'города', 'района', 'области'
+    ];
+    
+    const lowerText = text.toLowerCase();
+    
+    // Проверяем исключения
+    if (excludeWords.some(word => lowerText.includes(word))) {
+        return false;
+    }
+    
+    // Проверяем наличие ключевых слов
+    const hasEventKeywords = eventKeywords.some(keyword => lowerText.includes(keyword));
+    
+    // Проверяем наличие даты/времени
+    const hasDateTime = /\d{1,2}\s*(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)/i.test(text) ||
+                       /\d{1,2}:\d{2}/.test(text) ||
+                       /(завтра|сегодня|понедельник|вторник|среда|четверг|пятница|суббота|воскресенье)/i.test(text);
+    
+    return hasEventKeywords && hasDateTime;
+}
+
+// Основная функция парсинга Telegram каналов через веб-скраппинг
+async function parseTelegramChannels() {
+    console.log('🚀 Запуск парсинга Telegram каналов...');
+    const startTime = Date.now();
+    
+    try {
+        // Получаем каналы из базы данных
+        console.log('🔍 Ищем каналы в коллекции channels...');
+        let channelsSnapshot = await db.collection('channels').get();
+        
+        console.log(`📊 Найдено ${channelsSnapshot.size} каналов в коллекции`);
+        
+        // Фильтруем только активные каналы
+        const activeChannels = [];
+        channelsSnapshot.forEach(doc => {
+            const data = doc.data();
+            if (data.enabled === true) {
+                activeChannels.push({
+                    id: doc.id,
+                    ...data
+                });
+            }
+        });
+        
+        console.log(`✅ Активных каналов: ${activeChannels.length}`);
+        
+        if (activeChannels.length === 0) {
+            console.log('⚠️ Нет активных каналов для парсинга, создаем тестовые каналы...');
+            
+            // Создаем тестовые каналы если их нет
+            const testChannels = [
+                {
+                    name: 'Московские события',
+                    username: 'moscow_events',
+                    url: 'https://t.me/moscow_events',
+                    category: 'events',
+                    enabled: true,
+                    lastParsed: 0
+                },
+                {
+                    name: 'IT мероприятия Москвы',
+                    username: 'it_events_moscow',
+                    url: 'https://t.me/it_events_moscow',
+                    category: 'it',
+                    enabled: true,
+                    lastParsed: 0
+                }
+            ];
+            
+            const batch = db.batch();
+            const channelsCollection = db.collection('channels');
+            
+            testChannels.forEach(channel => {
+                const docRef = channelsCollection.doc();
+                batch.set(docRef, {
+                    ...channel,
+                    createdAt: admin.firestore.FieldValue.serverTimestamp()
+                });
+            });
+            
+            await batch.commit();
+            console.log(`✅ Создано ${testChannels.length} тестовых каналов`);
+            
+            // Используем созданные каналы
+            channelsSnapshot = await db.collection('channels')
+                .where('enabled', '==', true)
+                .get();
+        }
+        
+        const channels = [];
+        channelsSnapshot.forEach(doc => {
+            const data = doc.data();
+            channels.push({
+                id: doc.id,
+                name: data.name,
+                username: data.username,
+                url: data.url,
+                category: data.category || 'general',
+                lastParsed: data.lastParsed || 0
+            });
+        });
+        
+        console.log(`📊 Найдено ${channels.length} активных каналов для парсинга`);
+        
+        let totalProcessed = 0;
+        let totalEvents = 0;
+        let totalErrors = 0;
+        
+        // Обрабатываем каждый канал
+        for (const channel of channels) {
+            try {
+                console.log(`📺 Обработка канала: ${channel.name} (@${channel.username})`);
+                
+                // Пытаемся использовать Bot API, если доступен
+                let messages;
+                try {
+                    messages = await parseTelegramChannelWithBotAPI(channel.username, 10); // Уменьшил до 10 для скорости
+                    console.log(`✅ Получено ${messages ? messages.length : 0} сообщений через Bot API для ${channel.name}`);
+                } catch (botError) {
+                    console.log(`⚠️ Bot API недоступен для @${channel.username}, используем веб-скраппинг`);
+                    messages = await scrapeChannelMessages(channel.url, 10); // Уменьшил до 10 для скорости
+                    console.log(`📄 Найдено сообщений в ${channel.name}: ${messages ? messages.length : 0}`);
+                }
+                
+                // Проверяем, что messages определен и является массивом
+                if (!messages || !Array.isArray(messages)) {
+                    console.log(`❌ Ошибка: messages не определен или не является массивом для канала ${channel.name}`);
+                    continue;
+                }
+                
+                console.log(`📝 Начинаем обработку ${messages.length} сообщений для канала ${channel.name}`);
+                
+                for (const message of messages) {
+                    // Временно отключаем проверку кэша для тестирования YandexGPT
+                    const messageKey = `${channel.username}_${message.messageId}`;
+                    console.log(`🔄 Обрабатываем сообщение: ${messageKey}`);
+                    
+                    // Временно отключаем фильтрацию для тестирования YandexGPT
+                    console.log(`🎯 Обработка сообщения: ${message.text.substring(0, 100)}...`);
+                    
+                    try {
+                        // Парсим сообщение через YandexGPT
+                        const parsedEvent = await parseTelegramMessage(message.text, message.link);
+                        
+                        if (parsedEvent) {
+                            // Проверяем, не существует ли уже такое событие
+                            const existingEvent = await db.collection('events')
+                                .where('messageId', '==', message.messageId)
+                                .where('channelUsername', '==', channel.username)
+                                .limit(1)
+                                .get();
+                            
+                            if (existingEvent.empty) {
+                                // Сохраняем в Firestore
+                                const eventData = {
+                                    title: parsedEvent.title,
+                                    description: parsedEvent.description || '',
+                                    startAtMillis: parsedEvent.startAtMillis,
+                                    isOnline: parsedEvent.isOnline,
+                                    isFree: parsedEvent.isFree,
+                                    price: parsedEvent.price,
+                                    location: parsedEvent.location,
+                                    imageUrls: parsedEvent.imageUrls,
+                                    categories: parsedEvent.categories,
+                                    telegramUrl: message.link,
+                                    source: 'yandexgpt_parser',
+                                    channelName: channel.name,
+                                    channelUsername: channel.username,
+                                    channelCategory: channel.category,
+                                    messageId: message.messageId,
+                                    originalText: message.text,
+                                    messageDate: message.date,
+                                    confidence: parsedEvent.confidence,
+                                    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                                    parsedAt: new Date().toISOString()
+                                };
+                                
+                                await db.collection('events').add(eventData);
+                                
+                                totalEvents++;
+                                console.log(`✅ Событие сохранено: ${parsedEvent.title} из @${channel.username}`);
+                            } else {
+                                console.log(`⏭️ Событие уже существует: ${parsedEvent.title} из @${channel.username}`);
+                            }
+                        }
+                        
+                        // Отмечаем сообщение как обработанное
+                        processedMessages.add(messageKey);
+                    } catch (parseError) {
+                        console.error(`❌ Ошибка парсинга сообщения из @${channel.username}:`, parseError.message);
+                        totalErrors++;
+                    }
+                    
+                    totalProcessed++;
+                }
+                
+                // Обновляем время последнего парсинга канала
+                await db.collection('channels').doc(channel.id).update({
+                    lastParsed: admin.firestore.FieldValue.serverTimestamp()
+                });
+                
+            } catch (channelError) {
+                console.error(`Ошибка обработки канала ${channel.name}:`, channelError);
+            }
+        }
+        
+        const duration = Date.now() - startTime;
+        console.log(`🎉 Парсинг завершен за ${duration}ms`);
+        console.log(`📊 Статистика: обработано сообщений: ${totalProcessed}, найдено событий: ${totalEvents}, ошибок: ${totalErrors}`);
+        
+        return {
+            success: true,
+            processed: totalProcessed,
+            events: totalEvents,
+            errors: totalErrors,
+            duration: duration,
+            message: `Обработано ${totalProcessed} сообщений, найдено ${totalEvents} событий за ${duration}ms`
+        };
+        
+    } catch (error) {
+        console.error('Ошибка парсинга Telegram каналов:', error);
+        return {
+            success: false,
+            error: error.message
+        };
+    }
+}
+
+
+// Периодический парсинг Telegram каналов (каждую минуту)
+const { onSchedule } = require('firebase-functions/v2/scheduler');
+
+exports.parseTelegramChannels = onSchedule('every 1 minutes', async (event) => {
+    console.log('🔄 Запуск автоматического парсинга Telegram каналов...');
+    return await parseTelegramChannels();
+});
+
+// Ручной запуск парсинга Telegram каналов
+exports.parseChannelsManual = functions.https.onCall(async (data, context) => {
+    return await parseTelegramChannels();
+});
+
+
+// Инициализация коллекций и каналов
+exports.initializeDatabase = functions.https.onCall(async (data, context) => {
+    try {
+        console.log('Инициализация базы данных dvizheon...');
+        
+        // Создаем коллекцию каналов для мониторинга
+        const channelsCollection = db.collection('channels');
+        const defaultChannels = [
+            {
+                username: 'moscow_events',
+                name: 'Московские события',
+                url: 'https://t.me/s/moscow_events',
+                enabled: true,
+                lastParsed: null,
+                createdAt: admin.firestore.FieldValue.serverTimestamp()
+            },
+            {
+                username: 'art_moscow',
+                name: 'Искусство Москвы',
+                url: 'https://t.me/s/art_moscow',
+                enabled: true,
+                lastParsed: null,
+                createdAt: admin.firestore.FieldValue.serverTimestamp()
+            },
+            {
+                username: 'music_moscow',
+                name: 'Музыка Москвы',
+                url: 'https://t.me/s/music_moscow',
+                enabled: true,
+                lastParsed: null,
+                createdAt: admin.firestore.FieldValue.serverTimestamp()
+            },
+            {
+                username: 'sport_moscow',
+                name: 'Спорт Москвы',
+                url: 'https://t.me/s/sport_moscow',
+                enabled: true,
+                lastParsed: null,
+                createdAt: admin.firestore.FieldValue.serverTimestamp()
+            },
+            {
+                username: 'education_moscow',
+                name: 'Образование Москвы',
+                url: 'https://t.me/s/education_moscow',
+                enabled: true,
+                lastParsed: null,
+                createdAt: admin.firestore.FieldValue.serverTimestamp()
+            }
+        ];
+        
+        // Добавляем каналы в базу данных
+        const batch = db.batch();
+        defaultChannels.forEach(channel => {
+            const docRef = channelsCollection.doc();
+            batch.set(docRef, channel);
+        });
+        
+        await batch.commit();
+        
+        console.log(`✅ Создано ${defaultChannels.length} каналов для мониторинга`);
+        
+        // Создаем коллекцию событий с тестовым событием
+        const eventsCollection = db.collection('events');
+        const testEvent = {
+            title: 'Тестовое событие',
+            startAtMillis: Date.now(),
+            isOnline: false,
+            isFree: true,
+            price: null,
+            location: 'Тестовая локация',
+            imageUrls: [],
+            categories: ['тест'],
+            telegramUrl: 'https://t.me/test/123',
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            source: 'manual_test'
+        };
+        
+        await eventsCollection.add(testEvent);
+        
+        console.log('✅ Создано тестовое событие');
+        
+        return { 
+            success: true, 
+            message: 'База данных инициализирована успешно',
+            channelsCount: defaultChannels.length
+        };
+        
+    } catch (error) {
+        console.error('❌ Ошибка при инициализации базы данных:', error);
+        throw new functions.https.HttpsError('internal', 'Ошибка при инициализации', error.message);
+    }
+});
+
+// Создание событий за сентябрь
+exports.createSeptemberEvents = functions.https.onCall(async (data, context) => {
+    try {
+        console.log('Создаем события за сентябрь...');
+        
+        const events = [
+            {
+                title: 'Фестиваль "Московская осень"',
+                startAtMillis: new Date('2024-09-01T18:00:00').getTime(),
+                isOnline: false,
+                isFree: true,
+                price: null,
+                location: 'Парк Сокольники, главная сцена',
+                imageUrls: [],
+                categories: ['фестиваль', 'музыка'],
+                createdAt: admin.firestore.FieldValue.serverTimestamp()
+            },
+            {
+                title: 'Выставка "Осенние краски"',
+                startAtMillis: new Date('2024-09-05T10:00:00').getTime(),
+                isOnline: false,
+                isFree: false,
+                price: 300,
+                location: 'Третьяковская галерея',
+                imageUrls: [],
+                categories: ['искусство', 'выставка'],
+                createdAt: admin.firestore.FieldValue.serverTimestamp()
+            },
+            {
+                title: 'Концерт классической музыки',
+                startAtMillis: new Date('2024-09-08T19:30:00').getTime(),
+                isOnline: false,
+                isFree: false,
+                price: 800,
+                location: 'Концертный зал им. Чайковского',
+                imageUrls: [],
+                categories: ['музыка', 'классика'],
+                createdAt: admin.firestore.FieldValue.serverTimestamp()
+            },
+            {
+                title: 'Спортивный забег "Осенний марафон"',
+                startAtMillis: new Date('2024-09-12T09:00:00').getTime(),
+                isOnline: false,
+                isFree: true,
+                price: null,
+                location: 'Парк Горького',
+                imageUrls: [],
+                categories: ['спорт', 'бег'],
+                createdAt: admin.firestore.FieldValue.serverTimestamp()
+            },
+            {
+                title: 'Лекция "История Москвы"',
+                startAtMillis: new Date('2024-09-15T15:00:00').getTime(),
+                isOnline: true,
+                isFree: true,
+                price: null,
+                location: 'Онлайн',
+                imageUrls: [],
+                categories: ['образование', 'история'],
+                createdAt: admin.firestore.FieldValue.serverTimestamp()
+            },
+            {
+                title: 'Театральная премьера "Осенние сны"',
+                startAtMillis: new Date('2024-09-18T20:00:00').getTime(),
+                isOnline: false,
+                isFree: false,
+                price: 1200,
+                location: 'МХТ им. Чехова',
+                imageUrls: [],
+                categories: ['театр', 'премьера'],
+                createdAt: admin.firestore.FieldValue.serverTimestamp()
+            },
+            {
+                title: 'Фестиваль уличной еды',
+                startAtMillis: new Date('2024-09-22T12:00:00').getTime(),
+                isOnline: false,
+                isFree: true,
+                price: null,
+                location: 'Парк Коломенское',
+                imageUrls: [],
+                categories: ['еда', 'фестиваль'],
+                createdAt: admin.firestore.FieldValue.serverTimestamp()
+            },
+            {
+                title: 'Концерт джазовой музыки',
+                startAtMillis: new Date('2024-09-25T21:00:00').getTime(),
+                isOnline: false,
+                isFree: false,
+                price: 600,
+                location: 'Джаз-клуб "Союз композиторов"',
+                imageUrls: [],
+                categories: ['музыка', 'джаз'],
+                createdAt: admin.firestore.FieldValue.serverTimestamp()
+            },
+            {
+                title: 'Мастер-класс по живописи',
+                startAtMillis: new Date('2024-09-28T14:00:00').getTime(),
+                isOnline: false,
+                isFree: false,
+                price: 500,
+                location: 'Арт-студия "Палитра"',
+                imageUrls: [],
+                categories: ['творчество', 'живопись'],
+                createdAt: admin.firestore.FieldValue.serverTimestamp()
+            },
+            {
+                title: 'Закрытие летнего сезона в парке',
+                startAtMillis: new Date('2024-09-30T16:00:00').getTime(),
+                isOnline: false,
+                isFree: true,
+                price: null,
+                location: 'Парк Сокольники',
+                imageUrls: [],
+                categories: ['праздник', 'закрытие сезона'],
+                createdAt: admin.firestore.FieldValue.serverTimestamp()
+            }
+        ];
+        
+        const batch = db.batch();
+        const eventsCollection = db.collection('events');
+        
+        events.forEach(event => {
+            const docRef = eventsCollection.doc();
+            batch.set(docRef, event);
+        });
+        
+        await batch.commit();
+        
+        console.log(`✅ Создано ${events.length} событий за сентябрь`);
+        return { success: true, count: events.length };
+        
+    } catch (error) {
+        console.error('❌ Ошибка при создании событий за сентябрь:', error);
+        throw new functions.https.HttpsError('internal', 'Ошибка при создании событий', error.message);
+    }
+});
+
+// Добавление канала в мониторинг
+exports.addChannel = functions.https.onCall(async (data, context) => {
+    const { username, name } = data;
+    
+    if (!username || !name) {
+        throw new functions.https.HttpsError('invalid-argument', 'username и name обязательны');
+    }
+    
+    return await addChannelToMonitoring(username, name);
+});
+
+// Получение списка каналов
+exports.getChannels = functions.https.onCall(async (data, context) => {
+    const channels = await getMonitoredChannels();
+    return { success: true, channels };
+});
+
+// Удаление канала из мониторинга
+exports.removeChannel = functions.https.onCall(async (data, context) => {
+    const { channelId } = data;
+    
+    if (!channelId) {
+        throw new functions.https.HttpsError('invalid-argument', 'channelId обязателен');
+    }
+    
+    try {
+        const channelsRef = admin.firestore().collection('config').doc('telegram_channels');
+        const channelsDoc = await channelsRef.get();
+        
+        if (channelsDoc.exists) {
+            const channels = channelsDoc.data().channels || [];
+            const updatedChannels = channels.filter(channel => channel.id !== channelId);
+            
+            await channelsRef.update({ channels: updatedChannels });
+            return { success: true };
+        }
+        
+        return { success: false, error: 'Канал не найден' };
+    } catch (error) {
+        console.error('Ошибка удаления канала:', error);
+        return { success: false, error: error.message };
+    }
+});
+
+// Cloud Function для запуска парсинга всех каналов
+exports.parseallchannels = functions.https.onCall(async (data, context) => {
+    try {
+        console.log('🚀 Запуск парсинга всех каналов...');
+        const result = await parseTelegramChannels();
+        return result;
+    } catch (error) {
+        console.error('Ошибка парсинга каналов:', error);
+        throw new functions.https.HttpsError('internal', 'Ошибка парсинга каналов');
+    }
+});
+
+// v2-планировщик уже настроен выше через onSchedule('every 30 minutes')
+
+// Тестовая функция для проверки парсинга конкретного канала
+exports.clearAllEvents = functions.https.onCall(async (data, context) => {
+    try {
+        console.log('Начинаю очистку всех мероприятий...');
+        
+        // Get all events
+        const eventsSnapshot = await admin.firestore().collection('events').get();
+        console.log(`Найдено ${eventsSnapshot.size} мероприятий для удаления`);
+        
+        if (eventsSnapshot.size === 0) {
+            return { success: true, message: 'Мероприятия не найдены', deletedCount: 0 };
+        }
+        
+        // Delete all events in batches
+        const batchSize = 500;
+        let deletedCount = 0;
+        
+        for (let i = 0; i < eventsSnapshot.docs.length; i += batchSize) {
+            const batch = admin.firestore().batch();
+            const batchDocs = eventsSnapshot.docs.slice(i, i + batchSize);
+            
+            batchDocs.forEach(doc => {
+                batch.delete(doc.ref);
+            });
+            
+            await batch.commit();
+            deletedCount += batchDocs.length;
+            console.log(`Удалено ${deletedCount}/${eventsSnapshot.size} мероприятий`);
+        }
+        
+        console.log(`✅ Успешно удалено ${deletedCount} мероприятий`);
+        return { success: true, message: `Удалено ${deletedCount} мероприятий`, deletedCount };
+        
+    } catch (error) {
+        console.error('❌ Ошибка при очистке мероприятий:', error);
+        return { success: false, error: error.message };
+    }
+});
+
+exports.testChannelParsing = functions.https.onCall(async (data, context) => {
+    const { channelUrl, channelUsername } = data;
+    
+    if (!channelUrl) {
+        throw new functions.https.HttpsError('invalid-argument', 'channelUrl обязателен');
+    }
+    
+    try {
+        console.log(`🧪 Тестируем парсинг канала: ${channelUrl}`);
+        
+        // Парсим канал
+        const messages = await scrapeChannelMessages(channelUrl, 5);
+        console.log(`📨 Найдено сообщений: ${messages.length}`);
+        
+        const results = [];
+        
+        for (const message of messages) {
+            console.log(`📝 Обрабатываем сообщение: ${message.text.substring(0, 100)}...`);
+            console.log(`🔗 Ссылка на пост: ${message.link}`);
+            
+            // Проверяем, является ли сообщение о мероприятии
+            if (isEventMessage(message.text)) {
+                console.log(`✅ Сообщение о мероприятии найдено!`);
+                
+                // Парсим через YandexGPT
+                const parsedEvent = await parseTelegramMessage(message.text, message.link);
+                
+                if (parsedEvent) {
+                    results.push({
+                        messageId: message.messageId,
+                        text: message.text,
+                        link: message.link,
+                        parsedEvent: parsedEvent,
+                        success: true
+                    });
+                } else {
+                    results.push({
+                        messageId: message.messageId,
+                        text: message.text,
+                        link: message.link,
+                        parsedEvent: null,
+                        success: false,
+                        reason: 'Не удалось распознать мероприятие'
+                    });
+                }
+            } else {
+                console.log(`❌ Сообщение не о мероприятии`);
+                results.push({
+                    messageId: message.messageId,
+                    text: message.text,
+                    link: message.link,
+                    parsedEvent: null,
+                    success: false,
+                    reason: 'Не является сообщением о мероприятии'
+                });
+            }
+        }
+        
+        return {
+            success: true,
+            channelUrl: channelUrl,
+            channelUsername: channelUsername,
+            messagesFound: messages.length,
+            results: results
+        };
+        
+    } catch (error) {
+        console.error('❌ Ошибка тестирования парсинга:', error);
+        throw new functions.https.HttpsError('internal', 'Ошибка тестирования парсинга', error.message);
+    }
+});
+
+// Добавление тестовых каналов для парсинга
+exports.addTestChannels = functions.https.onCall(async (data, context) => {
+    console.log('Добавление каналов для парсинга...');
+
+    try {
+        const channels = [
+            {
+                name: 'На Фанере',
+                username: 'Na_Fanere',
+                url: 'https://t.me/s/Na_Fanere',
+                category: 'events',
+                enabled: true,
+                lastParsed: 0
+            },
+            {
+                name: 'Газета "Столица"',
+                username: 'gzsmsk',
+                url: 'https://t.me/s/gzsmsk',
+                category: 'events',
+                enabled: true,
+                lastParsed: 0
+            },
+            {
+                name: 'Московский гуляка',
+                username: 'mosgul',
+                url: 'https://t.me/s/mosgul',
+                category: 'events',
+                enabled: true,
+                lastParsed: 0
+            },
+            {
+                name: 'Бесплатные события',
+                username: 'freeskidos',
+                url: 'https://t.me/s/freeskidos',
+                category: 'events',
+                enabled: true,
+                lastParsed: 0
+            },
+            {
+                name: 'Ноябрьский кинотеатр',
+                username: 'novembercinema',
+                url: 'https://t.me/s/novembercinema',
+                category: 'events',
+                enabled: true,
+                lastParsed: 0
+            },
+            {
+                name: 'МОСКВИЧ ъ | ДОСУГ | Москва | АФИША | СОБЫТИЯ | БЕСПЛАТНО',
+                username: 'NovostiMoskvbl',
+                url: 'https://t.me/s/NovostiMoskvbl',
+                category: 'events',
+                enabled: true,
+                lastParsed: 0
+            },
+            {
+                name: 'Только парк',
+                username: 'only_park',
+                url: 'https://t.me/s/only_park',
+                category: 'events',
+                enabled: true,
+                lastParsed: 0
+            }
+        ];
+
+        const batch = db.batch();
+        const channelsCollection = db.collection('channels');
+
+        channels.forEach(channel => {
+            const docRef = channelsCollection.doc();
+            batch.set(docRef, {
+                ...channel,
+                createdAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+        });
+
+        await batch.commit();
+
+        console.log(`✅ Добавлено ${channels.length} каналов`);
+        return { success: true, count: channels.length, message: 'Каналы добавлены' };
+
+    } catch (error) {
+        console.error('❌ Ошибка при добавлении каналов:', error);
+        return { success: false, error: error.message };
+    }
+});
+
+exports.checkChannels = functions.https.onCall(async (data, context) => {
+    console.log('Проверка каналов в Firestore...');
+
+    try {
+        const channelsSnapshot = await db.collection('channels').get();
+        
+        if (channelsSnapshot.empty) {
+            console.log('⚠️ Коллекция channels пустая');
+            return { success: true, count: 0, message: 'Коллекция channels пустая' };
+        }
+
+        const channels = [];
+        channelsSnapshot.forEach(doc => {
+            const data = doc.data();
+            channels.push({
+                id: doc.id,
+                name: data.name,
+                username: data.username,
+                enabled: data.enabled,
+                category: data.category
+            });
+        });
+
+        console.log(`✅ Найдено ${channels.length} каналов:`, channels);
+        return { success: true, count: channels.length, channels: channels };
+
+    } catch (error) {
+        console.error('❌ Ошибка при проверке каналов:', error);
+        return { success: false, error: error.message };
+    }
+});
+
+// Простая тестовая функция для проверки подключения к Firestore
+exports.testFirestore = functions.https.onCall(async (data, context) => {
+    console.log('Тестирование подключения к Firestore...');
+
+    try {
+        // Пробуем создать простой документ
+        await db.collection('test').doc('connection-test').set({
+            timestamp: admin.firestore.FieldValue.serverTimestamp(),
+            message: 'Test connection successful'
+        });
+        
+        console.log('✅ Подключение к Firestore успешно');
+        
+        // Удаляем тестовый документ
+        await db.collection('test').doc('connection-test').delete();
+        
+        return { 
+            success: true, 
+            message: 'Firestore connection successful' 
+        };
+
+    } catch (error) {
+        console.error('❌ Ошибка подключения к Firestore:', error);
+        return { 
+            success: false, 
+            error: error.message,
+            code: error.code,
+            details: error.details
+        };
+    }
+});
+
+// Тестовая функция для проверки YandexGPT
+exports.testYandexGPT = functions.https.onCall(async (data, context) => {
+    const testMessage = "Концерт группы 'Radiohead' 20 сентября в 19:00 в клубе 'Циферблат'. Вход 500 рублей.";
+    
+    try {
+        const result = await parseTelegramMessageWithSDK(testMessage, 'https://t.me/test');
+        return { success: true, result: result };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+});

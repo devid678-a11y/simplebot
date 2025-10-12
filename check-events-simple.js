@@ -1,0 +1,40 @@
+const admin = require('firebase-admin');
+
+// Инициализация Firebase Admin SDK
+admin.initializeApp({
+    projectId: 'dvizh-eacfa'
+});
+
+const db = admin.firestore();
+
+async function checkEvents() {
+    console.log('🔍 Проверяем события в Firestore...');
+    try {
+        const eventsRef = db.collection('events');
+        const snapshot = await eventsRef.limit(10).get();
+
+        if (snapshot.empty) {
+            console.log('⚠️ В коллекции events нет документов.');
+            return;
+        }
+
+        console.log(`✅ Найдено ${snapshot.size} событий:`);
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            console.log(`\n📅 ${data.title}`);
+            console.log(`   📍 ${data.location || 'Не указано'}`);
+            console.log(`   💰 ${data.isFree ? 'Бесплатно' : data.price || 'Не указано'}`);
+            console.log(`   📅 ${new Date(data.startAtMillis).toLocaleString()}`);
+            console.log(`   🏷️ ${data.categories?.join(', ') || 'Не указано'}`);
+            console.log(`   📱 ${data.telegramUrl || 'Нет ссылки'}`);
+            console.log(`   🆔 ID: ${doc.id}`);
+        });
+
+    } catch (error) {
+        console.error('❌ Ошибка при получении событий:', error);
+    }
+}
+
+checkEvents();
+
+
