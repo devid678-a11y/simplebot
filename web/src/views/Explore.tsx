@@ -1,24 +1,62 @@
 import { useEffect, useMemo, useState } from 'react'
-import { collection, onSnapshot, orderBy, query, where } from 'firebase/firestore'
+import { collection, onSnapshot, orderBy, query, limit } from 'firebase/firestore'
 import { db } from '../firebase'
 import { Link } from 'react-router-dom'
 
 type Ev = { id: string; title: string; startAtMillis: number; location?: string; isOnline?: boolean }
 
 export default function Explore() {
-  const [events, setEvents] = useState<Ev[]>([])
+  const [eventsMain, setEventsMain] = useState<Ev[]>([])
+  const [eventsTelegram, setEventsTelegram] = useState<Ev[]>([])
+  const [eventsTgDash, setEventsTgDash] = useState<Ev[]>([])
   const [today, setToday] = useState(false)
   const [weekend, setWeekend] = useState(false)
   const [freeOnly, setFreeOnly] = useState(false)
   const [nearby, setNearby] = useState(false)
   const [pos, setPos] = useState<{lat:number, lon:number} | null>(null)
   useEffect(() => {
-    const q = query(collection(db, 'events'), where('startAtMillis', '>', Date.now()), orderBy('startAtMillis', 'asc'))
-    return onSnapshot(q, (snap) => {
+    // Читаем обе коллекции раздельно и объединяем детерминированно
+    const eventsQuery = query(
+      collection(db, 'events'),
+      orderBy('startAtMillis', 'desc'),
+      limit(50)
+    )
+    const telegramQuery = query(
+      collection(db, 'telegram_events'),
+      orderBy('startAtMillis', 'desc'),
+      limit(50)
+    )
+    const tgDashQuery = query(
+      collection(db, 'tg-events'),
+      orderBy('startAtMillis', 'desc'),
+      limit(50)
+    )
+
+    const unsubscribeEvents = onSnapshot(eventsQuery, (snap) => {
       const arr = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as Ev[]
-      setEvents(arr)
+      setEventsMain(arr)
     })
+
+    const unsubscribeTelegram = onSnapshot(telegramQuery, (snap) => {
+      const arr = snap.docs.map(d => ({ id: `telegram_${d.id}`, ...(d.data() as any) })) as Ev[]
+      setEventsTelegram(arr)
+    })
+    const unsubscribeTgDash = onSnapshot(tgDashQuery, (snap) => {
+      const arr = snap.docs.map(d => ({ id: `tg_${d.id}`, ...(d.data() as any) })) as Ev[]
+      setEventsTgDash(arr)
+    })
+
+    return () => {
+      unsubscribeEvents()
+      unsubscribeTelegram()
+      unsubscribeTgDash()
+    }
   }, [])
+
+  const events = useMemo(() => {
+    const merged = [...eventsMain, ...eventsTelegram, ...eventsTgDash]
+    return merged.sort((a:any, b:any) => (b.startAtMillis || 0) - (a.startAtMillis || 0))
+  }, [eventsMain, eventsTelegram, eventsTgDash])
 
   useEffect(() => {
     if (!nearby) return
