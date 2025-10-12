@@ -20,7 +20,7 @@ export default function App() {
   if (!ready) return <div style={{ padding: 16 }}>Загрузка…</div>
   return (
     <div>
-      <div className="topbar"><div className="topbar-inner"><div style={{ fontWeight: 700 }}>События</div><div className="muted" style={{ fontSize: 12 }}>Я, вылезатор</div></div></div>
+      <div className="topbar"><div className="topbar-inner"><div style={{ fontWeight: 700 }}>Движ</div><div className="muted" style={{ fontSize: 12 }}>Стриминг событий</div></div></div>
       <Routes>
         <Route path="/" element={<Explore />} />
         <Route path="/map" element={<Map />} />
