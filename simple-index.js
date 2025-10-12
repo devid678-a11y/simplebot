@@ -41,6 +41,25 @@ try {
 const bot = new Telegraf(BOT_TOKEN)
 const last = new Map()
 
+function extractMessageText(msg) {
+  if (!msg) return ''
+  // Текстовые сообщения
+  if (typeof msg.text === 'string' && msg.text.trim().length > 0) return msg.text
+  // Медиа с подписями (фото/видео/документ/аудио)
+  if (typeof msg.caption === 'string' && msg.caption.trim().length > 0) return msg.caption
+  // Ответы на сообщения
+  if (msg.reply_to_message) {
+    const rt = extractMessageText(msg.reply_to_message)
+    if (rt) return rt
+  }
+  // Опросы
+  if (msg.poll && msg.poll.question) {
+    const opts = Array.isArray(msg.poll.options) ? msg.poll.options.map(o => o.text).join(', ') : ''
+    return `${msg.poll.question}${opts ? '\n' + opts : ''}`
+  }
+  return ''
+}
+
 async function saveEventFromText(text, ctx) {
   if (!db) {
     throw new Error('Firebase не подключен')
@@ -178,8 +197,9 @@ bot.command('test', async (ctx) => {
 })
 
 // Обработка сообщений
-bot.on('message', async (ctx) => {
-  const text = ctx.message.text || ''
+bot.on(['message','channel_post','edited_message','edited_channel_post'], async (ctx) => {
+  const m = ctx.message || ctx.channelPost || ctx.editedMessage || ctx.editedChannelPost || ctx.update?.message
+  const text = extractMessageText(m)
   if (text.startsWith('/')) return // Игнорируем команды
   
   last.set(ctx.from.id, { text })
