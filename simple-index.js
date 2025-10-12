@@ -377,37 +377,34 @@ bot.on(['message','channel_post','edited_message','edited_channel_post'], async 
 })
 
 // Команда /push
-bot.command('push', async (ctx) => {
+async function handlePropose(ctx) {
   if (!db) {
     return ctx.reply('❌ Firebase не подключен')
   }
-  
   const data = last.get(ctx.from.id)
-  if (!data) {
-    return ctx.reply('❌ Нет данных. Отправьте сообщение и повторите.')
+  if (!data || !data.text) {
+    return ctx.reply('❌ Нет данных. Перешлите пост/сообщение и нажмите «Предложить» снова.')
   }
-  
-  // Требование: должна быть дата (в т.ч. «сегодня/завтра») или адрес
   const eligible = !!(parseRuDateTimeRange(data.text) || extractAddress(data.text))
   if (!eligible) {
     return ctx.reply('⚠️ Нужна дата (например: 25 октября, 25.10, сегодня, завтра, 19:00) или адрес (улица/м ...). Дополните сообщение и нажмите «Предложить» снова.')
   }
-
   try {
     const ids = await saveEventFromText(data.text, ctx, ctx.message)
     const suffix = ids.eventsId ? ` / events: ${ids.eventsId}` : ''
-    await ctx.reply(`✅ Событие создано: telegram_events: ${ids.telegramId}${suffix}\n\n🔗 https://dvizh-eacfa.web.app/`)
+    await ctx.reply(`✅ Движ скоро появится в mini-app, при условии, если в нем указана дата или локация.\n\nID: telegram_events: ${ids.telegramId}${suffix}\n🔗 https://dvizh-eacfa.web.app/`)
   } catch (e) {
     await ctx.reply(`❌ Ошибка: ${e.message}`)
   }
+}
+
+bot.command('push', async (ctx) => {
+  return handlePropose(ctx)
 })
 
 // Кнопка «Предложить» (reply keyboard)
 bot.hears(/^Предложить$/i, async (ctx) => {
-  return bot.handleUpdate({
-    update_id: Date.now(),
-    message: ctx.message
-  }) || ctx.telegram.invoke(() => {}) // no-op
+  return handlePropose(ctx)
 })
 
 // Запускаем Express (отдаёт фронт и живой маршрут /health)
