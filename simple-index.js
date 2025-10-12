@@ -63,6 +63,8 @@ try {
 const bot = new Telegraf(BOT_TOKEN)
 const last = new Map()
 const processedMsgIds = new Set()
+const processedMediaGroups = new Set()
+const lastNotify = new Map() // userId -> { hash, ts }
 
 function extractMessageText(msg) {
   if (!msg) return ''
@@ -425,13 +427,26 @@ bot.on(['message','channel_post'], async (ctx) => {
     // авто-очистка через 10 минут
     setTimeout(() => processedMsgIds.delete(k), 10*60*1000)
   }
+  // Дедупликация альбомов (media_group_id)
+  const mgid = m?.media_group_id
+  if (chatId && mgid) {
+    const kg = `${chatId}:mg:${mgid}`
+    if (processedMediaGroups.has(kg)) return
+    processedMediaGroups.add(kg)
+    setTimeout(() => processedMediaGroups.delete(kg), 10*60*1000)
+  }
   const text = extractMessageText(m)
   if (text.startsWith('/')) return // Игнорируем команды
-  
-  last.set(ctx.from.id, { text, msg: m })
-  await ctx.reply(`📝 Получено: ${text.slice(0, 200)}...
-
-Нажми кнопку "Предложить" или просто напиши текстом, чтобы движ улетел в аппку.`)
+  const normalized = (text || '').trim()
+  // Анти-спам: если подряд одинаковый текст в течение 30с, не дублируем уведомление
+  const prev = lastNotify.get(ctx.from.id)
+  const nowTs = Date.now()
+  const same = prev && prev.hash === normalized && (nowTs - prev.ts) < 30000
+  last.set(ctx.from.id, { text: normalized, msg: m })
+  if (!same) {
+    await ctx.reply(`📝 Получено: ${normalized.slice(0, 200)}...\n\nНажми кнопку "Предложить" или просто напиши текстом, чтобы движ улетел в аппку.`)
+    lastNotify.set(ctx.from.id, { hash: normalized, ts: nowTs })
+  }
 })
 
 // Команда /push
