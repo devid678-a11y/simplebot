@@ -15,6 +15,7 @@ export default function Explore() {
   const [weekend, setWeekend] = useState(false)
   const [freeOnly, setFreeOnly] = useState(false)
   const [nearby, setNearby] = useState(false)
+  const [queryText, setQueryText] = useState('')
   const [pos, setPos] = useState<{lat:number, lon:number} | null>(null)
   useEffect(() => {
     // Читаем обе коллекции раздельно и объединяем детерминированно
@@ -82,6 +83,7 @@ export default function Explore() {
   }
 
   const filtered = useMemo(() => {
+    const q = queryText.trim().toLowerCase()
     return events.filter((e:any) => {
       if (today && !isToday(e.startAtMillis)) return false
       if (weekend && !isWeekend(e.startAtMillis)) return false
@@ -90,12 +92,25 @@ export default function Explore() {
         const geo = e.geo; if (!geo || pos==null) return false
         if (distKm(pos, { lat: geo.lat, lon: geo.lon }) > 10) return false
       }
+      if (q) {
+        const hay = [
+          e.title || '',
+          (e.description || ''),
+          (typeof e.location === 'string' ? e.location : ''),
+          (typeof e.startAtMillis === 'number' ? new Date(e.startAtMillis).toLocaleDateString('ru-RU') : ''),
+          (typeof e.startAtMillis === 'number' ? new Date(e.startAtMillis).toLocaleString('ru-RU') : '')
+        ].join('\n').toLowerCase()
+        if (!hay.includes(q)) return false
+      }
       return true
     })
-  }, [events, today, weekend, freeOnly, nearby, pos])
+  }, [events, today, weekend, freeOnly, nearby, pos, queryText])
 
   return (
     <div style={{ padding: 16, paddingBottom: 88 }}>
+      <div style={{ position:'sticky', top:0, background:'var(--bg)', paddingBottom:8, zIndex:5 }}>
+        <input value={queryText} onChange={e=>setQueryText(e.target.value)} placeholder="Поиск: описание, дата, локация" style={{ width:'100%', padding:'10px 12px', borderRadius:10, marginBottom:8 }} />
+      </div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
         <div style={{ fontSize: 18, fontWeight: 700 }}>События</div>
         <Link to="/map" style={{ textDecoration: 'none' }}>
