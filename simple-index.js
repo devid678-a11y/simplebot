@@ -423,7 +423,7 @@ bot.on(['message','channel_post'], async (ctx) => {
   last.set(ctx.from.id, { text })
   await ctx.reply(`📝 Получено: ${text.slice(0, 200)}...
 
-Нажмите «Предложить», чтобы отправить в приложение. Требуется дата (в т.ч. сегодня/завтра) или адрес.`)
+Нажми кнопку "Предложить" или просто напиши текстом, чтобы движ улетел в аппку.`)
 })
 
 // Команда /push
@@ -442,7 +442,7 @@ async function handlePropose(ctx) {
   try {
     const ids = await saveEventFromText(data.text, ctx, ctx.message)
     const suffix = ids.eventsId ? ` / events: ${ids.eventsId}` : ''
-    await ctx.reply(`✅ Движ скоро появится в mini-app, при условии, если в нем указана дата или локация.\n\nID: telegram_events: ${ids.telegramId}${suffix}\n🔗 https://dvizh-eacfa.web.app/`)
+    await ctx.reply(`✅ Принято! Движ улетел!\n\nID: telegram_events: ${ids.telegramId}${suffix}\n🔗 https://dvizh-eacfa.web.app/`)
   } catch (e) {
     await ctx.reply(`❌ Ошибка: ${e.message}`)
   }
