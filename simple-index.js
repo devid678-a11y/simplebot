@@ -82,6 +82,44 @@ function extractMessageText(msg) {
   return ''
 }
 
+function extractLinksFromMessage(msg, text) {
+  try {
+    const entities = (msg && Array.isArray(msg.entities) ? msg.entities : [])
+      .concat(msg && Array.isArray(msg.caption_entities) ? msg.caption_entities : [])
+    if (!entities || entities.length === 0) return []
+    const links = []
+    for (const e of entities) {
+      if (!e) continue
+      const type = e.type
+      if (type === 'text_link' && typeof e.url === 'string') {
+        links.push({ type: 'url', url: e.url })
+      } else if (type === 'url' && typeof e.offset === 'number' && typeof e.length === 'number') {
+        const raw = (text || '').substring(e.offset, e.offset + e.length)
+        const href = raw.startsWith('http') ? raw : `https://${raw}`
+        links.push({ type: 'url', url: href })
+      } else if (type === 'mention' && typeof e.offset === 'number' && typeof e.length === 'number') {
+        const raw = (text || '').substring(e.offset, e.offset + e.length) // like @username
+        const username = raw.replace(/^@/, '')
+        if (username) links.push({ type: 'telegram', url: `https://t.me/${username}` })
+      } else if (type === 'text_mention' && e.user && e.user.id) {
+        // direct user mention without username
+        links.push({ type: 'telegram_user', url: `tg://user?id=${e.user.id}` })
+      }
+    }
+    // dedupe
+    const seen = new Set()
+    return links.filter(l => {
+      if (!l || !l.url) return false
+      const k = l.url
+      if (seen.has(k)) return false
+      seen.add(k)
+      return true
+    })
+  } catch {
+    return []
+  }
+}
+
 function extractAddress(rawText) {
   if (!rawText) return null
   const text = rawText.replace(/\s+/g, ' ').trim()
@@ -226,6 +264,7 @@ async function saveEventFromText(text, ctx, msg) {
     geo = await geocodeAddress(address)
   }
   const imageUrls = await extractImageUrls(ctx, msg)
+  const links = extractLinksFromMessage(msg || {}, text)
   const normalizedText = (text || '').trim()
   const title = (normalizedText.split('\n')[0] || '').trim() || 'Событие'
   const description = normalizedText.length > 0 ? normalizedText : 'Описание будет добавлено позже.'
@@ -240,6 +279,7 @@ async function saveEventFromText(text, ctx, msg) {
     location: address || 'Место уточняется',
     categories: ['telegram'],
     imageUrls,
+    links,
     geo,
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
     source: {

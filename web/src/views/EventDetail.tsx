@@ -62,6 +62,16 @@ export default function EventDetail() {
           <p style={{ marginTop: 12, whiteSpace: 'pre-wrap' }}
              dangerouslySetInnerHTML={{ __html: linkify(event.description) }} />
         )}
+        {Array.isArray(event.links) && event.links.length>0 && (
+          <div style={{ marginTop: 12 }}>
+            <div className="muted" style={{ marginBottom: 6 }}>Ссылки</div>
+            <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+              {event.links.map((l: any, i: number) => (
+                <a key={i} href={l.url} target="_blank" rel="noopener noreferrer" style={{ wordBreak:'break-all' }}>{l.url}</a>
+              ))}
+            </div>
+          </div>
+        )}
         </div>
       </div>
       <div style={{ position: 'fixed', left: 0, right: 0, bottom: 72, padding: 16, zIndex: 20 }}>
