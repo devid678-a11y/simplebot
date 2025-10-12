@@ -60,7 +60,7 @@ function extractMessageText(msg) {
   return ''
 }
 
-function parseRuDateTime(rawText) {
+function parseRuDateTimeRange(rawText) {
   if (!rawText || typeof rawText !== 'string') return null
   const text = rawText.toLowerCase().replace(/\s+/g, ' ').trim()
   const now = new Date()
@@ -78,15 +78,50 @@ function parseRuDateTime(rawText) {
     const m2 = text.match(/\b(\d{1,2})\s+(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)(?:\s+(\d{4}))?\b/)
     if (m2) { d=+m2[1]; m=months[m2[2]]; y=m2[3]?+m2[3]:now.getFullYear(); baseDate = new Date(y,m,d,0,0,0) }
   }
-  let hh=null, mm=null
-  const t1 = text.match(/(?:\bв\s*)?(\d{1,2})[:.](\d{2})\b/)
-  if (t1) { hh=+t1[1]; mm=+t1[2] }
-  if (!baseDate && hh!==null) {
-    const cand = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh, mm??0, 0)
-    if (cand.getTime()<now.getTime()) cand.setDate(cand.getDate()+1)
-    return cand.getTime()
+  // Времена: одиночное и диапазон (16:00-21:00, 10.00 до 21.00, с 11.00 до 19.30)
+  let startH=null,startM=null,endH=null,endM=null
+  const range1 = text.match(/(\d{1,2})[:.](\d{2})\s*[-–—]\s*(\d{1,2})[:.](\d{2})/) // 16:00-21:00
+  const range2 = text.match(/(?:\bс\s*)?(\d{1,2})[:.](\d{2})\s*(?:до|—|–|-)\s*(\d{1,2})[:.](\d{2})/) // с 11.00 до 19.30
+  const singleT = text.match(/(?:\bв\s*)?(\d{1,2})[:.](\d{2})\b/)
+  if (range1) { startH=+range1[1]; startM=+range1[2]; endH=+range1[3]; endM=+range1[4] }
+  else if (range2) { startH=+range2[1]; startM=+range2[2]; endH=+range2[3]; endM=+range2[4] }
+  else if (singleT) { startH=+singleT[1]; startM=+singleT[2] }
+
+  // Диапазон дат вида "4 и 5 октября"
+  let endDateFromDay = null
+  const twoDays = text.match(/\b(\d{1,2})\s+и\s+(\d{1,2})\s+(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)\b/)
+  if (twoDays) {
+    const d1 = +twoDays[1], d2 = +twoDays[2]
+    const mon = months[twoDays[3]]
+    const yyr = (baseDate ? baseDate.getFullYear() : now.getFullYear())
+    baseDate = new Date(yyr, mon, d1, 0, 0, 0)
+    endDateFromDay = new Date(yyr, mon, d2, 0, 0, 0)
   }
-  if (baseDate) { baseDate.setHours(hh??defaultHour, mm??defaultMinute, 0, 0); return baseDate.getTime() }
+
+  // Если есть только время — используем сегодня/завтра
+  if (!baseDate && startH!==null) {
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startH, startM??0, 0)
+    if (start.getTime() < now.getTime()) start.setDate(start.getDate()+1)
+    const end = (endH!==null) ? new Date(start.getFullYear(), start.getMonth(), start.getDate(), endH, endM??0, 0) : null
+    return { startMs: start.getTime(), endMs: end ? end.getTime() : null }
+  }
+
+  if (baseDate) {
+    const start = new Date(baseDate)
+    start.setHours(startH??defaultHour, startM??defaultMinute, 0, 0)
+    let end = null
+    if (endH!==null) {
+      end = new Date(baseDate)
+      end.setHours(endH, endM??0, 0, 0)
+      // если конец раньше начала — считаем переход через полночь
+      if (end.getTime() <= start.getTime()) end.setDate(end.getDate()+1)
+    } else if (endDateFromDay) {
+      end = new Date(endDateFromDay)
+      end.setHours(endH??21, endM??0, 0, 0)
+    }
+    return { startMs: start.getTime(), endMs: end ? end.getTime() : null }
+  }
+
   return null
 }
 
@@ -94,11 +129,12 @@ async function saveEventFromText(text, ctx) {
   if (!db) {
     throw new Error('Firebase не подключен')
   }
-  const parsedTs = parseRuDateTime(text)
+  const parsed = parseRuDateTimeRange(text)
   const eventData = {
     title: (text || '').split('\n')[0].slice(0, 100),
     description: text || '',
-    startAtMillis: parsedTs ?? (Date.now() + 86400000),
+    startAtMillis: (parsed && parsed.startMs) ? parsed.startMs : (Date.now() + 86400000),
+    endAtMillis: (parsed && parsed.endMs) ? parsed.endMs : null,
     isFree: true,
     price: null,
     isOnline: false,
