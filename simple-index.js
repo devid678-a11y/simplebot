@@ -436,8 +436,11 @@ bot.on(['message','channel_post'], async (ctx) => {
     setTimeout(() => processedMediaGroups.delete(kg), 10*60*1000)
   }
   const text = extractMessageText(m)
-  if (text.startsWith('/')) return // Игнорируем команды
-  const normalized = (text || '').trim()
+  if (!text) return
+  const t = text.trim()
+  if (t.startsWith('/')) return // Игнорируем команды
+  if (/^предложить$/i.test(t)) return // Игнорируем нажатие кнопки, чтобы не сломать last
+  const normalized = t
   // Анти-спам: если подряд одинаковый текст в течение 30с, не дублируем уведомление
   const prev = lastNotify.get(ctx.from.id)
   const nowTs = Date.now()
