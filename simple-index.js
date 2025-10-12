@@ -289,10 +289,18 @@ async function saveEventFromText(text, ctx, msg) {
       username: ctx.from.username || ctx.from.first_name
     }
   }
-  const refTg = await db.collection('telegram_events').add(eventData)
+  // Idempotency: ключ по userId + hash первых 64 символов текста
+  const key = `${ctx.from.id}::${normalizedText.slice(0,64)}`
+  const existing = await db.collection('telegram_events').where('dedupeKey','==',key).limit(1).get()
+  if (!existing.empty) {
+    const doc = existing.docs[0]
+    return { telegramId: doc.id, eventsId: null, deduped: true }
+  }
+  const withKey = { ...eventData, dedupeKey: key }
+  const refTg = await db.collection('telegram_events').add(withKey)
   let refEventsId = null
   try {
-    const refEvents = await db.collection('events').add(eventData)
+    const refEvents = await db.collection('events').add(withKey)
     refEventsId = refEvents.id
   } catch (err) {
     console.error('save to events failed:', err && err.message ? err.message : err)
@@ -420,7 +428,7 @@ bot.on(['message','channel_post'], async (ctx) => {
   const text = extractMessageText(m)
   if (text.startsWith('/')) return // Игнорируем команды
   
-  last.set(ctx.from.id, { text })
+  last.set(ctx.from.id, { text, msg: m })
   await ctx.reply(`📝 Получено: ${text.slice(0, 200)}...
 
 Нажми кнопку "Предложить" или просто напиши текстом, чтобы движ улетел в аппку.`)
@@ -440,9 +448,10 @@ async function handlePropose(ctx) {
     return ctx.reply('⚠️ Нужна дата (например: 25 октября, 25.10, сегодня, завтра, 19:00) или адрес (улица/м ...). Дополните сообщение и нажмите «Предложить» снова.')
   }
   try {
-    const ids = await saveEventFromText(data.text, ctx, ctx.message)
+    const ids = await saveEventFromText(data.text, ctx, data.msg || ctx.message)
     const suffix = ids.eventsId ? ` / events: ${ids.eventsId}` : ''
-    await ctx.reply(`✅ Принято! Движ улетел!\n\nID: telegram_events: ${ids.telegramId}${suffix}\n🔗 https://dvizh-eacfa.web.app/`)
+    const dedupeNote = ids.deduped ? '\n\nℹ️ Похоже, это сообщение уже было предложено ранее — дубль не создавался.' : ''
+    await ctx.reply(`✅ Принято! Движ улетел!${dedupeNote}\n\nID: telegram_events: ${ids.telegramId}${suffix}\n🔗 https://dvizh-eacfa.web.app/`)
   } catch (e) {
     await ctx.reply(`❌ Ошибка: ${e.message}`)
   }
