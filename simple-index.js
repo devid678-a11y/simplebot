@@ -62,6 +62,7 @@ try {
 
 const bot = new Telegraf(BOT_TOKEN)
 const last = new Map()
+const processedMsgIds = new Set()
 
 function extractMessageText(msg) {
   if (!msg) return ''
@@ -405,8 +406,17 @@ bot.command('test', async (ctx) => {
 })
 
 // Обработка сообщений
-bot.on(['message','channel_post','edited_message','edited_channel_post'], async (ctx) => {
-  const m = ctx.message || ctx.channelPost || ctx.editedMessage || ctx.editedChannelPost || ctx.update?.message
+bot.on(['message','channel_post'], async (ctx) => {
+  const m = ctx.message || ctx.channelPost || ctx.update?.message
+  const chatId = m?.chat?.id || ctx.chat?.id
+  const messageId = m?.message_id
+  if (chatId && messageId) {
+    const k = `${chatId}:${messageId}`
+    if (processedMsgIds.has(k)) return
+    processedMsgIds.add(k)
+    // авто-очистка через 10 минут
+    setTimeout(() => processedMsgIds.delete(k), 10*60*1000)
+  }
   const text = extractMessageText(m)
   if (text.startsWith('/')) return // Игнорируем команды
   
