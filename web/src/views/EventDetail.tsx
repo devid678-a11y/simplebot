@@ -2,6 +2,7 @@ import { addDoc, collection, deleteDoc, doc, onSnapshot, setDoc } from 'firebase
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { auth, db } from '../firebase'
+import { formatEventDateText } from '../utils/datetime'
 import { getEffectiveUid } from '../auth'
 
 export default function EventDetail() {
@@ -54,7 +55,7 @@ export default function EventDetail() {
         )}
         <div style={{ padding: 16 }}>
         <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>{event.title}</div>
-        <div className="muted" style={{ marginBottom: 4 }}>{new Date(event.startAtMillis).toLocaleString()}</div>
+        <div className="muted" style={{ marginBottom: 4 }}>{formatEventDateText(event)}</div>
         <div className="muted">{event.isOnline ? 'Онлайн' : (event.location || '—')}</div>
         {event.description && <p style={{ marginTop: 12, whiteSpace: 'pre-wrap' }}>{event.description}</p>}
         </div>

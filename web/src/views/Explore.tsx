@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { collection, onSnapshot, orderBy, query, limit } from 'firebase/firestore'
 import { db } from '../firebase'
 import { Link } from 'react-router-dom'
+import { formatEventDateText } from '../utils/datetime'
 
 type Ev = { id: string; title: string; startAtMillis: number; location?: string; isOnline?: boolean }
 
@@ -116,7 +117,7 @@ export default function Explore() {
               )}
               <div style={{ padding: 14 }}>
                 <div style={{ fontWeight: 700, marginBottom: 6 }}>{e.title}</div>
-                <div className="muted" style={{ fontSize: 13, marginBottom: 4 }}>{new Date(e.startAtMillis).toLocaleString()}</div>
+                <div className="muted" style={{ fontSize: 13, marginBottom: 4 }}>{formatEventDateText(e)}</div>
                 <div className="muted" style={{ fontSize: 13, marginBottom: 8 }}>{e.isOnline ? 'Онлайн' : (e.location || '—')}</div>
                 {typeof (e as any).description === 'string' && (e as any).description && (
                   <div className="muted" style={{ fontSize: 13, marginBottom: 8, display:'-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient:'vertical', overflow:'hidden' }}>{(e as any).description}</div>

@@ -153,7 +153,7 @@ export default function Profile() {
           {going.map(g => {
             const ev = goingDetails[g.id]
             const title = ev?.title || 'Событие'
-            const when = typeof ev?.startAtMillis === 'number' ? new Date(ev.startAtMillis).toLocaleString() : ''
+            const when = formatEventDateText(ev)
             return (
               <div key={g.id} className="row" style={{ justifyContent:'space-between' }}>
                 <div>
