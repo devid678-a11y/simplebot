@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { auth, db } from '../firebase'
+import { getEffectiveUid } from '../auth'
 import { collection, doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { storage } from '../firebase'
 import CategorySelector from '../components/CategorySelector'
 
 export default function Profile() {
-  const uid = auth.currentUser?.uid || null
+  const uid = getEffectiveUid()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [displayName, setDisplayName] = useState('')

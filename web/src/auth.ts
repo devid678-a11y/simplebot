@@ -43,3 +43,20 @@ export async function signInWithTelegram() {
 }
 
 
+// Резервный UID устройства для неавторизованных сессий (вне Telegram)
+export function getEffectiveUid(): string | null {
+  const uid = auth.currentUser?.uid || null
+  if (uid) return uid
+  try {
+    const key = 'device_uid'
+    let dev = localStorage.getItem(key)
+    if (!dev) {
+      dev = 'anon_' + Math.random().toString(36).slice(2) + Date.now().toString(36)
+      localStorage.setItem(key, dev)
+    }
+    return dev
+  } catch {
+    return null
+  }
+}
+
