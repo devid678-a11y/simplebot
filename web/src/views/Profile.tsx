@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { auth, db } from '../firebase'
 import { getEffectiveUid } from '../auth'
-import { collection, doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore'
+import { collection, doc, getDoc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { storage } from '../firebase'
 import CategorySelector from '../components/CategorySelector'
+import { Link } from 'react-router-dom'
 
 export default function Profile() {
   const uid = getEffectiveUid()
@@ -16,6 +17,7 @@ export default function Profile() {
   const [city, setCity] = useState('')
   const [interests, setInterests] = useState<string[]>([])
   const [going, setGoing] = useState<any[]>([])
+  const [goingDetails, setGoingDetails] = useState<Record<string, any>>({})
 
   useEffect(() => {
     if (!uid) { setLoading(false); return }
@@ -40,6 +42,33 @@ export default function Profile() {
     })
     return () => unsub()
   }, [uid])
+
+  // Загружаем детали событий для отображения названия и времени
+  useEffect(() => {
+    let cancelled = false
+    async function loadDetails() {
+      const out: Record<string, any> = {}
+      for (const g of going) {
+        const { col, realId } = resolveCollectionAndId(g.id)
+        if (!realId) continue
+        try {
+          const d = await getDoc(doc(db, col, realId))
+          if (d.exists()) out[g.id] = { id: g.id, ...(d.data() as any) }
+        } catch {}
+      }
+      if (!cancelled) setGoingDetails(out)
+    }
+    if (going.length > 0) loadDetails()
+    else setGoingDetails({})
+    return () => { cancelled = true }
+  }, [going])
+
+  function resolveCollectionAndId(rawId?: string) {
+    if (!rawId) return { col: 'events', realId: '' }
+    if (rawId.startsWith('telegram_')) return { col: 'telegram_events', realId: rawId.replace(/^telegram_/, '') }
+    if (rawId.startsWith('tg_')) return { col: 'tg-events', realId: rawId.replace(/^tg_/, '') }
+    return { col: 'events', realId: rawId }
+  }
 
   async function save() {
     if (!uid) return
@@ -121,12 +150,20 @@ export default function Profile() {
         <div style={{ fontWeight: 700, marginBottom: 12 }}>Мои события</div>
         {going.length === 0 && <div className="muted">Пока пусто</div>}
         <div style={{ display:'grid', gap:8 }}>
-          {going.map(g => (
-            <div key={g.id} className="row" style={{ justifyContent:'space-between' }}>
-              <div>Событие: {g.id}</div>
-              <a href={`/event/${g.id}`}>Открыть</a>
-            </div>
-          ))}
+          {going.map(g => {
+            const ev = goingDetails[g.id]
+            const title = ev?.title || 'Событие'
+            const when = typeof ev?.startAtMillis === 'number' ? new Date(ev.startAtMillis).toLocaleString() : ''
+            return (
+              <div key={g.id} className="row" style={{ justifyContent:'space-between' }}>
+                <div>
+                  <div style={{ fontWeight: 600 }}>{title}</div>
+                  {when && <div className="muted" style={{ fontSize:12 }}>{when}</div>}
+                </div>
+                <Link to={`/event/${g.id}`}>Открыть</Link>
+              </div>
+            )
+          })}
         </div>
       </div>
     </div>
