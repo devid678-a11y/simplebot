@@ -63,8 +63,15 @@ async function saveEventFromText(text, ctx) {
       username: ctx.from.username || ctx.from.first_name
     }
   }
-  const ref = await db.collection('telegram_events').add(eventData)
-  return ref.id
+  const refTg = await db.collection('telegram_events').add(eventData)
+  let refEventsId = null
+  try {
+    const refEvents = await db.collection('events').add(eventData)
+    refEventsId = refEvents.id
+  } catch (err) {
+    console.error('save to events failed:', err && err.message ? err.message : err)
+  }
+  return { telegramId: refTg.id, eventsId: refEventsId }
 }
 
 // Команда /start
@@ -178,8 +185,9 @@ bot.on('message', async (ctx) => {
   last.set(ctx.from.id, { text })
   await ctx.reply(`📝 Получено: ${text.slice(0, 100)}...`)
   try {
-    const id = await saveEventFromText(text, ctx)
-    await ctx.reply(`✅ Событие создано: ${id}`)
+    const ids = await saveEventFromText(text, ctx)
+    const suffix = ids.eventsId ? ` / events: ${ids.eventsId}` : ''
+    await ctx.reply(`✅ Событие создано: telegram_events: ${ids.telegramId}${suffix}`)
   } catch (e) {
     await ctx.reply(`⚠️ Не удалось сохранить событие: ${e.message}`)
   }
@@ -197,8 +205,9 @@ bot.command('push', async (ctx) => {
   }
   
   try {
-    const id = await saveEventFromText(data.text, ctx)
-    await ctx.reply(`✅ Событие создано: ${id}\n\n🔗 https://dvizh-eacfa.web.app/`)
+    const ids = await saveEventFromText(data.text, ctx)
+    const suffix = ids.eventsId ? ` / events: ${ids.eventsId}` : ''
+    await ctx.reply(`✅ Событие создано: telegram_events: ${ids.telegramId}${suffix}\n\n🔗 https://dvizh-eacfa.web.app/`)
   } catch (e) {
     await ctx.reply(`❌ Ошибка: ${e.message}`)
   }
