@@ -177,7 +177,23 @@ function parseRuDateTimeRange(rawText) {
   return null
 }
 
-async function saveEventFromText(text, ctx) {
+async function extractImageUrls(ctx, msg) {
+  const urls = []
+  try {
+    if (msg && Array.isArray(msg.photo) && msg.photo.length > 0) {
+      const largest = msg.photo[msg.photo.length - 1]
+      const link = await ctx.telegram.getFileLink(largest.file_id)
+      if (link && typeof link.href === 'string') urls.push(link.href)
+    }
+    if (msg && msg.document && typeof msg.document.mime_type === 'string' && msg.document.mime_type.startsWith('image/')) {
+      const link = await ctx.telegram.getFileLink(msg.document.file_id)
+      if (link && typeof link.href === 'string') urls.push(link.href)
+    }
+  } catch {}
+  return urls
+}
+
+async function saveEventFromText(text, ctx, msg) {
   if (!db) {
     throw new Error('Firebase не подключен')
   }
@@ -187,9 +203,13 @@ async function saveEventFromText(text, ctx) {
   if (address) {
     geo = await geocodeAddress(address)
   }
+  const imageUrls = await extractImageUrls(ctx, msg)
+  const normalizedText = (text || '').trim()
+  const title = (normalizedText.split('\n')[0] || '').trim() || 'Событие'
+  const description = normalizedText.length > 0 ? normalizedText : 'Описание будет добавлено позже.'
   const eventData = {
-    title: (text || '').split('\n')[0].slice(0, 100),
-    description: text || '',
+    title: title.slice(0, 100),
+    description,
     startAtMillis: (parsed && parsed.startMs) ? parsed.startMs : (Date.now() + 86400000),
     endAtMillis: (parsed && parsed.endMs) ? parsed.endMs : null,
     isFree: true,
@@ -197,7 +217,7 @@ async function saveEventFromText(text, ctx) {
     isOnline: false,
     location: address || 'Место уточняется',
     categories: ['telegram'],
-    imageUrls: [],
+    imageUrls,
     geo,
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
     source: {
@@ -329,7 +349,7 @@ bot.on(['message','channel_post','edited_message','edited_channel_post'], async 
   last.set(ctx.from.id, { text })
   await ctx.reply(`📝 Получено: ${text.slice(0, 100)}...`)
   try {
-    const ids = await saveEventFromText(text, ctx)
+    const ids = await saveEventFromText(text, ctx, m)
     const suffix = ids.eventsId ? ` / events: ${ids.eventsId}` : ''
     await ctx.reply(`✅ Событие создано: telegram_events: ${ids.telegramId}${suffix}`)
   } catch (e) {
@@ -349,7 +369,7 @@ bot.command('push', async (ctx) => {
   }
   
   try {
-    const ids = await saveEventFromText(data.text, ctx)
+    const ids = await saveEventFromText(data.text, ctx, ctx.message)
     const suffix = ids.eventsId ? ` / events: ${ids.eventsId}` : ''
     await ctx.reply(`✅ Событие создано: telegram_events: ${ids.telegramId}${suffix}\n\n🔗 https://dvizh-eacfa.web.app/`)
   } catch (e) {
