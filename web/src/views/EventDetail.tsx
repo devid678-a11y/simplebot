@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { auth, db } from '../firebase'
 import { formatEventDateText } from '../utils/datetime'
+import { linkify } from '../utils/text'
 import { getEffectiveUid } from '../auth'
 
 export default function EventDetail() {
@@ -57,7 +58,10 @@ export default function EventDetail() {
         <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>{event.title}</div>
         <div className="muted" style={{ marginBottom: 4 }}>{formatEventDateText(event)}</div>
         <div className="muted">{event.isOnline ? 'Онлайн' : (event.location || '—')}</div>
-        {event.description && <p style={{ marginTop: 12, whiteSpace: 'pre-wrap' }}>{event.description}</p>}
+        {event.description && (
+          <p style={{ marginTop: 12, whiteSpace: 'pre-wrap' }}
+             dangerouslySetInnerHTML={{ __html: linkify(event.description) }} />
+        )}
         </div>
       </div>
       <div style={{ position: 'fixed', left: 0, right: 0, bottom: 72, padding: 16, zIndex: 20 }}>

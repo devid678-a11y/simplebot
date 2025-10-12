@@ -120,7 +120,8 @@ export default function Explore() {
                 <div className="muted" style={{ fontSize: 13, marginBottom: 4 }}>{formatEventDateText(e)}</div>
                 <div className="muted" style={{ fontSize: 13, marginBottom: 8 }}>{e.isOnline ? 'Онлайн' : (e.location || '—')}</div>
                 {typeof (e as any).description === 'string' && (e as any).description && (
-                  <div className="muted" style={{ fontSize: 13, marginBottom: 8, display:'-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient:'vertical', overflow:'hidden' }}>{(e as any).description}</div>
+                  <div className="muted" style={{ fontSize: 13, marginBottom: 8, display:'-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient:'vertical', overflow:'hidden' }}
+                       dangerouslySetInnerHTML={{ __html: (e as any).description.length ? require('../utils/text').linkify((e as any).description) : '' }} />
                 )}
                 {Array.isArray(e.categories) && e.categories.length>0 && (
                   <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
