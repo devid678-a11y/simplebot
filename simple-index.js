@@ -190,8 +190,14 @@ function parseRuDateTimeRange(rawText) {
   const m1 = text.match(/\b(\d{1,2})[.\/-](\d{1,2})(?:[.\/-](\d{2,4}))?\b/)
   if (m1) { d = +m1[1]; m = +m1[2]-1; y = m1[3] ? +m1[3] : now.getFullYear(); if (y<100) y+=2000; baseDate = new Date(y,m,d,0,0,0) }
   if (!baseDate) {
-    const m2 = text.match(/\b(\d{1,2})\s+(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)(?:\s+(\d{4}))?\b/)
+    // 21 октября, 21-е октября, 21й октября, 21-й октября
+    const m2 = text.match(/\b(\d{1,2})(?:\s*[-–—]?\s*(?:е|й))?\s+(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)(?:\s+(\d{4}))?\b/)
     if (m2) { d=+m2[1]; m=months[m2[2]]; y=m2[3]?+m2[3]:now.getFullYear(); baseDate = new Date(y,m,d,0,0,0) }
+  }
+  // Формы дня без месяца: 21е, 21-й, 15го — считаем текущий месяц
+  if (!baseDate) {
+    const mDayOnly = text.match(/\b(\d{1,2})(?:\s*[-–—]?\s*(?:го|й|е))\b/)
+    if (mDayOnly) { d=+mDayOnly[1]; m=now.getMonth(); y=now.getFullYear(); baseDate = new Date(y,m,d,0,0,0) }
   }
   // Времена: одиночное и диапазон (16:00-21:00, 10.00 до 21.00, с 11.00 до 19.30)
   let startH=null,startM=null,endH=null,endM=null
