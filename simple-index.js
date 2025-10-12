@@ -416,7 +416,7 @@ bot.command('test', async (ctx) => {
 })
 
 // Обработка сообщений
-bot.on(['message','channel_post'], async (ctx) => {
+bot.on(['message','channel_post'], async (ctx, next) => {
   const m = ctx.message || ctx.channelPost || ctx.update?.message
   const chatId = m?.chat?.id || ctx.chat?.id
   const messageId = m?.message_id
@@ -436,10 +436,10 @@ bot.on(['message','channel_post'], async (ctx) => {
     setTimeout(() => processedMediaGroups.delete(kg), 10*60*1000)
   }
   const text = extractMessageText(m)
-  if (!text) return
+  if (!text) return next()
   const t = text.trim()
-  if (t.startsWith('/')) return // Игнорируем команды
-  if (/^предложить$/i.test(t)) return // Игнорируем нажатие кнопки, чтобы не сломать last
+  if (t.startsWith('/')) return next() // пусть обработают bot.command
+  if (/^предложить$/i.test(t)) return next() // пусть обработает bot.hears
   const normalized = t
   // Анти-спам: если подряд одинаковый текст в течение 30с, не дублируем уведомление
   const prev = lastNotify.get(ctx.from.id)
@@ -450,6 +450,7 @@ bot.on(['message','channel_post'], async (ctx) => {
     await ctx.reply(`📝 Получено: ${normalized.slice(0, 200)}...\n\nНажми кнопку "Предложить" или просто напиши текстом, чтобы движ улетел в аппку.`)
     lastNotify.set(ctx.from.id, { hash: normalized, ts: nowTs })
   }
+  return next()
 })
 
 // Команда /push
