@@ -14,6 +14,11 @@ export default function App() {
 
   useEffect(() => {
     WebApp.ready(); WebApp.expand()
+    // Синхронизация темы Telegram: если тема светлая — добавим класс
+    try {
+      const isLight = WebApp.colorScheme === 'light'
+      document.documentElement.classList.toggle('tg-light', !!isLight)
+    } catch {}
     ;(async () => { try { await signInWithTelegram() } finally { setReady(true) } })()
   }, [])
 
