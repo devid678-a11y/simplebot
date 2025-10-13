@@ -1,8 +1,28 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if true;
+    // Публичная лента
+    match /events/{id} {
+      allow read: if true;
+      allow write: if false; // пишет только сервер (Admin SDK)
+      match /attendees/{uid} {
+        allow read: if true;
+        allow write: if request.auth != null && request.auth.uid == uid;
+      }
+    }
+
+    // События, пришедшие из Telegram
+    match /telegram_events/{id} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Профили и «Мои события»
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+      match /going/{eventId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
     }
   }
 }

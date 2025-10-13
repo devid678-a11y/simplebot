@@ -3,6 +3,8 @@ import http from 'http'
 import dotenv from 'dotenv'
 import admin from 'firebase-admin'
 import express from 'express'
+import cors from 'cors'
+import crypto from 'crypto'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
@@ -17,6 +19,8 @@ console.log('🚀 Запускаем простейшего бота...')
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const app = express()
+app.use(cors())
+app.use(express.json())
 const distDir = path.join(__dirname, 'web', 'dist')
 app.use(express.static(distDir))
 app.get('/', (req, res) => {
@@ -24,6 +28,37 @@ app.get('/', (req, res) => {
 })
 app.get('/health', (req, res) => {
   res.status(200).send('ok')
+})
+// Auth: Telegram initData -> Firebase custom token
+app.post('/api/auth/telegram', async (req, res) => {
+  try {
+    const initData = typeof req.body === 'string' ? req.body : (req.body?.initData || '')
+    if (!initData || typeof initData !== 'string') {
+      return res.status(400).json({ error: 'initData required' })
+    }
+    // Verify Telegram signature per https://core.telegram.org/bots/webapps#validating-data-received-via-the-web-app
+    const urlParams = new URLSearchParams(initData)
+    const hash = urlParams.get('hash') || ''
+    urlParams.delete('hash')
+    const dataCheckString = Array.from(urlParams.entries())
+      .map(([k, v]) => `${k}=${v}`)
+      .sort()
+      .join('\n')
+    const secret = crypto.createHmac('sha256', 'WebAppData').update(BOT_TOKEN).digest()
+    const computed = crypto.createHmac('sha256', secret).update(dataCheckString).digest('hex')
+    if (computed !== hash) {
+      return res.status(401).json({ error: 'invalid_signature' })
+    }
+    // Extract Telegram user
+    const userRaw = urlParams.get('user')
+    const tg = userRaw ? JSON.parse(userRaw) : null
+    const uid = String(tg?.id || 'anon')
+    const additionalClaims = { tg_id: tg?.id || null, tg_username: tg?.username || null }
+    const token = await admin.auth().createCustomToken(uid, additionalClaims)
+    return res.json({ token })
+  } catch (e) {
+    return res.status(500).json({ error: 'internal', message: e?.message || String(e) })
+  }
 })
 // SPA fallback: любые роуты фронта отдаем на index.html
 app.get('*', (req, res) => {
