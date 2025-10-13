@@ -4,7 +4,48 @@ export default function BottomNav() {
   const loc = useLocation()
   const active = (path: string) => loc.pathname === path
 
-  function Item({ to, icon, label }: { to: string; icon: string; label: string }) {
+  function IconSearch({ dimmed }: { dimmed?: boolean }) {
+    const opacity = dimmed ? 0.7 : 1
+    return (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ opacity }}>
+        <circle cx="11" cy="11" r="7" stroke="#fff" strokeWidth="2" />
+        <path d="M20 20L17 17" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    )
+  }
+
+  function IconMap({ dimmed }: { dimmed?: boolean }) {
+    const opacity = dimmed ? 0.7 : 1
+    return (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ opacity }}>
+        <path d="M9 3L3 5V21L9 19L15 21L21 19V3L15 5L9 3Z" stroke="#fff" strokeWidth="2" strokeLinejoin="round"/>
+        <path d="M9 3V19" stroke="#fff" strokeWidth="2"/>
+        <path d="M15 5V21" stroke="#fff" strokeWidth="2"/>
+      </svg>
+    )
+  }
+
+  function IconPlus({ dimmed }: { dimmed?: boolean }) {
+    const opacity = dimmed ? 0.7 : 1
+    return (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ opacity }}>
+        <path d="M12 5V19" stroke="#fff" strokeWidth="2" strokeLinecap="round"/>
+        <path d="M5 12H19" stroke="#fff" strokeWidth="2" strokeLinecap="round"/>
+      </svg>
+    )
+  }
+
+  function IconUser({ dimmed }: { dimmed?: boolean }) {
+    const opacity = dimmed ? 0.7 : 1
+    return (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ opacity }}>
+        <circle cx="12" cy="8" r="4" stroke="#fff" strokeWidth="2"/>
+        <path d="M5 20C5.8 16.667 8.4 15 12 15C15.6 15 18.2 16.667 19 20" stroke="#fff" strokeWidth="2" strokeLinecap="round"/>
+      </svg>
+    )
+  }
+
+  function Item({ to, icon, label }: { to: string; icon: React.ReactNode; label: string }) {
     const isActive = active(to)
     return (
       <Link to={to} style={{ flex: 1, textDecoration: 'none' }}>
@@ -31,7 +72,7 @@ export default function BottomNav() {
               background: isActive ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.06)'
             }}
           >
-            <span style={{ fontSize: 18 }}>{icon}</span>
+            {typeof icon === 'string' ? <span style={{ fontSize: 18, color: '#fff' }}>{icon}</span> : icon}
           </div>
           <div style={{ fontSize: 12, fontWeight: 600 }}>{label}</div>
         </div>
@@ -55,10 +96,10 @@ export default function BottomNav() {
         }}
       >
         <div style={{ display: 'flex', gap: 6 }}>
-          <Item to="/" icon="🔎" label="Найти" />
-          <Item to="/map" icon="🗺️" label="Карта" />
-          <Item to="/create" icon="✚" label="Создать" />
-          <Item to="/profile" icon="👤" label="Профиль" />
+          <Item to="/" icon={<IconSearch />} label="Найти" />
+          <Item to="/map" icon={<IconMap />} label="Карта" />
+          <Item to="/create" icon={<IconPlus />} label="Создать" />
+          <Item to="/profile" icon={<IconUser />} label="Профиль" />
         </div>
       </div>
     </div>
