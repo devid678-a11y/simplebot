@@ -11,7 +11,9 @@ export async function signInWithTelegram() {
       await signInAnonymously(auth)
       return
     }
-    const res = await fetch(`${import.meta.env.VITE_API_BASE}/auth/telegram`, {
+    const base = (import.meta.env.VITE_API_BASE as string) || ''
+    const url = base ? `${base}/auth/telegram` : '/api/auth/telegram'
+    const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
       body: initData

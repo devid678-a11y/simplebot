@@ -30,7 +30,8 @@ app.get('/health', (req, res) => {
   res.status(200).send('ok')
 })
 // Auth: Telegram initData -> Firebase custom token
-app.post('/api/auth/telegram', async (req, res) => {
+// Принимаем raw initData (text/plain) или JSON { initData }
+app.post('/api/auth/telegram', express.text({ type: '*/*', limit: '256kb' }), async (req, res) => {
   try {
     const initData = typeof req.body === 'string' ? req.body : (req.body?.initData || '')
     if (!initData || typeof initData !== 'string') {
