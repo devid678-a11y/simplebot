@@ -107,7 +107,7 @@ export default function Profile() {
 
   if (!uid) {
     const deviceUid = getEffectiveUid() || 'anon'
-    const BOT_USERNAME = 'your_bot_username' // Укажите @username бота
+    const BOT_USERNAME = 'dvizheon_bot' // Укажите @username бота
     const deeplink = `https://t.me/${BOT_USERNAME}?start=link_${encodeURIComponent(deviceUid)}`
     async function exchange() {
       try {
