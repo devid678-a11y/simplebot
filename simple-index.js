@@ -102,6 +102,97 @@ const processedMsgIds = new Set()
 const processedMediaGroups = new Set()
 const lastNotify = new Map() // userId -> { hash, ts }
 
+// Функция отправки уведомлений
+async function sendNotifications() {
+  if (!db) return
+  
+  try {
+    console.log('🔔 Проверка уведомлений...')
+    const now = Date.now()
+    const oneDay = 24 * 60 * 60 * 1000
+    const threeHours = 3 * 60 * 60 * 1000
+    
+    // Проверяем события из обеих коллекций
+    const collections = ['events', 'telegram_events']
+    
+    for (const colName of collections) {
+      const eventsSnap = await db.collection(colName).get()
+      
+      for (const eventDoc of eventsSnap.docs) {
+        const event = eventDoc.data()
+        const eventId = eventDoc.id
+        const startTime = event.startAtMillis
+        
+        if (!startTime || startTime <= now) continue
+        
+        const timeUntil = startTime - now
+        
+        // Проверяем, нужно ли отправить уведомление
+        let notificationType = null
+        if (timeUntil <= oneDay && timeUntil > oneDay - 10 * 60 * 1000) {
+          notificationType = '24h'
+        } else if (timeUntil <= threeHours && timeUntil > threeHours - 10 * 60 * 1000) {
+          notificationType = '3h'
+        }
+        
+        if (!notificationType) continue
+        
+        // Получаем участников события
+        const attendeesSnap = await db.collection(colName).doc(eventId).collection('attendees').get()
+        
+        for (const attendeeDoc of attendeesSnap.docs) {
+          const uid = attendeeDoc.id
+          
+          // Проверяем, не отправляли ли уже это уведомление
+          const notificationId = `${uid}_${notificationType}`
+          const notificationRef = db.collection(colName).doc(eventId).collection('notifications').doc(notificationId)
+          const notificationDoc = await notificationRef.get()
+          
+          if (notificationDoc.exists()) continue
+          
+          // Получаем Telegram ID пользователя из профиля
+          const userDoc = await db.collection('users').doc(uid).get()
+          const userData = userDoc.data()
+          
+          if (!userData?.telegram?.id) continue
+          
+          const tgUserId = userData.telegram.id
+          
+          // Формируем сообщение
+          const timeText = notificationType === '24h' ? '24 часа' : '3 часа'
+          const eventDate = new Date(startTime).toLocaleString('ru-RU')
+          
+          const message = `🔔 Напоминание о событии!
+
+${event.title}
+📅 ${eventDate}
+📍 ${event.location || 'Место уточняется'}
+
+Событие начнется через ${timeText}!
+🔗 https://dvizh-eacfa.web.app/event/${colName === 'telegram_events' ? `telegram_${eventId}` : eventId}`
+          
+          try {
+            await bot.telegram.sendMessage(tgUserId, message)
+            
+            // Сохраняем факт отправки уведомления
+            await notificationRef.set({
+              sentAt: admin.firestore.FieldValue.serverTimestamp(),
+              type: notificationType,
+              userId: uid
+            })
+            
+            console.log(`✅ Уведомление ${notificationType} отправлено пользователю ${tgUserId} для события ${eventId}`)
+          } catch (error) {
+            console.error(`❌ Ошибка отправки уведомления пользователю ${tgUserId}:`, error.message)
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error('❌ Ошибка в sendNotifications:', error.message)
+  }
+}
+
 function extractMessageText(msg) {
   if (!msg) return ''
   // Текстовые сообщения
@@ -535,6 +626,12 @@ const server = app.listen(PORT, () => {
 // Запуск бота
 bot.launch().then(() => {
   console.log('✅ Бот запущен!')
+  
+  // Запускаем проверку уведомлений каждые 10 минут
+  if (db) {
+    setInterval(sendNotifications, 10 * 60 * 1000)
+    console.log('🔔 Уведомления включены (проверка каждые 10 минут)')
+  }
 }).catch(e => {
   console.error('❌ Ошибка запуска:', e)
 })

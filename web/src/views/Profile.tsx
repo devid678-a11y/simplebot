@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react'
 import { auth, db } from '../firebase'
-import { getEffectiveUid } from '../auth'
 import { collection, doc, getDoc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { storage } from '../firebase'
 import CategorySelector from '../components/CategorySelector'
 import { Link } from 'react-router-dom'
+import { formatEventDateText } from '../utils/datetime'
 
 export default function Profile() {
-  const uid = getEffectiveUid()
+  const uid = auth.currentUser?.uid
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [displayName, setDisplayName] = useState('')

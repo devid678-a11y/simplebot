@@ -4,7 +4,6 @@ import { useParams } from 'react-router-dom'
 import { auth, db } from '../firebase'
 import { formatEventDateText } from '../utils/datetime'
 import { linkify } from '../utils/text'
-import { getEffectiveUid } from '../auth'
 
 export default function EventDetail() {
   const { id } = useParams()
@@ -24,7 +23,7 @@ export default function EventDetail() {
   }, [col, realId])
   useEffect(() => {
     if (!realId) return
-    const uid = getEffectiveUid()
+    const uid = auth.currentUser?.uid
     if (!uid) return
     // «Пойду» храним в <col>/{realId}/attendees/{uid}
     return onSnapshot(doc(db, col, realId, 'attendees', uid), (d) => setGoing(d.exists()))
@@ -32,7 +31,7 @@ export default function EventDetail() {
   if (!event) return <div style={{ padding: 16 }}>Загрузка…</div>
   async function toggleGoing() {
     try {
-      const uid = getEffectiveUid()
+      const uid = auth.currentUser?.uid
       if (!uid || !realId) return
       const ref = doc(db, col, realId, 'attendees', uid)
       if (going) {
