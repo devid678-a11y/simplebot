@@ -29,6 +29,32 @@ app.get('/', (req, res) => {
 app.get('/health', (req, res) => {
   res.status(200).send('ok')
 })
+// Обмен анонимного deeplink-токена на Firebase Custom Token
+app.post('/api/auth/exchange', async (req, res) => {
+  try {
+    const body = typeof req.body === 'object' ? req.body : {}
+    const token = String(body.token || '')
+    if (!token) return res.status(400).json({ error: 'token_required' })
+    if (!db) return res.status(500).json({ error: 'db_unavailable' })
+    const ref = db.collection('link_tokens').doc(token)
+    const snap = await ref.get()
+    if (!snap.exists) return res.status(400).json({ error: 'invalid_token' })
+    const data = snap.data() || {}
+    if (data.used) return res.status(400).json({ error: 'token_used' })
+    const created = data.createdAt?.toDate?.() || new Date()
+    const ttlMs = data.ttlMs || 0
+    if (ttlMs && (Date.now() - created.getTime() > ttlMs)) {
+      return res.status(400).json({ error: 'expired' })
+    }
+    const uid = String(data.uid || '')
+    if (!uid) return res.status(400).json({ error: 'uid_missing' })
+    const customToken = await admin.auth().createCustomToken(uid, { linked: true })
+    await ref.set({ used: true, usedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true })
+    return res.json({ token: customToken })
+  } catch (e) {
+    return res.status(500).json({ error: 'internal', message: e?.message || String(e) })
+  }
+})
 // Auth: Telegram initData -> Firebase custom token
 // Принимаем raw initData (text/plain) или JSON { initData }
 app.post('/api/auth/telegram', express.text({ type: '*/*', limit: '256kb' }), async (req, res) => {
@@ -101,6 +127,42 @@ const last = new Map()
 const processedMsgIds = new Set()
 const processedMediaGroups = new Set()
 const lastNotify = new Map() // userId -> { hash, ts }
+
+// =============================
+// Deep-link привязка анонимной сессии к Telegram
+// =============================
+async function upsertUserProfileFromTelegram(tg, ctx) {
+  try {
+    const uid = String(tg.id)
+    let photoUrl = tg.photo_url || null
+    try {
+      const photos = await ctx.telegram.getUserProfilePhotos(tg.id, 0, 1)
+      const fileId = photos?.photos?.[0]?.[0]?.file_id
+      if (fileId) {
+        const link = await ctx.telegram.getFileLink(fileId)
+        if (link?.href) photoUrl = link.href
+      }
+    } catch {}
+    const displayName = [tg.first_name, tg.last_name].filter(Boolean).join(' ') || tg.username || 'User'
+    await db.collection('users').doc(uid).set({
+      displayName,
+      photoUrl: photoUrl || null,
+      telegram: { id: tg.id, username: tg.username || null },
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    }, { merge: true })
+  } catch {}
+}
+
+async function createLinkTokenForAnon(anonUid, tg) {
+  // Используем anonUid как идентификатор одноразового токена (TTL + used)
+  await db.collection('link_tokens').doc(String(anonUid)).set({
+    anonUid: String(anonUid),
+    uid: String(tg.id),
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    ttlMs: 5 * 60 * 1000,
+    used: false,
+  }, { merge: true })
+}
 
 // Функция отправки уведомлений
 async function sendNotifications() {
@@ -444,8 +506,24 @@ async function saveEventFromText(text, ctx, msg) {
 }
 
 // Команда /start
-bot.start((ctx) => {
-  ctx.reply('👋 Привет! Перешлите пост, затем нажмите «Предложить». Событие отправится только при наличии даты (в т.ч. сегодня/завтра) или адреса.', {
+bot.start(async (ctx) => {
+  try {
+    const tg = ctx.from || {}
+    // payload формата: link_<anonUid>
+    const payload = (ctx.startPayload || '') || (ctx.message?.text?.split(' ').slice(1).join(' ') || '')
+    if (payload && /^link_/i.test(payload)) {
+      const anonUid = payload.replace(/^link_/i, '').trim()
+      if (anonUid && db) {
+        await upsertUserProfileFromTelegram(tg, ctx)
+        await createLinkTokenForAnon(anonUid, tg)
+        await ctx.reply('✅ Аккаунт найден и привязан. Вернитесь в приложение и нажмите «Я нажал Старт». Токен активен 5 минут.', {
+          reply_markup: { keyboard: [[{ text: 'Предложить' }]], resize_keyboard: true }
+        })
+        return
+      }
+    }
+  } catch {}
+  await ctx.reply('👋 Привет! Перешлите пост, затем нажмите «Предложить». Событие отправится только при наличии даты (в т.ч. сегодня/завтра) или адреса.', {
     reply_markup: { keyboard: [[{ text: 'Предложить' }]], resize_keyboard: true }
   })
 })

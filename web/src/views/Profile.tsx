@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { auth, db } from '../firebase'
+import { signInWithCustomToken } from 'firebase/auth'
+import { getEffectiveUid } from '../auth'
 import { collection, doc, getDoc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { storage } from '../firebase'
@@ -103,7 +105,31 @@ export default function Profile() {
     } catch {}
   }
 
-  if (!uid) return <div style={{ padding: 16 }}>Войдите через Telegram</div>
+  if (!uid) {
+    const deviceUid = getEffectiveUid() || 'anon'
+    const BOT_USERNAME = 'your_bot_username' // Укажите @username бота
+    const deeplink = `https://t.me/${BOT_USERNAME}?start=link_${encodeURIComponent(deviceUid)}`
+    async function exchange() {
+      try {
+        const res = await fetch('/api/auth/exchange', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: deviceUid }) })
+        if (!res.ok) { alert('Не удалось обменять токен. Откройте бота, нажмите Старт и попробуйте снова.'); return }
+        const { token } = await res.json()
+        await signInWithCustomToken(auth as any, token)
+        location.reload()
+      } catch (e) {
+        alert('Ошибка входа. Попробуйте ещё раз.')
+      }
+    }
+    return (
+      <div style={{ padding: 16 }}>
+        <div style={{ marginBottom: 12 }}>Войдите через Telegram, чтобы открыть профиль.</div>
+        <a href={deeplink} target="_blank" rel="noreferrer">
+          <button style={{ width: '100%', marginBottom: 8 }}>Войти через Telegram</button>
+        </a>
+        <button onClick={exchange} style={{ width: '100%' }}>Я нажал Старт</button>
+      </div>
+    )
+  }
   if (loading) return <div style={{ padding: 16 }}>Загрузка…</div>
 
   return (
