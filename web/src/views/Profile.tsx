@@ -111,7 +111,9 @@ export default function Profile() {
     const deeplink = `https://t.me/${BOT_USERNAME}?start=link_${encodeURIComponent(deviceUid)}`
     async function exchange() {
       try {
-        const res = await fetch('/api/auth/exchange', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: deviceUid }) })
+        const base = (import.meta as any).env?.VITE_API_BASE || (globalThis as any).__API_BASE__ || ''
+        const url = base ? `${base}/api/auth/exchange` : '/api/auth/exchange'
+        const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: deviceUid }) })
         if (!res.ok) { alert('Не удалось обменять токен. Откройте бота, нажмите Старт и попробуйте снова.'); return }
         const { token } = await res.json()
         await signInWithCustomToken(auth as any, token)

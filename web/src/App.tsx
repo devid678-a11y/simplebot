@@ -7,6 +7,10 @@ import Explore from './views/Explore'
 import EventDetail from './views/EventDetail'
 import CreateEvent from './views/CreateEvent'
 import Profile from './views/Profile'
+import GroutCalc from './views/GroutCalc'
+import About from './views/About'
+import Delivery from './views/Delivery'
+import Header from './components/Header'
 import BottomNav from './components/BottomNav'
 
 export default function App() {
@@ -25,13 +29,16 @@ export default function App() {
   if (!ready) return <div style={{ padding: 16 }}>Загрузка…</div>
   return (
     <div>
-      <div className="topbar"><div className="topbar-inner"><div style={{ fontWeight: 700 }}>Движ</div><div className="muted" style={{ fontSize: 12 }}>Стриминг событий</div></div></div>
+      <Header />
       <Routes>
         <Route path="/" element={<Explore />} />
         <Route path="/map" element={<Map />} />
         <Route path="/event/:id" element={<EventDetail />} />
         <Route path="/create" element={<CreateEvent />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/calc" element={<GroutCalc />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/delivery" element={<Delivery />} />
       </Routes>
       <BottomNav />
     </div>

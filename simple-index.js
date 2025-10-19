@@ -12,6 +12,10 @@ dotenv.config()
 
 const BOT_TOKEN = process.env.BOT_TOKEN || '8269219896:AAF3dVeZRJ__AFIOfI1_uyxyKsvmBMNIAg0'
 const PORT = process.env.PORT || 3000
+// Timeweb AI (или любой OpenAI-совместимый провайдер)
+const AI_URL = process.env.TIMEWEB_AI_URL || process.env.AI_URL || ''
+const AI_TOKEN = process.env.TIMEWEB_AI_TOKEN || process.env.AI_TOKEN || ''
+const AI_MODEL = process.env.TIMEWEB_AI_MODEL || process.env.AI_MODEL || 'gpt-4o-mini'
 
 console.log('🚀 Запускаем простейшего бота...')
 
@@ -127,6 +131,51 @@ const last = new Map()
 const processedMsgIds = new Set()
 const processedMediaGroups = new Set()
 const lastNotify = new Map() // userId -> { hash, ts }
+
+// =============================
+// AI парсер события (Timeweb AI / OpenAI-совместимый API)
+// =============================
+async function aiParseEvent(rawText) {
+  try {
+    if (!AI_URL || !AI_TOKEN) return null
+    const system = `Ты извлекаешь из русскоязычного поста поля события JSON:
+{
+  "title": string,
+  "description": string,
+  "date": string,           // как в посте (напр. 25 октября, 25.10, завтра)
+  "time": string | null,    // как в посте (напр. 19:00 или 16:00-21:00)
+  "category": string | null,
+  "address": string | null
+}
+Без пояснений, только валидный JSON.`
+    const user = rawText.slice(0, 4000)
+    const resp = await fetch(AI_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${AI_TOKEN}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: AI_MODEL,
+        messages: [
+          { role: 'system', content: system },
+          { role: 'user', content: user }
+        ],
+        temperature: 0.2
+      })
+    })
+    if (!resp.ok) return null
+    const j = await resp.json()
+    const content = j?.choices?.[0]?.message?.content || ''
+    const start = content.indexOf('{')
+    const end = content.lastIndexOf('}')
+    if (start === -1 || end === -1) return null
+    const json = JSON.parse(content.slice(start, end + 1))
+    return json
+  } catch {
+    return null
+  }
+}
 
 // =============================
 // Deep-link привязка анонимной сессии к Telegram
@@ -455,8 +504,11 @@ async function saveEventFromText(text, ctx, msg) {
   if (!db) {
     throw new Error('Firebase не подключен')
   }
+  // 1) Попробуем AI-парсинг
+  const ai = await aiParseEvent(text)
+  // 2) Резерв – наш парсер дат/адресов
   const parsed = parseRuDateTimeRange(text)
-  const address = extractAddress(text)
+  const address = ai?.address || extractAddress(text)
   let geo = null
   if (address) {
     geo = await geocodeAddress(address)
@@ -464,8 +516,9 @@ async function saveEventFromText(text, ctx, msg) {
   const imageUrls = await extractImageUrls(ctx, msg)
   const links = extractLinksFromMessage(msg || {}, text)
   const normalizedText = (text || '').trim()
-  const title = (normalizedText.split('\n')[0] || '').trim() || 'Событие'
-  const description = normalizedText.length > 0 ? normalizedText : 'Описание будет добавлено позже.'
+  const title = (ai?.title && String(ai.title).trim()) || (normalizedText.split('\n')[0] || '').trim() || 'Событие'
+  const description = (ai?.description && String(ai.description).trim()) || (normalizedText.length > 0 ? normalizedText : 'Описание будет добавлено позже.')
+  // Дата/время из AI — используем как подсказку, но миллисекунды считаем из нашего парсера
   const eventData = {
     title: title.slice(0, 100),
     description,
@@ -475,7 +528,7 @@ async function saveEventFromText(text, ctx, msg) {
     price: null,
     isOnline: false,
     location: address || 'Место уточняется',
-    categories: ['telegram'],
+    categories: ai?.category ? [String(ai.category)] : ['telegram'],
     imageUrls,
     links,
     geo,

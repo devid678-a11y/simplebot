@@ -60,7 +60,8 @@ export default function Map() {
         const feats: any[] = []
         for (const d of snap.docs) {
           const data = d.data() as any
-          let lon: number | null = data?.geo?.lon ?? null
+          // поддержка обоих вариантов названий: lng (бэкенд) и lon (старый фронт)
+          let lon: number | null = (data?.geo?.lng ?? data?.geo?.lon) ?? null
           let lat: number | null = data?.geo?.lat ?? null
           if ((lon == null || lat == null) && data?.location) {
             try {
