@@ -107,20 +107,23 @@ try {
 app.get('/api/events', async (req, res) => {
   try {
     console.log(`📥 GET /api/events - запрос событий`)
-    const limit = parseInt(req.query.limit || '50', 10)
+    const limit = parseInt(req.query.limit || '100', 10)
     const orderBy = req.query.orderBy || 'start_at_millis'
     const order = req.query.order || 'desc'
     
     // Показываем события: будущие ИЛИ без даты ИЛИ созданные недавно (в течение последних 30 дней)
     const query = `
       SELECT 
-        id, title, description, start_at_millis, end_at_millis,
-        is_free, price, is_online, location, 
-        geo_lat, geo_lng, geohash,
-        categories, image_urls, links, source, dedupe_key, created_at
-      FROM events
-      WHERE (start_at_millis IS NULL OR start_at_millis > $1 OR created_at > NOW() - INTERVAL '30 days')
-      ORDER BY ${orderBy === 'start_at_millis' ? 'COALESCE(start_at_millis, 9999999999999)' : orderBy} ${order}
+        e.id, e.title, e.description, e.start_at_millis, e.end_at_millis,
+        e.is_free, e.price, e.is_online, e.location, 
+        e.geo_lat, e.geo_lng, e.geohash,
+        e.categories, e.image_urls, e.links, e.source, e.dedupe_key, e.created_at,
+        COUNT(DISTINCT a.user_id) as attendees_count
+      FROM events e
+      LEFT JOIN attendees a ON e.id = a.event_id
+      WHERE (e.start_at_millis IS NULL OR e.start_at_millis > $1 OR e.created_at > NOW() - INTERVAL '30 days')
+      GROUP BY e.id
+      ORDER BY ${orderBy === 'start_at_millis' ? 'COALESCE(e.start_at_millis, 9999999999999)' : (orderBy === 'attendees_count' ? 'COUNT(DISTINCT a.user_id)' : `e.${orderBy}`)} ${order}
       LIMIT $2
     `
     
@@ -176,6 +179,7 @@ app.get('/api/events', async (req, res) => {
         imageUrls: Array.isArray(row.image_urls) ? row.image_urls : (row.image_urls ? [row.image_urls] : []),
         links: links,
         source: source,
+        attendeesCount: parseInt(row.attendees_count || '0', 10),
         createdAt: row.created_at ? {
           _seconds: Math.floor(new Date(row.created_at).getTime() / 1000),
           _nanoseconds: 0
@@ -199,12 +203,15 @@ app.get('/api/events/:id', async (req, res) => {
     
     const query = `
       SELECT 
-        id, title, description, start_at_millis, end_at_millis,
-        is_free, price, is_online, location,
-        geo_lat, geo_lng, geohash,
-        categories, image_urls, links, source, dedupe_key, created_at
-      FROM events
-      WHERE id = $1
+        e.id, e.title, e.description, e.start_at_millis, e.end_at_millis,
+        e.is_free, e.price, e.is_online, e.location,
+        e.geo_lat, e.geo_lng, e.geohash,
+        e.categories, e.image_urls, e.links, e.source, e.dedupe_key, e.created_at,
+        COUNT(DISTINCT a.user_id) as attendees_count
+      FROM events e
+      LEFT JOIN attendees a ON e.id = a.event_id
+      WHERE e.id = $1
+      GROUP BY e.id
       LIMIT 1
     `
     
@@ -264,6 +271,7 @@ app.get('/api/events/:id', async (req, res) => {
       imageUrls: Array.isArray(row.image_urls) ? row.image_urls : (row.image_urls ? [row.image_urls] : []),
       links: links,
       source: source,
+      attendeesCount: parseInt(row.attendees_count || '0', 10),
       createdAt: row.created_at ? {
         _seconds: Math.floor(new Date(row.created_at).getTime() / 1000),
         _nanoseconds: 0

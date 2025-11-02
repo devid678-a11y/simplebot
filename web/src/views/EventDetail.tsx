@@ -11,6 +11,7 @@ export default function EventDetail() {
   const [event, setEvent] = useState<any>(null)
   const [going, setGoing] = useState<boolean>(false)
   const [creator, setCreator] = useState<{displayName?:string; photoUrl?:string} | null>(null)
+  const [attendeesCount, setAttendeesCount] = useState<number>(0)
   
   // Используем ID напрямую (PostgreSQL не использует префиксы)
   const realId = id || ''
@@ -30,6 +31,7 @@ export default function EventDetail() {
           const data = await response.json()
           console.log(`[EventDetail] Получено событие:`, data)
           setEvent(data)
+          setAttendeesCount(data.attendeesCount || 0)
         } else if (response.status === 404) {
           console.warn(`[EventDetail] Событие не найдено: ${realId}`)
           setEvent(null)
@@ -70,8 +72,24 @@ export default function EventDetail() {
       }
     }
     
+    async function fetchAttendeesCount() {
+      try {
+        const response = await fetch(`${apiBase}/api/events/${realId}/attendees`)
+        if (response.ok) {
+          const data = await response.json()
+          setAttendeesCount(Array.isArray(data) ? data.length : 0)
+        }
+      } catch (e) {
+        console.error('Ошибка получения количества участников:', e)
+      }
+    }
+    
     checkGoing()
-    const interval = setInterval(checkGoing, 5000) // Проверяем каждые 5 секунд
+    fetchAttendeesCount()
+    const interval = setInterval(() => {
+      checkGoing()
+      fetchAttendeesCount()
+    }, 5000) // Проверяем каждые 5 секунд
     return () => clearInterval(interval)
   }, [realId])
   if (!event) return <div style={{ padding: 16 }}>Загрузка…</div>
@@ -84,10 +102,31 @@ export default function EventDetail() {
       const apiBase = 'https://devid678-a11y-simplebot-0a93.twc1.net'
       const url = `${apiBase}/api/events/${realId}/attendees/${uid}`
       
+      let telegramId: string | null = null
+      try {
+        const idTokenResult = await auth.currentUser?.getIdTokenResult()
+        telegramId = idTokenResult?.claims?.tg_id as string || null
+        
+        if (!telegramId && typeof window !== 'undefined') {
+          const WebApp = (window as any).Telegram?.WebApp
+          if (WebApp?.initDataUnsafe?.user?.id) {
+            telegramId = String(WebApp.initDataUnsafe.user.id)
+          }
+        }
+      } catch (e) {
+        console.warn('Не удалось получить Telegram ID:', e)
+      }
+      
       if (going) {
         await fetch(url, { method: 'DELETE' })
+        setAttendeesCount(Math.max(0, attendeesCount - 1))
       } else {
-        await fetch(url, { method: 'POST' })
+        await fetch(url, { 
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ telegramId })
+        })
+        setAttendeesCount(attendeesCount + 1)
       }
       setGoing(!going)
     } catch (e) {
@@ -123,18 +162,78 @@ export default function EventDetail() {
             </span>
           )}
         </div>
-        <div className="muted">{event.isOnline ? 'Онлайн' : (event.location || '—')}</div>
+        <div className="muted" style={{ marginBottom: 4 }}>
+          {event.isOnline ? (
+            <span style={{ color: 'var(--accent)' }}>🌐 Онлайн</span>
+          ) : (
+            event.location ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <span>{event.location}</span>
+                <a 
+                  href={`https://yandex.ru/maps/?text=${encodeURIComponent(event.location)}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  style={{ 
+                    fontSize: 12, 
+                    color: 'var(--accent)', 
+                    textDecoration: 'none',
+                    padding: '2px 6px',
+                    borderRadius: 4,
+                    background: 'rgba(0,229,255,0.1)'
+                  }}
+                >
+                  🗺️ Карта
+                </a>
+              </div>
+            ) : '—'
+          )}
+        </div>
+        {attendeesCount > 0 && (
+          <div className="muted" style={{ marginBottom: 8, fontSize: 14 }}>
+            👥 Пойдут: {attendeesCount} {attendeesCount === 1 ? 'человек' : attendeesCount < 5 ? 'человека' : 'человек'}
+          </div>
+        )}
+        {Array.isArray(event.categories) && event.categories.length > 0 && (
+          <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom: 12 }}>
+            {event.categories.map((c:string) => (
+              <span key={c} style={{ fontSize:12, padding:'4px 8px', background:'rgba(255,255,255,0.06)', borderRadius:8 }}>{c}</span>
+            ))}
+          </div>
+        )}
         {event.description && (
-          <p style={{ marginTop: 12, whiteSpace: 'pre-wrap' }}
+          <p style={{ marginTop: 12, whiteSpace: 'pre-wrap', lineHeight: 1.6 }}
              dangerouslySetInnerHTML={{ __html: linkify(event.description) }} />
         )}
         {Array.isArray(event.links) && event.links.length>0 && (
           <div style={{ marginTop: 12 }}>
-            <a href={event.links[0].url} target="_blank" rel="noopener noreferrer">Смотреть в источнике</a>
+            <a href={event.links[0].url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)' }}>
+              Смотреть в источнике →
+            </a>
           </div>
         )}
-        <div style={{ marginTop: 16 }}>
-          <button onClick={toggleGoing} style={{ width: '100%' }}>{going ? 'Не пойду' : 'Пойду'}</button>
+        <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
+          <button onClick={toggleGoing} style={{ flex: 1 }}>{going ? 'Не пойду' : 'Пойду'}</button>
+          <button 
+            onClick={() => {
+              const url = `${window.location.origin}/event/${event.id}`
+              if (navigator.share) {
+                navigator.share({
+                  title: event.title,
+                  text: `${formatEventDateText(event)}\n${event.location || 'Онлайн'}`,
+                  url: url
+                }).catch(() => {})
+              } else {
+                navigator.clipboard.writeText(url).then(() => {
+                  alert('Ссылка скопирована!')
+                }).catch(() => {})
+              }
+            }}
+            className="btn-ghost"
+            style={{ padding: '10px 16px' }}
+            title="Поделиться"
+          >
+            📤
+          </button>
         </div>
         </div>
       </div>
