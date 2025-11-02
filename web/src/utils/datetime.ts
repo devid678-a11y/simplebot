@@ -57,24 +57,39 @@ export function formatEventDateText(event: any): string {
  * Форматирует время до мероприятия в удобочитаемый формат
  * Примеры: "через 3 дня, пятница", "через неделю, пятница", "завтра", "сегодня"
  */
-export function formatTimeUntilEvent(startAtMillis: number | null | undefined): string {
+export function formatTimeUntilEvent(startAtMillis: number | null | undefined): string | null {
   if (!startAtMillis || typeof startAtMillis !== 'number' || !isFinite(startAtMillis)) {
-    return ''
+    return null
   }
   
   const now = Date.now()
   const eventDate = new Date(startAtMillis)
-  const diffMs = startAtMillis - now
+  const today = new Date()
+  
+  // Нормализуем даты до начала дня для точного сравнения
+  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+  const eventStart = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate())
+  
+  // Проверяем, что событие в будущем
+  if (eventStart < todayStart) {
+    return null // Событие уже прошло
+  }
+  
+  // Вычисляем разницу в днях точно
+  const diffMs = eventStart.getTime() - todayStart.getTime()
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
   
   const dayNames = ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота']
   const dayName = dayNames[eventDate.getDay()]
   
-  if (diffDays < 0) {
-    // Прошедшее событие
-    return ''
-  } else if (diffDays === 0) {
-    return `сегодня, ${dayName}`
+  if (diffDays === 0) {
+    // Проверяем, что это действительно сегодня
+    const isToday = todayStart.getTime() === eventStart.getTime()
+    if (isToday) {
+      return `сегодня, ${dayName}`
+    }
+    // Если по какой-то причине не совпало, считаем как завтра
+    return `завтра, ${dayName}`
   } else if (diffDays === 1) {
     return `завтра, ${dayName}`
   } else if (diffDays === 2) {
