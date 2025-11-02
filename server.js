@@ -10,28 +10,26 @@ import admin from 'firebase-admin'
 dotenv.config()
 
 // ===== Firebase Admin initialization =====
-// Встроенные credentials для Firebase (или используем переменные окружения)
+// Встроенные credentials для Firebase (встроены напрямую в код для Timeweb)
+const FIREBASE_SERVICE_ACCOUNT = {
+  "type": "service_account",
+  "project_id": "dvizh-eacfa",
+  "private_key_id": "f96ef8165d6d259f4cca814bd0d80b071c1ea8e6",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDRDeroKlpyFbBW\n4E0wF0iGhuwI/RPMOjGBR7cXZLWdG5sU4wv7ghFSQjxvEHdIejI1SgT2yoSyfUa4\nNx2RjLPo3PjbCd/4RG88b8IDBRXDdLhA8t05QaL+k86IohDuaG2xmd4pc8YFj8+E\noLc6CBBOouToymqBW06Ffyj5REcpJ2nbagWmPwORQoPWcs6yafS07ooVLwtLlJKb\nx1CbD8FvzHUYU/8yrSSxv+97HWfquGbVM2LuHbdzYel1E6uy9jNlqqs+Z3idrxyL\nqrTdqRgvQTZCcH2RQnZmpioXOx0bSHSn/BliHICWeN3HwDtLtzVFvWihYE+u1tcu\nWkh0boUNAgMBAAECggEASwBzxTygu2p1nA2YE8desUkJuMXXSv+b0DaDBSUQFWAY\nmPtGSsMk5L63wN8G9J1GkyDNvB73UbQpYaEAfj4dM8/Hhoo57O/cerHbyMqTvs6K\n5l5bqRWX3T75K8L9URNtO3kpH/UV19v7BynD4tGOzC+b8brhUCyKdNGkyR1KbIQ9\n375WVn+kuFBAFAsCNBiD59/oQl9HswkvAsdC0KqjtA7q/WKbxBNFyEbgPkQ6IHXX\nwz2wrWGsf2z+u9X4XE51xSrp3IfCFM65X7OaKxcRmTGVJoW8OqRZnB9RPzYX6pML\nV4OMJwworPgad6R3V3s7nbXKjDElSNRiI//k+O26DwKBgQDuW0c56894om6XMAaN\nrH91g5OdWxS4e2tL1wK0EIJYhK6qN50tTiAiRftbS9qDRLYO4AnFJ7dganfLMz9E\nGm3Lijibt+wT653LEWWX6IGCzn2syRremLso4scry0+feXE+rVpIKCUobkzNvV7J\n+itLQzPRjZNXVoRR4L+5yu48zwKBgQDgh2Ek4Sta9i1sa8Tqk/0lzhDQtaTSQG6s\nyFNLoQ7Z5jRjwB1rb7PG8LN5TnSK9T19QMSkvKrseBngOyXWiMkZrmUp6Dnle0QR\n5L4GGhxbKdJmjNSR/m3KNU+NmKt/BMBlddAOWudm87u6a+SJpeCcA/3zcyjaS309\nStZ9V20vYwKBgQC0aYiG8dLux1uXufUr5OXwx6/Cif8sB9bV55+XNWvDnmIqWr/w\nW9L8viWcG9UASNDYf4FFpmMpakzUFC0N2kdCqZNhYhwhk9SysK9KBOWKYctELk/V\nLptzPfttTY0t8xjhTQsp1KETcjFWBMErddyxMeOV+GgO0mCDLO9RrKUYhwKBgQCi\n6ZfS6o5KsdTDlm6KxlYn2BzbUvEEnTuwoqnNdk8QS7g3qG2wRpxq/Ls8iXCGYur6\ntsP3w+1BJuOfj0slHprLx34fqiBYIdiCIza9trRccTv4rLaQN8vxrDzMwLmusAPp\nmlIcGFlOmgrceOyZ84HFsh/RRP2fZqa4klSPHaBbgQKBgQCVp/Xnd2lMAN/jTQEl\nqTmIEC6ZXWXMO3OFQaLr0Dl5v8tAZOAZ2mYVqj5Xc14fWsE6gMN1CMHlucw3d2Gx\nTU6BmAPxiGtcraJOF1s6AZpnfUUa5nsY1qk4f9YvcDYlQL5AuS1zbdvziyxyD9Eq\nmBssLsKrGVKUhRHeNyTVJXsoRQ==\n-----END PRIVATE KEY-----\n",
+  "client_email": "dvizh-eacfa@appspot.gserviceaccount.com",
+  "client_id": "107347185732625933670",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/dvizh-eacfa%40appspot.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
+
 try {
-  const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH || './firebase-service-account.json'
-  if (fs.existsSync(serviceAccountPath)) {
-    const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'))
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount)
-    })
-    console.log('✅ Firebase Admin инициализирован из файла')
-  } else {
-    // Попробуем использовать переменные окружения или встроенные credentials
-    // Для Timeweb можно встроить credentials напрямую в код
-    const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON
-    if (serviceAccountJson) {
-      admin.initializeApp({
-        credential: admin.credential.cert(JSON.parse(serviceAccountJson))
-      })
-      console.log('✅ Firebase Admin инициализирован из переменной окружения')
-    } else {
-      console.warn('⚠️ Firebase Admin не инициализирован - авторизация через Telegram будет недоступна')
-    }
-  }
+  admin.initializeApp({
+    credential: admin.credential.cert(FIREBASE_SERVICE_ACCOUNT)
+  })
+  console.log('✅ Firebase Admin инициализирован')
 } catch (e) {
   console.warn('⚠️ Ошибка инициализации Firebase Admin:', e.message)
 }
