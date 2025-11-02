@@ -76,6 +76,7 @@ try {
 // GET /api/events - список событий
 app.get('/api/events', async (req, res) => {
   try {
+    console.log(`📥 GET /api/events - запрос событий`)
     const limit = parseInt(req.query.limit || '50', 10)
     const orderBy = req.query.orderBy || 'start_at_millis'
     const order = req.query.order || 'desc'
@@ -97,28 +98,62 @@ app.get('/api/events', async (req, res) => {
     const result = await pool.query(query, [now, limit])
     
     // Преобразуем данные в формат, похожий на Firestore
-    const events = result.rows.map(row => ({
-      id: row.id,
-      title: row.title,
-      description: row.description,
-      startAtMillis: row.start_at_millis,
-      endAtMillis: row.end_at_millis,
-      isFree: row.is_free,
-      price: row.price,
-      isOnline: row.is_online,
-      location: row.location,
-      geo: (row.geo_lat && row.geo_lng) ? { lat: row.geo_lat, lng: row.geo_lng } : null,
-      geohash: row.geohash,
-      categories: row.categories || [],
-      imageUrls: row.image_urls || [],
-      links: Array.isArray(row.links) ? row.links : (row.links ? [row.links] : []),
-      source: row.source,
-      createdAt: row.created_at ? {
-        _seconds: Math.floor(new Date(row.created_at).getTime() / 1000),
-        _nanoseconds: 0
-      } : null
-    }))
+    // bigint из PostgreSQL может быть строкой, нужно преобразовать в число
+    const events = result.rows.map(row => {
+      // Преобразуем bigint в число
+      const startAtMillis = row.start_at_millis != null ? parseInt(row.start_at_millis, 10) : null
+      const endAtMillis = row.end_at_millis != null ? parseInt(row.end_at_millis, 10) : null
+      
+      // Парсим links если это JSON строка
+      let links = []
+      if (row.links) {
+        if (typeof row.links === 'string') {
+          try {
+            links = JSON.parse(row.links)
+          } catch {
+            links = []
+          }
+        } else if (Array.isArray(row.links)) {
+          links = row.links
+        } else {
+          links = [row.links]
+        }
+      }
+      
+      // Парсим source если это JSON строка
+      let source = row.source
+      if (typeof row.source === 'string') {
+        try {
+          source = JSON.parse(row.source)
+        } catch {
+          // Оставляем как строку
+        }
+      }
+      
+      return {
+        id: row.id,
+        title: row.title,
+        description: row.description,
+        startAtMillis: startAtMillis,
+        endAtMillis: endAtMillis,
+        isFree: row.is_free === true || row.is_free === 'true',
+        price: row.price != null ? parseInt(row.price, 10) : 0,
+        isOnline: row.is_online === true || row.is_online === 'true',
+        location: row.location,
+        geo: (row.geo_lat && row.geo_lng) ? { lat: parseFloat(row.geo_lat), lng: parseFloat(row.geo_lng) } : null,
+        geohash: row.geohash,
+        categories: Array.isArray(row.categories) ? row.categories : (row.categories ? [row.categories] : []),
+        imageUrls: Array.isArray(row.image_urls) ? row.image_urls : (row.image_urls ? [row.image_urls] : []),
+        links: links,
+        source: source,
+        createdAt: row.created_at ? {
+          _seconds: Math.floor(new Date(row.created_at).getTime() / 1000),
+          _nanoseconds: 0
+        } : null
+      }
+    })
     
+    console.log(`✅ Вернуно ${events.length} событий из базы`)
     res.json(events)
   } catch (e) {
     console.error('❌ Ошибка получения событий:', e.message)
@@ -149,22 +184,53 @@ app.get('/api/events/:id', async (req, res) => {
     }
     
     const row = result.rows[0]
+    
+    // Преобразуем bigint в число
+    const startAtMillis = row.start_at_millis != null ? parseInt(row.start_at_millis, 10) : null
+    const endAtMillis = row.end_at_millis != null ? parseInt(row.end_at_millis, 10) : null
+    
+    // Парсим links если это JSON строка
+    let links = []
+    if (row.links) {
+      if (typeof row.links === 'string') {
+        try {
+          links = JSON.parse(row.links)
+        } catch {
+          links = []
+        }
+      } else if (Array.isArray(row.links)) {
+        links = row.links
+      } else {
+        links = [row.links]
+      }
+    }
+    
+    // Парсим source если это JSON строка
+    let source = row.source
+    if (typeof row.source === 'string') {
+      try {
+        source = JSON.parse(row.source)
+      } catch {
+        // Оставляем как строку
+      }
+    }
+    
     const event = {
       id: row.id,
       title: row.title,
       description: row.description,
-      startAtMillis: row.start_at_millis,
-      endAtMillis: row.end_at_millis,
-      isFree: row.is_free,
-      price: row.price,
-      isOnline: row.is_online,
+      startAtMillis: startAtMillis,
+      endAtMillis: endAtMillis,
+      isFree: row.is_free === true || row.is_free === 'true',
+      price: row.price != null ? parseInt(row.price, 10) : 0,
+      isOnline: row.is_online === true || row.is_online === 'true',
       location: row.location,
-      geo: (row.geo_lat && row.geo_lng) ? { lat: row.geo_lat, lng: row.geo_lng } : null,
+      geo: (row.geo_lat && row.geo_lng) ? { lat: parseFloat(row.geo_lat), lng: parseFloat(row.geo_lng) } : null,
       geohash: row.geohash,
-      categories: row.categories || [],
-      imageUrls: row.image_urls || [],
-      links: Array.isArray(row.links) ? row.links : (row.links ? [row.links] : []),
-      source: row.source,
+      categories: Array.isArray(row.categories) ? row.categories : (row.categories ? [row.categories] : []),
+      imageUrls: Array.isArray(row.image_urls) ? row.image_urls : (row.image_urls ? [row.image_urls] : []),
+      links: links,
+      source: source,
       createdAt: row.created_at ? {
         _seconds: Math.floor(new Date(row.created_at).getTime() / 1000),
         _nanoseconds: 0
