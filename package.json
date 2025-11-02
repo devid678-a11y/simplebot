@@ -2,18 +2,21 @@
   "name": "simple-telegram-bot",
   "version": "1.0.0",
   "description": "Simple Telegram bot that responds to messages",
-  "main": "index.js",
+  "main": "server.js",
   "type": "module",
   "scripts": {
     "start": "node index.js",
     "dev": "node index.js"
   },
   "dependencies": {
-    "express": "^4.19.2",
+    "cheerio": "^1.1.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
-    "telegraf": "^4.16.3",
-    "firebase-admin": "^12.5.0"
+    "express": "^4.21.2",
+    "firebase-admin": "^12.5.0",
+    "pg": "^8.16.3",
+    "puppeteer": "^24.27.0",
+    "telegraf": "^4.16.3"
   },
   "engines": {
     "node": ">=18"
