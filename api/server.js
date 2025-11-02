@@ -13,9 +13,18 @@ app.use(cors())
 app.use(express.json())
 
 // ===== PostgreSQL connection =====
+// Встроенные переменные окружения для Timeweb PostgreSQL
+const DATABASE_URL = 'postgresql://gen_user:c%-5Yc01xe*Bdf@7cedb753215efecb1de53f8c.twc1.net:5432/default_db?sslmode=require'
+const DB_HOST = '7cedb753215efecb1de53f8c.twc1.net'
+const DB_PORT = 5432
+const DB_NAME = 'default_db'
+const DB_USER = 'gen_user'
+const DB_PASSWORD = 'c%-5Yc01xe*Bdf'
+
 let pool = null
 try {
-  const connectionString = process.env.DATABASE_URL || process.env.TIMEWEB_DB_URL
+  // Используем встроенные значения или переменные окружения (если есть)
+  const connectionString = process.env.DATABASE_URL || DATABASE_URL
   
   function getSSLOptions() {
     const sslCertPath = process.env.PGSSLROOTCERT || process.env.DB_SSL_CERT
@@ -27,6 +36,7 @@ try {
         }
       } catch {}
     }
+    // Для Timeweb обычно нужен SSL, но без проверки сертификата
     return { rejectUnauthorized: false }
   }
   
@@ -44,12 +54,13 @@ try {
       throw new Error('Не удалось распарсить connection string')
     }
   } else {
+    // Fallback на отдельные параметры
     poolConfig = {
-      host: process.env.DB_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT || '5432', 10),
-      database: process.env.DB_NAME || 'default_db',
-      user: process.env.DB_USER || 'postgres',
-      password: process.env.DB_PASSWORD || '',
+      host: process.env.DB_HOST || DB_HOST,
+      port: parseInt(process.env.DB_PORT || String(DB_PORT), 10),
+      database: process.env.DB_NAME || DB_NAME,
+      user: process.env.DB_USER || DB_USER,
+      password: process.env.DB_PASSWORD || DB_PASSWORD,
       ssl: getSSLOptions() !== false ? getSSLOptions() : { rejectUnauthorized: false },
       max: 20, idleTimeoutMillis: 30000
     }
