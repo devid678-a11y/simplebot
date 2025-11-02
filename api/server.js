@@ -177,6 +177,69 @@ app.get('/api/events/:id', async (req, res) => {
   }
 })
 
+// GET /api/events/:id/attendees - получить список кто идет на событие
+app.get('/api/events/:id/attendees', async (req, res) => {
+  try {
+    const { id } = req.params
+    const result = await pool.query(
+      'SELECT user_id, created_at FROM attendees WHERE event_id = $1 ORDER BY created_at DESC',
+      [id]
+    )
+    res.json(result.rows.map(row => ({
+      userId: row.user_id,
+      createdAt: row.created_at
+    })))
+  } catch (e) {
+    console.error('❌ Ошибка получения attendees:', e.message)
+    res.status(500).json({ error: e.message })
+  }
+})
+
+// GET /api/events/:id/attendees/:userId - проверка идет ли пользователь
+app.get('/api/events/:id/attendees/:userId', async (req, res) => {
+  try {
+    const { id, userId } = req.params
+    const result = await pool.query(
+      'SELECT 1 FROM attendees WHERE event_id = $1 AND user_id = $2 LIMIT 1',
+      [id, userId]
+    )
+    res.json({ going: result.rows.length > 0 })
+  } catch (e) {
+    console.error('❌ Ошибка проверки attendee:', e.message)
+    res.status(500).json({ error: e.message })
+  }
+})
+
+// POST /api/events/:id/attendees/:userId - добавить отметку "Пойду"
+app.post('/api/events/:id/attendees/:userId', async (req, res) => {
+  try {
+    const { id, userId } = req.params
+    await pool.query(
+      'INSERT INTO attendees (event_id, user_id) VALUES ($1, $2) ON CONFLICT (event_id, user_id) DO NOTHING',
+      [id, userId]
+    )
+    res.json({ success: true })
+  } catch (e) {
+    console.error('❌ Ошибка добавления attendee:', e.message)
+    res.status(500).json({ error: e.message })
+  }
+})
+
+// DELETE /api/events/:id/attendees/:userId - убрать отметку "Пойду"
+app.delete('/api/events/:id/attendees/:userId', async (req, res) => {
+  try {
+    const { id, userId } = req.params
+    await pool.query(
+      'DELETE FROM attendees WHERE event_id = $1 AND user_id = $2',
+      [id, userId]
+    )
+    res.json({ success: true })
+  } catch (e) {
+    console.error('❌ Ошибка удаления attendee:', e.message)
+    res.status(500).json({ error: e.message })
+  }
+})
+
 // Health check
 app.get('/health', async (req, res) => {
   try {
