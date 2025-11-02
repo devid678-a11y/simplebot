@@ -560,6 +560,23 @@ async function saveEvent(channel, text, imageUrls, postUrl, extraLinks) {
   }
   
   const parsed = parseRuDateTimeRange(text)
+  
+  // Проверка: должна быть конкретная дата (не только время)
+  if (!parsed || !parsed.startMs) {
+    console.log(`  ⏭ Пропущено (нет конкретной даты)`)
+    return { deduped: false, id: null, skipped: 'no_date' }
+  }
+  
+  // Проверка: событие должно быть не раньше завтра
+  const tomorrowStart = new Date()
+  tomorrowStart.setDate(tomorrowStart.getDate() + 1)
+  tomorrowStart.setHours(0, 0, 0, 0)
+  
+  if (parsed.startMs < tomorrowStart.getTime()) {
+    console.log(`  ⏭ Пропущено (дата раньше завтра)`)
+    return { deduped: false, id: null, skipped: 'too_early' }
+  }
+  
   const addrHeu = extractAddressHeuristic(text)
   // Приоритет: эвристика (более точная) > AI адрес
   const address = addrHeu || ai?.address || null
@@ -645,9 +662,39 @@ async function saveEvent(channel, text, imageUrls, postUrl, extraLinks) {
 
 function isDigestOrPromo(text) {
   const t = (text || '').toLowerCase()
+  
+  // Дайджесты и подборки
   if (/дайджест|подборк|итоги|\bтоп\b|лучшие|все события|сводк|расписаниe/.test(t)) return true
+  
+  // Промо и акции
   if (/акци|скидк|промо|\bаэрофлот\b|промокод|билеты от/.test(t)) return true
+  
+  // Слишком длинные посты (вероятно дайджесты)
   if ((t.match(/\n/g)||[]).length > 10) return true
+  
+  // Проверка на наличие конкретной даты (не только времени)
+  // Если есть только время без даты (например "с 10 до 20:00"), это не анонс события
+  const hasTimeOnly = /\b(с\s*)?(\d{1,2})[:.](\d{2})\s*(?:до|—|–|-)\s*(\d{1,2})[:.](\d{2})\b/.test(t)
+  const hasDate = /\b(сегодня|завтра|послезавтра|\d{1,2}[.\/-]\d{1,2}|\d{1,2}\s+(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря))\b/.test(t)
+  
+  // Если есть только время без даты, это не анонс
+  if (hasTimeOnly && !hasDate) {
+    // Исключение: если есть слова-маркеры события (концерт, выставка, лекция и т.д.)
+    const eventMarkers = /концерт|выставк|лекци|спектакл|кино|мастер[- ]класс|воркшоп|фестиваль|экскурс|квест|вечеринк|конференц/i.test(t)
+    if (!eventMarkers) {
+      return true // Пропускаем посты типа "парк работает с 10 до 20:00"
+    }
+  }
+  
+  // Если нет ни даты, ни времени - скорее всего не анонс
+  if (!hasDate && !hasTimeOnly) {
+    // Но если есть четкие маркеры события, пропускаем дальше
+    const eventMarkers = /концерт|выставк|лекци|спектакл|кино|мастер[- ]класс|воркшоп|фестиваль|экскурс|квест|вечеринк|конференц|анонс|приглашаем|ждем|встреча/i.test(t)
+    if (!eventMarkers) {
+      return true
+    }
+  }
+  
   return false
 }
 
@@ -743,6 +790,8 @@ async function main() {
           const r = await saveEvent(ch, p.text, p.imgs, p.postUrl, p.links)
           if (r.skipped === 'too_early') {
             console.log('  ⏭ Пропущено (дата раньше завтра)')
+          } else if (r.skipped === 'no_date') {
+            console.log('  ⏭ Пропущено (нет конкретной даты)')
           } else if (r.skipped === 'no_address') {
             // Уже логируется внутри saveEvent
           } else {
