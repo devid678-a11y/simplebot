@@ -80,6 +80,7 @@ app.get('/api/events', async (req, res) => {
     const orderBy = req.query.orderBy || 'start_at_millis'
     const order = req.query.order || 'desc'
     
+    // Показываем события: будущие ИЛИ без даты ИЛИ созданные недавно (в течение последних 30 дней)
     const query = `
       SELECT 
         id, title, description, start_at_millis, end_at_millis,
@@ -87,12 +88,12 @@ app.get('/api/events', async (req, res) => {
         geo_lat, geo_lng, geohash,
         categories, image_urls, links, source, dedupe_key, created_at
       FROM events
-      WHERE start_at_millis > $1
-      ORDER BY ${orderBy} ${order}
+      WHERE (start_at_millis IS NULL OR start_at_millis > $1 OR created_at > NOW() - INTERVAL '30 days')
+      ORDER BY ${orderBy === 'start_at_millis' ? 'COALESCE(start_at_millis, 9999999999999)' : orderBy} ${order}
       LIMIT $2
     `
     
-    const now = Date.now()
+    const now = Date.now() - (7 * 24 * 60 * 60 * 1000) // Показываем события на 7 дней назад и вперед
     const result = await pool.query(query, [now, limit])
     
     // Преобразуем данные в формат, похожий на Firestore
