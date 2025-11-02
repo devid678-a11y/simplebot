@@ -4,8 +4,40 @@ import cors from 'cors'
 import pg from 'pg'
 import dotenv from 'dotenv'
 import fs from 'fs'
+import crypto from 'crypto'
+import admin from 'firebase-admin'
 
 dotenv.config()
+
+// ===== Firebase Admin initialization =====
+// Встроенные credentials для Firebase (или используем переменные окружения)
+try {
+  const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH || './firebase-service-account.json'
+  if (fs.existsSync(serviceAccountPath)) {
+    const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'))
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount)
+    })
+    console.log('✅ Firebase Admin инициализирован из файла')
+  } else {
+    // Попробуем использовать переменные окружения или встроенные credentials
+    // Для Timeweb можно встроить credentials напрямую в код
+    const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON
+    if (serviceAccountJson) {
+      admin.initializeApp({
+        credential: admin.credential.cert(JSON.parse(serviceAccountJson))
+      })
+      console.log('✅ Firebase Admin инициализирован из переменной окружения')
+    } else {
+      console.warn('⚠️ Firebase Admin не инициализирован - авторизация через Telegram будет недоступна')
+    }
+  }
+} catch (e) {
+  console.warn('⚠️ Ошибка инициализации Firebase Admin:', e.message)
+}
+
+// Telegram Bot Token для проверки подписи WebApp
+const BOT_TOKEN = process.env.BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN || '8269219896:AAF3dVeZRJ__AFIOfI1_uyxyKsvmBMNIAg0'
 
 const { Pool } = pg
 const app = express()
@@ -311,11 +343,137 @@ app.delete('/api/events/:id/attendees/:userId', async (req, res) => {
   }
 })
 
+// POST /api/auth/telegram - авторизация через Telegram WebApp
+app.post('/api/auth/telegram', express.text({ type: '*/*', limit: '256kb' }), async (req, res) => {
+  try {
+    const initData = typeof req.body === 'string' ? req.body : (req.body?.initData || '')
+    if (!initData || typeof initData !== 'string') {
+      return res.status(400).json({ error: 'initData required' })
+    }
+    
+    // Verify Telegram signature per https://core.telegram.org/bots/webapps#validating-data-received-via-the-web-app
+    const urlParams = new URLSearchParams(initData)
+    const hash = urlParams.get('hash') || ''
+    urlParams.delete('hash')
+    const dataCheckString = Array.from(urlParams.entries())
+      .map(([k, v]) => `${k}=${v}`)
+      .sort()
+      .join('\n')
+    const secret = crypto.createHmac('sha256', 'WebAppData').update(BOT_TOKEN).digest()
+    const computed = crypto.createHmac('sha256', secret).update(dataCheckString).digest('hex')
+    
+    if (computed !== hash) {
+      console.warn('⚠️ Неверная подпись Telegram:', { computed, hash })
+      return res.status(401).json({ error: 'invalid_signature' })
+    }
+    
+    // Extract Telegram user
+    const userRaw = urlParams.get('user')
+    const tg = userRaw ? JSON.parse(userRaw) : null
+    const uid = String(tg?.id || 'anon')
+    const additionalClaims = { tg_id: tg?.id || null, tg_username: tg?.username || null }
+    
+    // Создаем Firebase Custom Token
+    if (!admin.apps.length) {
+      console.warn('⚠️ Firebase Admin не инициализирован - возвращаем ошибку')
+      return res.status(503).json({ error: 'firebase_not_configured' })
+    }
+    
+    const token = await admin.auth().createCustomToken(uid, additionalClaims)
+    console.log(`✅ Создан токен для пользователя: ${uid}`)
+    return res.json({ token })
+  } catch (e) {
+    console.error('❌ Ошибка авторизации Telegram:', e.message)
+    return res.status(500).json({ error: 'internal', message: e.message })
+  }
+})
+
+// POST /api/auth/exchange - обмен токена устройства на Firebase Custom Token
+app.post('/api/auth/exchange', async (req, res) => {
+  try {
+    const body = typeof req.body === 'object' ? req.body : {}
+    const token = String(body.token || '')
+    
+    if (!token) {
+      return res.status(400).json({ error: 'token_required' })
+    }
+    
+    // Проверяем токен в PostgreSQL (таблица link_tokens)
+    // Если таблицы нет, создаем простой токен на основе device UID
+    let uid = null
+    
+    try {
+      // Проверяем, есть ли таблица link_tokens
+      const tableCheck = await pool.query(`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = 'link_tokens'
+        )
+      `)
+      
+      if (tableCheck.rows[0]?.exists) {
+        // Используем таблицу link_tokens
+        const result = await pool.query(
+          'SELECT uid, created_at, used, ttl_ms FROM link_tokens WHERE token = $1 LIMIT 1',
+          [token]
+        )
+        
+        if (result.rows.length > 0) {
+          const row = result.rows[0]
+          if (row.used) {
+            return res.status(400).json({ error: 'token_used' })
+          }
+          
+          const created = row.created_at ? new Date(row.created_at).getTime() : Date.now()
+          const ttlMs = row.ttl_ms || 0
+          if (ttlMs && (Date.now() - created > ttlMs)) {
+            return res.status(400).json({ error: 'expired' })
+          }
+          
+          uid = String(row.uid || '')
+          
+          // Помечаем токен как использованный
+          await pool.query(
+            'UPDATE link_tokens SET used = true, used_at = NOW() WHERE token = $1',
+            [token]
+          )
+        }
+      }
+    } catch (e) {
+      console.warn('⚠️ Ошибка проверки токена в БД:', e.message)
+    }
+    
+    // Если токен не найден в БД, используем сам токен как UID (для простоты)
+    if (!uid) {
+      uid = `device_${token}`
+    }
+    
+    if (!uid) {
+      return res.status(400).json({ error: 'invalid_token' })
+    }
+    
+    // Создаем Firebase Custom Token
+    if (!admin.apps.length) {
+      console.warn('⚠️ Firebase Admin не инициализирован - возвращаем ошибку')
+      return res.status(503).json({ error: 'firebase_not_configured' })
+    }
+    
+    const customToken = await admin.auth().createCustomToken(uid, { linked: true })
+    console.log(`✅ Создан токен для устройства: ${uid}`)
+    return res.json({ token: customToken })
+  } catch (e) {
+    console.error('❌ Ошибка обмена токена:', e.message)
+    return res.status(500).json({ error: 'internal', message: e.message })
+  }
+})
+
 // Health check
 app.get('/health', async (req, res) => {
   try {
     await pool.query('SELECT 1')
-    res.json({ status: 'ok', database: 'connected' })
+    const firebaseStatus = admin.apps.length > 0 ? 'initialized' : 'not_configured'
+    res.json({ status: 'ok', database: 'connected', firebase: firebaseStatus })
   } catch (e) {
     res.status(500).json({ status: 'error', message: e.message })
   }
@@ -329,9 +487,11 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`   GET /api/events - список событий`)
   console.log(`   GET /api/events/:id - одно событие`)
   console.log(`   GET /api/events/:id/attendees - список кто идет на событие`)
-  console.log(`   GET /api/events/:id/attendees/:userId - проверка идет ли пользователь`)
-  console.log(`   POST /api/events/:id/attendees/:userId - добавить отметку "Пойду"`)
-  console.log(`   DELETE /api/events/:id/attendees/:userId - убрать отметку "Пойду"`)
-  console.log(`   GET /health - проверка состояния`)
+    console.log(`   GET /api/events/:id/attendees/:userId - проверка идет ли пользователь`)
+    console.log(`   POST /api/events/:id/attendees/:userId - добавить отметку "Пойду"`)
+    console.log(`   DELETE /api/events/:id/attendees/:userId - убрать отметку "Пойду"`)
+    console.log(`   POST /api/auth/telegram - авторизация через Telegram`)
+    console.log(`   POST /api/auth/exchange - обмен токена устройства`)
+    console.log(`   GET /health - проверка состояния`)
 })
 
