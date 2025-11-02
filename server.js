@@ -317,8 +317,9 @@ app.get('/health', async (req, res) => {
   }
 })
 
-const PORT = process.env.PORT || 3000
-app.listen(PORT, () => {
+// PORT встроен для Timeweb (по умолчанию 3000, но Timeweb может использовать другой порт из переменной окружения)
+const PORT = process.env.PORT || process.env.PORT_HTTP || 3000
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 API сервер запущен на порту ${PORT}`)
   console.log(`📡 Endpoints:`)
   console.log(`   GET /api/events - список событий`)
