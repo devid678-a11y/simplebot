@@ -3,7 +3,7 @@ import { doc, setDoc, deleteDoc } from 'firebase/firestore'
 import { db, auth } from '../firebase'
 import { Link } from 'react-router-dom'
 import { linkify } from '../utils/text'
-import { formatEventDateText } from '../utils/datetime'
+import { formatEventDateText, formatTimeUntilEvent } from '../utils/datetime'
 
 type Ev = { id: string; title: string; startAtMillis: number; location?: string; isOnline?: boolean }
 
@@ -22,24 +22,8 @@ export default function Explore() {
   const [loadingFeed, setLoadingFeed] = useState(false)
   const [goingMap, setGoingMap] = useState<Record<string, boolean>>({})
   useEffect(() => {
-    // Очищаем старые URL из localStorage ПЕРЕД использованием
-    try {
-      const oldApiBase = localStorage.getItem('API_BASE')
-      const oldApiBase2 = localStorage.getItem('api_base')
-      if (oldApiBase && (oldApiBase.includes('a491') || oldApiBase.includes('6b55'))) {
-        localStorage.removeItem('API_BASE')
-      }
-      if (oldApiBase2 && (oldApiBase2.includes('a491') || oldApiBase2.includes('6b55'))) {
-        localStorage.removeItem('api_base')
-      }
-    } catch {}
-    
-    // Используем ТОЛЬКО Timeweb API сервер (всегда новый URL)
-    const DEFAULT_API = 'https://devid678-a11y-simplebot-0a93.twc1.net'
-    
-    // Определяем API base - всегда используем новый URL
-    const envBase = import.meta.env.VITE_API_BASE as string
-    const apiBase = envBase || DEFAULT_API
+    // ВСЕГДА используем новый URL Timeweb API (жестко прописан)
+    const apiBase = 'https://devid678-a11y-simplebot-0a93.twc1.net'
     const apiUrl = `${apiBase}/api/events`
     
     async function fetchEvents() {
@@ -89,6 +73,29 @@ export default function Explore() {
               })
             }
             setEventsMain(events)
+            
+            // Загружаем статусы "Пойду" для всех событий (если пользователь авторизован)
+            // Проверяем авторизацию через короткий таймаут, чтобы дождаться инициализации Firebase
+            setTimeout(() => {
+              const uid = auth.currentUser?.uid
+              if (uid && events.length > 0) {
+                const checkPromises = events.slice(0, 20).map(async (e: any) => {
+                  try {
+                    const checkUrl = `${apiBase}/api/events/${e.id}/attendees/${uid}`
+                    const checkRes = await fetch(checkUrl)
+                    if (checkRes.ok) {
+                      const checkData = await checkRes.json()
+                      if (checkData.going) {
+                        setGoingMap(s => ({ ...s, [e.id]: true }))
+                      }
+                    }
+                  } catch (e) {
+                    // Игнорируем ошибки проверки
+                  }
+                })
+                Promise.all(checkPromises).catch(() => {})
+              }
+            }, 500)
           } else {
             console.warn('[Explore] Данные не массив:', data)
             setEventsMain([])
@@ -188,9 +195,7 @@ export default function Explore() {
 
   // Helper to resolve API base - всегда используем новый URL
   function getApiBase() {
-    const DEFAULT_API = 'https://devid678-a11y-simplebot-0a93.twc1.net'
-    const envBase = import.meta.env.VITE_API_BASE as string
-    return envBase || DEFAULT_API
+    return 'https://devid678-a11y-simplebot-0a93.twc1.net'
   }
 
   // Fetch feed by preset
@@ -222,19 +227,62 @@ export default function Explore() {
   }, [nearby, pos])
 
   async function toggleGoing(eid: string) {
-    const uid = auth.currentUser?.uid; if (!uid) { alert('Войдите для отметки'); return }
-    const DEFAULT_API = 'https://devid678-a11y-simplebot-0a93.twc1.net'
-    const envBase = import.meta.env.VITE_API_BASE as string
-    const apiBase = envBase || DEFAULT_API
+    // Используем Firebase UID или device UID как fallback
+    let uid = auth.currentUser?.uid
+    let telegramId: string | null = null
+    
+    // Пытаемся получить Telegram ID из Firebase claims или из WebApp
+    try {
+      const idTokenResult = await auth.currentUser?.getIdTokenResult()
+      telegramId = idTokenResult?.claims?.tg_id as string || null
+      
+      // Если нет в claims, пытаемся получить из Telegram WebApp
+      if (!telegramId && typeof window !== 'undefined') {
+        const WebApp = (window as any).Telegram?.WebApp
+        if (WebApp?.initDataUnsafe?.user?.id) {
+          telegramId = String(WebApp.initDataUnsafe.user.id)
+        }
+      }
+    } catch (e) {
+      console.warn('Не удалось получить Telegram ID:', e)
+    }
+    
+    if (!uid) {
+      // Пробуем анонимную авторизацию если не авторизованы
+      try {
+        const { signInAnonymously } = await import('firebase/auth')
+        const { auth: authInstance } = await import('../firebase')
+        await signInAnonymously(authInstance)
+        uid = authInstance.currentUser?.uid
+      } catch (e) {
+        console.error('Ошибка анонимной авторизации:', e)
+        alert('Войдите для отметки')
+        return
+      }
+    }
+    
+    if (!uid) {
+      alert('Не удалось получить ID пользователя')
+      return
+    }
+    
+    const apiBase = 'https://devid678-a11y-simplebot-0a93.twc1.net'
     const isGoing = !!goingMap[eid]
     try {
       const url = `${apiBase}/api/events/${eid}/attendees/${uid}`
-      if (isGoing) {
-        await fetch(url, { method: 'DELETE' })
+      const response = isGoing 
+        ? await fetch(url, { method: 'DELETE' })
+        : await fetch(url, { 
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ telegramId })
+          })
+      
+      if (response.ok) {
+        setGoingMap(s => ({ ...s, [eid]: !isGoing }))
       } else {
-        await fetch(url, { method: 'POST' })
+        throw new Error(`HTTP ${response.status}`)
       }
-      setGoingMap(s => ({ ...s, [eid]: !isGoing }))
     } catch (e) {
       console.error('Ошибка обновления статуса:', e)
       alert('Не удалось обновить статус')
@@ -266,8 +314,9 @@ export default function Explore() {
       {loadingFeed && <div className="muted">Загрузка…</div>}
       {!loadingFeed && preset && feedItems.length === 0 && <div className="muted">Нет подборок для выбранного пресета</div>}
       {!loadingFeed && nearby && feedItems.length === 0 && <div className="muted">Рядом ничего не найдено</div>}
+      {!loadingFeed && !preset && !nearby && filtered.length === 0 && <div className="muted">События не найдены</div>}
       <div style={{ display: 'grid', gap: 12 }}>
-        {(preset || nearby ? feedItems : filtered).map((e:any) => (
+        {((preset || nearby) && feedItems.length > 0 ? feedItems : filtered).map((e:any) => (
           <div key={e.id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
             {(e.createdBy || e.createdByDisplayName || e.createdByPhotoUrl) && (
               <div className="row" style={{ alignItems:'center', gap:10, padding:'10px 12px' }}>
@@ -288,9 +337,18 @@ export default function Explore() {
                 <Link to={`/event/${e.id}`} style={{ textDecoration:'none', color:'inherit' }} onClick={()=>sessionStorage.setItem('feedScroll',''+window.scrollY)}>
                   <div style={{ fontWeight: 700, marginBottom: 6 }}>{e.title}</div>
                 </Link>
-                <button onClick={()=>toggleGoing(e.id)} className="btn-ghost" style={{ padding:'6px 10px', borderRadius: 10 }}>Пойду</button>
+                <button onClick={()=>toggleGoing(e.id)} className="btn-ghost" style={{ padding:'6px 10px', borderRadius: 10 }}>
+                  {goingMap[e.id] ? 'Не пойду' : 'Пойду'}
+                </button>
               </div>
-              <div className="muted" style={{ fontSize: 13, marginBottom: 4 }}>{formatEventDateText(e)}</div>
+              <div className="muted" style={{ fontSize: 13, marginBottom: 4 }}>
+                {formatEventDateText(e)}
+                {e.startAtMillis && formatTimeUntilEvent(e.startAtMillis) && (
+                  <span style={{ marginLeft: 8, opacity: 0.7 }}>
+                    • {formatTimeUntilEvent(e.startAtMillis)}
+                  </span>
+                )}
+              </div>
               <div className="muted" style={{ fontSize: 13, marginBottom: 8 }}>
                 {e.isOnline ? 'Онлайн' : (
                   e.location ? (

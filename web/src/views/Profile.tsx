@@ -118,17 +118,9 @@ export default function Profile() {
     const deeplink = `https://t.me/${BOT_USERNAME}?start=acc_${encodeURIComponent(deviceUid)}`
     async function exchange() {
       try {
-        let base = (import.meta as any).env?.VITE_API_BASE || (globalThis as any).__API_BASE__ || 'https://devid678-a11y-simplebot-0a93.twc1.net'
-        try {
-          const url = new URL(location.href)
-          const q = url.searchParams.get('api')
-          if (q) { localStorage.setItem('API_BASE', q); base = base || q }
-          if (!base || base === 'https://devid678-a11y-simplebot-0a93.twc1.net') {
-            const s = localStorage.getItem('API_BASE')
-            if (s && !s.includes('a491') && !s.includes('6b55')) base = s
-          }
-        } catch {}
-        const url = base ? `${base}/api/auth/exchange` : 'https://devid678-a11y-simplebot-0a93.twc1.net/api/auth/exchange'
+        // ВСЕГДА используем новый URL Timeweb API (жестко прописан)
+        const base = 'https://devid678-a11y-simplebot-0a93.twc1.net'
+        const url = `${base}/api/auth/exchange`
         const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: deviceUid }) })
         if (!res.ok) { alert('Не удалось обменять токен. Откройте бота, нажмите Старт и попробуйте снова.'); return }
         const { token } = await res.json()

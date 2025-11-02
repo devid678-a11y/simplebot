@@ -315,10 +315,18 @@ app.get('/api/events/:id/attendees/:userId', async (req, res) => {
 app.post('/api/events/:id/attendees/:userId', async (req, res) => {
   try {
     const { id, userId } = req.params
+    const { telegramId } = req.body || {}
+    
+    // Сохраняем отметку "Пойду" с telegram_id если он передан
     await pool.query(
-      'INSERT INTO attendees (event_id, user_id) VALUES ($1, $2) ON CONFLICT (event_id, user_id) DO NOTHING',
-      [id, userId]
+      `INSERT INTO attendees (event_id, user_id, telegram_id) 
+       VALUES ($1, $2, $3) 
+       ON CONFLICT (event_id, user_id) 
+       DO UPDATE SET telegram_id = COALESCE(EXCLUDED.telegram_id, attendees.telegram_id)`,
+      [id, userId, telegramId || null]
     )
+    
+    console.log(`✅ Пользователь ${userId} отметил "Пойду" на событие ${id}${telegramId ? ` (telegram: ${telegramId})` : ''}`)
     res.json({ success: true })
   } catch (e) {
     console.error('❌ Ошибка добавления attendee:', e.message)
@@ -466,6 +474,132 @@ app.post('/api/auth/exchange', async (req, res) => {
   }
 })
 
+// POST /api/notifications/send - отправка уведомлений о предстоящих мероприятиях
+app.post('/api/notifications/send', async (req, res) => {
+  try {
+    const BOT_TOKEN = process.env.BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN || '8269219896:AAF3dVeZRJ__AFIOfI1_uyxyKsvmBMNIAg0'
+    const now = Date.now()
+    const in24Hours = now + (24 * 60 * 60 * 1000)
+    
+    // Находим мероприятия, которые начинаются в ближайшие 24 часа
+    const eventsQuery = `
+      SELECT 
+        id, title, description, start_at_millis, location, is_online,
+        image_urls, links
+      FROM events
+      WHERE start_at_millis >= $1 
+        AND start_at_millis <= $2
+        AND start_at_millis IS NOT NULL
+      ORDER BY start_at_millis ASC
+    `
+    
+    const eventsResult = await pool.query(eventsQuery, [now, in24Hours])
+    const events = eventsResult.rows
+    
+    if (events.length === 0) {
+      return res.json({ success: true, message: 'Нет мероприятий для уведомлений', sent: 0 })
+    }
+    
+    let totalSent = 0
+    let totalFailed = 0
+    
+    // Функция форматирования даты
+    function formatEventDateTime(startAtMillis) {
+      const date = new Date(startAtMillis)
+      const dayNames = ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота']
+      const monthNames = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря']
+      
+      const day = date.getDate()
+      const month = monthNames[date.getMonth()]
+      const dayName = dayNames[date.getDay()]
+      const hours = String(date.getHours()).padStart(2, '0')
+      const minutes = String(date.getMinutes()).padStart(2, '0')
+      
+      return `${day} ${month}, ${dayName} в ${hours}:${minutes}`
+    }
+    
+    // Отправка сообщения в Telegram
+    async function sendTelegramMessage(chatId, text) {
+      try {
+        const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text: text,
+            parse_mode: 'HTML',
+            disable_web_page_preview: false
+          })
+        })
+        return response.ok && (await response.json()).ok === true
+      } catch (e) {
+        return false
+      }
+    }
+    
+    // Обрабатываем каждое мероприятие
+    for (const event of events) {
+      const attendeesQuery = `
+        SELECT DISTINCT telegram_id
+        FROM attendees
+        WHERE event_id = $1 
+          AND telegram_id IS NOT NULL
+      `
+      
+      const attendeesResult = await pool.query(attendeesQuery, [event.id])
+      const attendees = attendeesResult.rows.filter(row => row.telegram_id)
+      
+      if (attendees.length === 0) continue
+      
+      const eventDate = formatEventDateTime(parseInt(event.start_at_millis, 10))
+      const locationText = event.is_online ? 'Онлайн' : (event.location || 'Адрес уточняется')
+      
+      let notificationText = `🎉 <b>Напоминание о мероприятии</b>\n\n`
+      notificationText += `📅 <b>${event.title}</b>\n\n`
+      notificationText += `🕐 ${eventDate}\n`
+      notificationText += `📍 ${locationText}\n\n`
+      
+      if (event.description) {
+        const desc = event.description.length > 200 
+          ? event.description.substring(0, 200) + '...' 
+          : event.description
+        notificationText += `${desc}\n\n`
+      }
+      
+      let eventLink = `https://dvizh-eacfa.web.app/event/${event.id}`
+      if (event.links) {
+        try {
+          const links = typeof event.links === 'string' ? JSON.parse(event.links) : event.links
+          if (Array.isArray(links) && links.length > 0 && links[0].url) {
+            eventLink = links[0].url
+          }
+        } catch {}
+      }
+      
+      notificationText += `👉 <a href="${eventLink}">Открыть мероприятие</a>`
+      
+      // Отправляем уведомления
+      for (const attendee of attendees) {
+        const sent = await sendTelegramMessage(attendee.telegram_id, notificationText)
+        if (sent) totalSent++
+        else totalFailed++
+        await new Promise(resolve => setTimeout(resolve, 100))
+      }
+    }
+    
+    res.json({ 
+      success: true, 
+      events: events.length, 
+      sent: totalSent, 
+      failed: totalFailed 
+    })
+  } catch (e) {
+    console.error('❌ Ошибка отправки уведомлений:', e.message)
+    res.status(500).json({ error: e.message })
+  }
+})
+
 // Health check
 app.get('/health', async (req, res) => {
   try {
@@ -490,6 +624,7 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log(`   DELETE /api/events/:id/attendees/:userId - убрать отметку "Пойду"`)
     console.log(`   POST /api/auth/telegram - авторизация через Telegram`)
     console.log(`   POST /api/auth/exchange - обмен токена устройства`)
+    console.log(`   POST /api/notifications/send - отправка уведомлений о мероприятиях`)
     console.log(`   GET /health - проверка состояния`)
 })
 

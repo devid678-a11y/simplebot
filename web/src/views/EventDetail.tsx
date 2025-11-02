@@ -2,7 +2,7 @@ import { addDoc, collection, deleteDoc, doc, setDoc, getDoc } from 'firebase/fir
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { auth, db } from '../firebase'
-import { formatEventDateText } from '../utils/datetime'
+import { formatEventDateText, formatTimeUntilEvent } from '../utils/datetime'
 import { linkify } from '../utils/text'
 
 export default function EventDetail() {
@@ -17,10 +17,8 @@ export default function EventDetail() {
   useEffect(() => {
     if (!realId) return
     
-    // Используем Timeweb API для получения события из PostgreSQL
-    const DEFAULT_API = 'https://devid678-a11y-simplebot-0a93.twc1.net'
-    const envBase = import.meta.env.VITE_API_BASE as string
-    const apiBase = envBase || DEFAULT_API
+    // ВСЕГДА используем новый URL Timeweb API (жестко прописан)
+    const apiBase = 'https://devid678-a11y-simplebot-0a93.twc1.net'
     
     async function fetchEvent() {
       try {
@@ -57,10 +55,8 @@ export default function EventDetail() {
     const uid = auth.currentUser?.uid
     if (!uid) return
     
-    // Используем API для проверки отметки "Пойду"
-    const DEFAULT_API = 'https://devid678-a11y-simplebot-0a93.twc1.net'
-    const envBase = import.meta.env.VITE_API_BASE as string
-    const apiBase = envBase || DEFAULT_API
+    // ВСЕГДА используем новый URL Timeweb API (жестко прописан)
+    const apiBase = 'https://devid678-a11y-simplebot-0a93.twc1.net'
     
     async function checkGoing() {
       try {
@@ -84,10 +80,8 @@ export default function EventDetail() {
       const uid = auth.currentUser?.uid
       if (!uid || !realId) return
       
-      // Используем API для отметки "Пойду"
-      const DEFAULT_API = 'https://devid678-a11y-simplebot-0a93.twc1.net'
-      const envBase = import.meta.env.VITE_API_BASE as string
-      const apiBase = envBase || DEFAULT_API
+      // ВСЕГДА используем новый URL Timeweb API (жестко прописан)
+      const apiBase = 'https://devid678-a11y-simplebot-0a93.twc1.net'
       const url = `${apiBase}/api/events/${realId}/attendees/${uid}`
       
       if (going) {
@@ -121,7 +115,14 @@ export default function EventDetail() {
         )}
         <div style={{ padding: 16 }}>
         <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>{event.title}</div>
-        <div className="muted" style={{ marginBottom: 4 }}>{formatEventDateText(event)}</div>
+        <div className="muted" style={{ marginBottom: 4 }}>
+          {formatEventDateText(event)}
+          {event.startAtMillis && formatTimeUntilEvent(event.startAtMillis) && (
+            <span style={{ marginLeft: 8, opacity: 0.7 }}>
+              • {formatTimeUntilEvent(event.startAtMillis)}
+            </span>
+          )}
+        </div>
         <div className="muted">{event.isOnline ? 'Онлайн' : (event.location || '—')}</div>
         {event.description && (
           <p style={{ marginTop: 12, whiteSpace: 'pre-wrap' }}

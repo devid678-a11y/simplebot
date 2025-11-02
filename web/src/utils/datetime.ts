@@ -53,4 +53,91 @@ export function formatEventDateText(event: any): string {
   return 'Дата уточняется'
 }
 
+/**
+ * Форматирует время до мероприятия в удобочитаемый формат
+ * Примеры: "через 3 дня, пятница", "через неделю, пятница", "завтра", "сегодня"
+ */
+export function formatTimeUntilEvent(startAtMillis: number | null | undefined): string {
+  if (!startAtMillis || typeof startAtMillis !== 'number' || !isFinite(startAtMillis)) {
+    return ''
+  }
+  
+  const now = Date.now()
+  const eventDate = new Date(startAtMillis)
+  const diffMs = startAtMillis - now
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+  
+  const dayNames = ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота']
+  const dayName = dayNames[eventDate.getDay()]
+  
+  if (diffDays < 0) {
+    // Прошедшее событие
+    return ''
+  } else if (diffDays === 0) {
+    return `сегодня, ${dayName}`
+  } else if (diffDays === 1) {
+    return `завтра, ${dayName}`
+  } else if (diffDays === 2) {
+    return `послезавтра, ${dayName}`
+  } else if (diffDays < 7) {
+    return `через ${diffDays} ${getDayWord(diffDays)}, ${dayName}`
+  } else if (diffDays === 7) {
+    return `через неделю, ${dayName}`
+  } else if (diffDays < 14) {
+    return `через ${diffDays} ${getDayWord(diffDays)}, ${dayName}`
+  } else if (diffDays < 30) {
+    const weeks = Math.floor(diffDays / 7)
+    return `через ${weeks} ${getWeekWord(weeks)}, ${dayName}`
+  } else {
+    const months = Math.floor(diffDays / 30)
+    return `через ${months} ${getMonthWord(months)}, ${dayName}`
+  }
+}
 
+function getDayWord(days: number): string {
+  const lastDigit = days % 10
+  const lastTwoDigits = days % 100
+  
+  if (lastTwoDigits >= 11 && lastTwoDigits <= 14) {
+    return 'дней'
+  }
+  if (lastDigit === 1) {
+    return 'день'
+  }
+  if (lastDigit >= 2 && lastDigit <= 4) {
+    return 'дня'
+  }
+  return 'дней'
+}
+
+function getWeekWord(weeks: number): string {
+  const lastDigit = weeks % 10
+  const lastTwoDigits = weeks % 100
+  
+  if (lastTwoDigits >= 11 && lastTwoDigits <= 14) {
+    return 'недель'
+  }
+  if (lastDigit === 1) {
+    return 'неделю'
+  }
+  if (lastDigit >= 2 && lastDigit <= 4) {
+    return 'недели'
+  }
+  return 'недель'
+}
+
+function getMonthWord(months: number): string {
+  const lastDigit = months % 10
+  const lastTwoDigits = months % 100
+  
+  if (lastTwoDigits >= 11 && lastTwoDigits <= 14) {
+    return 'месяцев'
+  }
+  if (lastDigit === 1) {
+    return 'месяц'
+  }
+  if (lastDigit >= 2 && lastDigit <= 4) {
+    return 'месяца'
+  }
+  return 'месяцев'
+}
