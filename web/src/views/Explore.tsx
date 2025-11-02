@@ -22,30 +22,98 @@ export default function Explore() {
   const [loadingFeed, setLoadingFeed] = useState(false)
   const [goingMap, setGoingMap] = useState<Record<string, boolean>>({})
   useEffect(() => {
-    // Используем ТОЛЬКО PostgreSQL через API (без fallback на Firestore)
-    const apiBase = import.meta.env.VITE_API_BASE || 'https://devid678-a11y-simplebot-cfb4.twc1.net'
+    // Очищаем старые URL из localStorage ПЕРЕД использованием
+    try {
+      const oldApiBase = localStorage.getItem('API_BASE')
+      const oldApiBase2 = localStorage.getItem('api_base')
+      if (oldApiBase && (oldApiBase.includes('a491') || oldApiBase.includes('6b55'))) {
+        localStorage.removeItem('API_BASE')
+      }
+      if (oldApiBase2 && (oldApiBase2.includes('a491') || oldApiBase2.includes('6b55'))) {
+        localStorage.removeItem('api_base')
+      }
+    } catch {}
+    
+    // Используем ТОЛЬКО Timeweb API сервер (всегда новый URL)
+    const DEFAULT_API = 'https://devid678-a11y-simplebot-0a93.twc1.net'
+    
+    // Определяем API base - всегда используем новый URL
+    const envBase = import.meta.env.VITE_API_BASE as string
+    const apiBase = envBase || DEFAULT_API
+    const apiUrl = `${apiBase}/api/events`
     
     async function fetchEvents() {
       try {
-        const response = await fetch(`${apiBase}/api/events?limit=50&orderBy=start_at_millis&order=desc`)
+        console.log(`[Explore] Запрос событий из ${apiUrl}`)
+        const response = await fetch(`${apiUrl}?limit=50&orderBy=start_at_millis&order=desc`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
+        
+        console.log(`[Explore] Ответ API: status=${response.status}, ok=${response.ok}`)
+        
         if (response.ok) {
           const data = await response.json()
-          const events = data.map((e: any) => ({
-            id: e.id,
-            title: e.title,
-            startAtMillis: e.startAtMillis,
-            location: e.location,
-            isOnline: e.isOnline,
-            ...e
-          })) as Ev[]
-          setEventsMain(events)
+          console.log(`[Explore] Получено событий: ${data?.length || 0}`)
+          
+          if (Array.isArray(data)) {
+            const events = data.map((e: any) => {
+              // Преобразуем startAtMillis в число если нужно
+              const startMs = e.startAtMillis != null ? (typeof e.startAtMillis === 'string' ? parseInt(e.startAtMillis, 10) : e.startAtMillis) : null
+              
+              return {
+                id: e.id,
+                title: e.title || 'Без названия',
+                startAtMillis: startMs,
+                location: e.location,
+                isOnline: e.isOnline === true || e.isOnline === 'true',
+                isFree: e.isFree === true || e.isFree === 'true' || e.price === 0,
+                price: e.price || 0,
+                description: e.description,
+                geo: e.geo,
+                categories: Array.isArray(e.categories) ? e.categories : [],
+                imageUrls: Array.isArray(e.imageUrls) ? e.imageUrls : [],
+                ...e
+              }
+            }) as Ev[]
+            
+            console.log(`[Explore] Обработано событий: ${events.length}`)
+            if (events.length > 0) {
+              console.log(`[Explore] Первое событие:`, {
+                id: events[0].id,
+                title: events[0].title,
+                startAtMillis: events[0].startAtMillis,
+                type: typeof events[0].startAtMillis
+              })
+            }
+            setEventsMain(events)
+          } else {
+            console.warn('[Explore] Данные не массив:', data)
+            setEventsMain([])
+          }
         } else {
-          console.warn('API вернул ошибку:', response.status)
+          const errorText = await response.text()
+          console.warn('[Explore] API вернул ошибку:', response.status, errorText)
           setEventsMain([])
         }
-      } catch (e) {
-        console.error('Ошибка загрузки событий из API:', e)
-        setEventsMain([]) // Показываем пустой список вместо fallback на Firestore
+      } catch (e: any) {
+        console.error('[Explore] Ошибка загрузки событий из API:', e.message)
+        console.error('[Explore] Детали ошибки:', {
+          message: e.message,
+          stack: e.stack,
+          name: e.name
+        })
+        
+        // Не используем HTTP fallback - браузер заблокирует Mixed Content
+        // Проблема должна быть решена на стороне API сервера (SSL сертификат)
+        console.warn('[Explore] API недоступен. Проверьте:')
+        console.warn('  1. Запущен ли API сервер в Timeweb')
+        console.warn('  2. Настроен ли SSL сертификат')
+        console.warn('  3. Правильный ли URL API')
+        
+        setEventsMain([]) // Показываем пустой список
       }
     }
     
@@ -82,10 +150,12 @@ export default function Explore() {
   }
 
   const filtered = useMemo(() => {
+    console.log(`[Explore] Фильтрация: всего событий=${events.length}, today=${today}, weekend=${weekend}, freeOnly=${freeOnly}, nearby=${nearby}, query="${queryText}"`)
     const q = queryText.trim().toLowerCase()
-    return events.filter((e:any) => {
-      if (today && !isToday(e.startAtMillis)) return false
-      if (weekend && !isWeekend(e.startAtMillis)) return false
+    const result = events.filter((e:any) => {
+      // Проверка валидности startAtMillis
+      if (today && e.startAtMillis != null && !isToday(e.startAtMillis)) return false
+      if (weekend && e.startAtMillis != null && !isWeekend(e.startAtMillis)) return false
       if (freeOnly && !((e.isFree===true) || (e.price===0))) return false
       if (nearby && feedItems.length===0) {
         const geo = e.geo; if (!geo || pos==null) return false
@@ -96,14 +166,16 @@ export default function Explore() {
           e.title || '',
           (e.description || ''),
           (typeof e.location === 'string' ? e.location : ''),
-          (typeof e.startAtMillis === 'number' ? new Date(e.startAtMillis).toLocaleDateString('ru-RU') : ''),
-          (typeof e.startAtMillis === 'number' ? new Date(e.startAtMillis).toLocaleString('ru-RU') : '')
+          (e.startAtMillis != null && typeof e.startAtMillis === 'number' ? new Date(e.startAtMillis).toLocaleDateString('ru-RU') : ''),
+          (e.startAtMillis != null && typeof e.startAtMillis === 'number' ? new Date(e.startAtMillis).toLocaleString('ru-RU') : '')
         ].join('\n').toLowerCase()
         if (!hay.includes(q)) return false
       }
       return true
     })
-  }, [events, today, weekend, freeOnly, nearby, pos, queryText])
+    console.log(`[Explore] После фильтрации: ${result.length} событий`)
+    return result
+  }, [events, today, weekend, freeOnly, nearby, pos, queryText, feedItems])
 
   // Восстановление позиции прокрутки после возврата со страницы события
   useEffect(() => {
@@ -114,10 +186,11 @@ export default function Explore() {
     }
   }, [])
 
-  // Helper to resolve API base
+  // Helper to resolve API base - всегда используем новый URL
   function getApiBase() {
-    const base = (import.meta.env.VITE_API_BASE as string) || (localStorage.getItem('api_base') || '')
-    return base || ''
+    const DEFAULT_API = 'https://devid678-a11y-simplebot-0a93.twc1.net'
+    const envBase = import.meta.env.VITE_API_BASE as string
+    return envBase || DEFAULT_API
   }
 
   // Fetch feed by preset
@@ -150,7 +223,9 @@ export default function Explore() {
 
   async function toggleGoing(eid: string) {
     const uid = auth.currentUser?.uid; if (!uid) { alert('Войдите для отметки'); return }
-    const apiBase = import.meta.env.VITE_API_BASE || 'https://devid678-a11y-simplebot-cfb4.twc1.net'
+    const DEFAULT_API = 'https://devid678-a11y-simplebot-0a93.twc1.net'
+    const envBase = import.meta.env.VITE_API_BASE as string
+    const apiBase = envBase || DEFAULT_API
     const isGoing = !!goingMap[eid]
     try {
       const url = `${apiBase}/api/events/${eid}/attendees/${uid}`

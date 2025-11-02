@@ -11,8 +11,26 @@ export async function signInWithTelegram() {
       await signInAnonymously(auth)
       return
     }
-    const base = ((import.meta as any).env?.VITE_API_BASE as string) || (globalThis as any).__API_BASE__ || ''
-    const url = base ? `${base}/api/auth/telegram` : '/api/auth/telegram'
+    // Определяем базовый URL API: ВСЕГДА используем новый URL
+    const DEFAULT_API_BASE = 'https://devid678-a11y-simplebot-0a93.twc1.net'
+    
+    // Очищаем старые URL из localStorage ПЕРЕД использованием
+    try {
+      const oldApiBase = localStorage.getItem('API_BASE')
+      const oldApiBase2 = localStorage.getItem('api_base')
+      if (oldApiBase && (oldApiBase.includes('a491') || oldApiBase.includes('6b55'))) {
+        localStorage.removeItem('API_BASE')
+      }
+      if (oldApiBase2 && (oldApiBase2.includes('a491') || oldApiBase2.includes('6b55'))) {
+        localStorage.removeItem('api_base')
+      }
+    } catch {}
+    
+    // Всегда используем новый URL по умолчанию
+    const envBase = (import.meta as any).env?.VITE_API_BASE as string
+    const base = envBase || DEFAULT_API_BASE
+    
+    const url = `${base}/api/auth/telegram`
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },

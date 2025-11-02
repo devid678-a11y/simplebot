@@ -172,3 +172,10 @@ const Delivery: React.FC = () => {
 
 export default Delivery;
 
+
+
+
+
+
+
+

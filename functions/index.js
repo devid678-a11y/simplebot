@@ -3791,3 +3791,157 @@ exports.importAfishaRuHttp = functions.https.onRequest(async (req, res) => {
     try { const result = await importAfishaRuEvents(); res.json(result); }
     catch(e){ res.status(500).json({ success:false, error: e.message }); }
 });
+
+// Прокси для получения событий из PostgreSQL (обход проблемы SSL с Timeweb API)
+// Используем v1 functions для работы на бесплатном плане
+exports.getEvents = functions.https.onRequest(async (req, res) => {
+    try {
+        // CORS заголовки
+        res.set('Access-Control-Allow-Origin', '*');
+        res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+        res.set('Access-Control-Allow-Headers', 'Content-Type');
+        
+        if (req.method === 'OPTIONS') {
+            res.status(204).send('');
+            return;
+        }
+        
+        // Подключаемся напрямую к PostgreSQL из Firebase Functions
+        const { Pool } = require('pg');
+        const pool = new Pool({
+            host: '7cedb753215efecb1de53f8c.twc1.net',
+            port: 5432,
+            database: 'default_db',
+            user: 'gen_user',
+            password: 'c%-5Yc01xe*Bdf',
+            ssl: { rejectUnauthorized: false },
+            max: 5,
+            idleTimeoutMillis: 30000
+        });
+        
+        const limit = parseInt(req.query.limit || '50', 10);
+        const orderBy = req.query.orderBy || 'start_at_millis';
+        const order = req.query.order || 'desc';
+        
+        const now = Date.now() - (7 * 24 * 60 * 60 * 1000);
+        const query = `
+            SELECT 
+                id, title, description, start_at_millis, end_at_millis,
+                is_free, price, is_online, location, 
+                geo_lat, geo_lng, geohash,
+                categories, image_urls, links, source, dedupe_key, created_at
+            FROM events
+            WHERE (start_at_millis IS NULL OR start_at_millis > $1 OR created_at > NOW() - INTERVAL '30 days')
+            ORDER BY ${orderBy === 'start_at_millis' ? 'COALESCE(start_at_millis, 9999999999999)' : orderBy} ${order}
+            LIMIT $2
+        `;
+        
+        const result = await pool.query(query, [now, limit]);
+        
+        // Преобразуем данные
+        const events = result.rows.map(row => {
+            const startAtMillis = row.start_at_millis != null ? parseInt(row.start_at_millis, 10) : null;
+            const endAtMillis = row.end_at_millis != null ? parseInt(row.end_at_millis, 10) : null;
+            
+            let links = [];
+            if (row.links) {
+                if (typeof row.links === 'string') {
+                    try { links = JSON.parse(row.links); } catch {}
+                } else if (Array.isArray(row.links)) {
+                    links = row.links;
+                }
+            }
+            
+            let source = row.source;
+            if (typeof row.source === 'string') {
+                try { source = JSON.parse(row.source); } catch {}
+            }
+            
+            return {
+                id: row.id,
+                title: row.title,
+                description: row.description,
+                startAtMillis: startAtMillis,
+                endAtMillis: endAtMillis,
+                isFree: row.is_free === true || row.is_free === 'true',
+                price: row.price != null ? parseInt(row.price, 10) : 0,
+                isOnline: row.is_online === true || row.is_online === 'true',
+                location: row.location,
+                geo: (row.geo_lat && row.geo_lng) ? { lat: parseFloat(row.geo_lat), lng: parseFloat(row.geo_lng) } : null,
+                geohash: row.geohash,
+                categories: Array.isArray(row.categories) ? row.categories : (row.categories ? [row.categories] : []),
+                imageUrls: Array.isArray(row.image_urls) ? row.image_urls : (row.image_urls ? [row.image_urls] : []),
+                links: links,
+                source: source,
+                createdAt: row.created_at ? {
+                    _seconds: Math.floor(new Date(row.created_at).getTime() / 1000),
+                    _nanoseconds: 0
+                } : null
+            };
+        });
+        
+        await pool.end();
+        res.json(events);
+    } catch (e) {
+        console.error('❌ Ошибка получения событий:', e.message);
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Получить одно событие по ID
+exports.getEvent = functions.https.onRequest(async (req, res) => {
+    try {
+        res.set('Access-Control-Allow-Origin', '*');
+        
+        // Получаем ID из query параметра или из пути
+        const eventId = req.query.id || req.path.split('/').filter(p => p && p !== 'getEvent').pop();
+        if (!eventId) {
+            return res.status(400).json({ error: 'Event ID required' });
+        }
+        
+        const { Pool } = require('pg');
+        const pool = new Pool({
+            host: '7cedb753215efecb1de53f8c.twc1.net',
+            port: 5432,
+            database: 'default_db',
+            user: 'gen_user',
+            password: 'c%-5Yc01xe*Bdf',
+            ssl: { rejectUnauthorized: false },
+            max: 5
+        });
+        
+        const result = await pool.query('SELECT * FROM events WHERE id = $1 LIMIT 1', [eventId]);
+        await pool.end();
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Event not found' });
+        }
+        
+        const row = result.rows[0];
+        const event = {
+            id: row.id,
+            title: row.title,
+            description: row.description,
+            startAtMillis: row.start_at_millis != null ? parseInt(row.start_at_millis, 10) : null,
+            endAtMillis: row.end_at_millis != null ? parseInt(row.end_at_millis, 10) : null,
+            isFree: row.is_free === true,
+            price: row.price || 0,
+            isOnline: row.is_online === true,
+            location: row.location,
+            geo: (row.geo_lat && row.geo_lng) ? { lat: parseFloat(row.geo_lat), lng: parseFloat(row.geo_lng) } : null,
+            categories: Array.isArray(row.categories) ? row.categories : [],
+            imageUrls: Array.isArray(row.image_urls) ? row.image_urls : [],
+            links: typeof row.links === 'string' ? JSON.parse(row.links) : (Array.isArray(row.links) ? row.links : []),
+            source: typeof row.source === 'string' ? JSON.parse(row.source) : row.source,
+            createdAt: row.created_at ? {
+                _seconds: Math.floor(new Date(row.created_at).getTime() / 1000),
+                _nanoseconds: 0
+            } : null
+        };
+        
+        res.json(event);
+    } catch (e) {
+        console.error('❌ Ошибка получения события:', e.message);
+        res.status(500).json({ error: e.message });
+    }
+});

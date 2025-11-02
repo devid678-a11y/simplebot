@@ -13,8 +13,9 @@ dotenv.config()
 const BOT_TOKEN = process.env.BOT_TOKEN || '8269219896:AAF3dVeZRJ__AFIOfI1_uyxyKsvmBMNIAg0'
 const PORT = process.env.PORT || 3000
 // Timeweb AI (или любой OpenAI-совместимый провайдер)
-const AI_URL = process.env.TIMEWEB_AI_URL || process.env.AI_URL || ''
-const AI_TOKEN = process.env.TIMEWEB_AI_TOKEN || process.env.AI_TOKEN || ''
+// Значения по умолчанию для Timeweb AI агента (OpenAI-совместимый endpoint)
+const AI_URL = process.env.TIMEWEB_AI_URL || process.env.AI_URL || 'https://agent.timeweb.cloud/api/v1/cloud-ai/agents/3ef82647-9ad7-492b-a959-c5a78be61e2b/v1'
+const AI_TOKEN = process.env.TIMEWEB_AI_TOKEN || process.env.AI_TOKEN || 'sk-eyJhbGciOiJSUzUxMiIsInR5cCI6IkpXVCIsImtpZCI6IjFrYnhacFJNQGJSI0tSbE1xS1lqIn0.eyJ1c2VyIjoiYmM0NDU5MzUiLCJ0eXBlIjoiYXBpX2tleSIsImFwaV9rZXlfaWQiOiJlNDkzMzI1MS0wMjYxLTRmMDYtOTNlYy1iZDBlNzcxZGIzMTkiLCJpYXQiOjE3NjA4Nzc5NzF9.Jwy2CuZ5Rw5JzOPFDJlN62hQi2kX8Gb3hcdEW_S0UX4H6aJMbbYPLt8441pB6ckaCYrOBr8tOYZJNaJ98lN89ZmGvzmORCOHHrA96qX5QnEHniBXL_rpXZl6diiH2QQeJzavMrf9evpVKQ50gaYbX7MMVRKIM_fSlFBGC_UrHrauqRV_TMb2noDCqhQbOO8uWnHIAAWXHsBmZxqGJdn7KTfKiCvWHa_5wIn1UqWPe4tRs31JVzLG5TFLNCrzuxtRPmdBW50qa-zp3Yzo9qTLejK3UaQjMPSnXuIXeQEOqXHIXCi6Pt1wty_x7mP9DuHvgrjP2mm3JjkPvP1KXzyGG4j51BprKSCYwtmNlu5Sp-Jb7u39E9J3LTzPsoZrQcYqNWV3SMkBKutK_s21V2n6DKyhGjBmvggFLHUAQFahoAfeOGUR3PuuY3LWZ3aLckLJzebt4F0KAhqa_5iZz2oEwnwGm0Two7IkKurTUbZcpH95RmBI6NXQa3WfXEvl7iNz'
 const AI_MODEL = process.env.TIMEWEB_AI_MODEL || process.env.AI_MODEL || 'gpt-4o-mini'
 
 console.log('🚀 Запускаем простейшего бота...')
@@ -33,6 +34,158 @@ app.get('/', (req, res) => {
 app.get('/health', (req, res) => {
   res.status(200).send('ok')
 })
+// Feed presets and nearby search (MVP)
+app.get('/api/feed', async (req, res) => {
+  try {
+    if (!db) return res.status(503).json({ error: 'db_unavailable' })
+    const preset = String(req.query.preset || 'today_evening')
+    // Try cached_feeds
+    const cacheRef = db.collection('cached_feeds').doc(preset)
+    const cacheSnap = await cacheRef.get()
+    const now = Date.now()
+    const fifteenMin = 15 * 60 * 1000
+    if (cacheSnap.exists) {
+      const data = cacheSnap.data() || {}
+      const updated = data.updatedAt?.toDate?.()?.getTime?.() || 0
+      if (now - updated < fifteenMin) {
+        return res.json({ preset, items: data.items || [], cached: true })
+      }
+    }
+    // Build time window
+    const startOfDay = new Date()
+    startOfDay.setHours(0,0,0,0)
+    const endOfDay = new Date()
+    endOfDay.setHours(23,59,59,999)
+    let fromMs = Math.max(now, startOfDay.getTime())
+    let toMs = endOfDay.getTime()
+    if (preset === 'tomorrow_evening') {
+      const d = new Date(now + 24*60*60*1000); d.setHours(0,0,0,0)
+      const e = new Date(d); e.setHours(23,59,59,999)
+      fromMs = d.getTime(); toMs = e.getTime()
+    } else if (preset === 'weekend') {
+      // next Saturday 00:00 to Sunday 23:59
+      const d = new Date()
+      const day = d.getDay() // 0 Sun .. 6 Sat
+      const daysToSat = (6 - day + 7) % 7
+      const sat = new Date(d.getFullYear(), d.getMonth(), d.getDate() + daysToSat, 0,0,0,0)
+      const sun = new Date(sat.getFullYear(), sat.getMonth(), sat.getDate() + 1, 23,59,59,999)
+      fromMs = sat.getTime(); toMs = sun.getTime()
+    }
+    // Compute feed on demand
+    const result = await computeFeedPreset(preset, fromMs, toMs)
+    try { await cacheRef.set({ items: result, updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true }) } catch {}
+    return res.json({ preset, items: result, cached: false })
+  } catch (e) {
+    return res.status(500).json({ error: 'internal', message: e?.message || String(e) })
+  }
+})
+
+app.get('/api/nearby', async (req, res) => {
+  try {
+    if (!db) return res.status(503).json({ error: 'db_unavailable' })
+    const lat = parseFloat(String(req.query.lat || ''))
+    const lng = parseFloat(String(req.query.lng || ''))
+    const radiusKm = Math.min(20, Math.max(0.5, parseFloat(String(req.query.radiusKm || '2'))))
+    const now = Date.now()
+    const fromMs = Number(req.query.from || now)
+    const toMs = Number(req.query.to || (now + 3 * 24 * 60 * 60 * 1000))
+    const cat = String(req.query.cat || '')
+    if (!isFinite(lat) || !isFinite(lng)) return res.status(400).json({ error: 'lat_lng_required' })
+    function haversine(aLat, aLng, bLat, bLng) {
+      const toRad = v => v * Math.PI / 180
+      const R = 6371
+      const dLat = toRad(bLat - aLat)
+      const dLng = toRad(bLng - aLng)
+      const sa = Math.sin(dLat/2) ** 2 + Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) * Math.sin(dLng/2) ** 2
+      return 2 * R * Math.asin(Math.sqrt(sa))
+    }
+    const snap = await db.collection('events')
+      .where('startAtMillis', '>=', fromMs)
+      .where('startAtMillis', '<=', toMs)
+      .orderBy('startAtMillis', 'asc')
+      .limit(500)
+      .get()
+    const items = []
+    for (const d of snap.docs) {
+      const ev = d.data() || {}
+      if (cat && Array.isArray(ev.categories) && ev.categories.length > 0) {
+        if (!ev.categories.includes(cat)) continue
+      }
+      const g = ev.geo
+      if (!g || !isFinite(g.lat) || !isFinite(g.lng)) continue
+      const dist = haversine(lat, lng, g.lat, g.lng)
+      if (dist > radiusKm) continue
+      const t = Number(ev.startAtMillis || 0)
+      const dt = new Date(t)
+      const timeProximity = Math.max(0, 1 - Math.abs(dt.getHours() - 20) / 6)
+      const base = 0.6 + timeProximity * 0.3 - Math.min(0.3, dist / radiusKm)
+      items.push({ id: d.id, title: ev.title, startAtMillis: t, categories: ev.categories || [], priceMin: ev.price || null, geo: g, distanceKm: Number(dist.toFixed(2)), score: Number(base.toFixed(3)) })
+    }
+    items.sort((a,b) => b.score - a.score)
+    return res.json({ items: items.slice(0, 100) })
+  } catch (e) {
+    return res.status(500).json({ error: 'internal', message: e?.message || String(e) })
+  }
+})
+
+// Helper: compute feed items for preset and window
+async function computeFeedPreset(preset, fromMs, toMs) {
+  const snap = await db.collection('events')
+    .where('startAtMillis', '>=', fromMs)
+    .where('startAtMillis', '<=', toMs)
+    .orderBy('startAtMillis', 'asc')
+    .limit(500)
+    .get()
+  const targetHour = 20
+  const items = []
+  for (const d of snap.docs) {
+    const ev = d.data() || {}
+    const t = Number(ev.startAtMillis || 0)
+    if (!t) continue
+    const dt = new Date(t)
+    const hour = dt.getHours()
+    const timeProximity = Math.max(0, 1 - Math.abs(hour - targetHour) / 6)
+    const isFree = ev.price == null || ev.isFree === true
+    const priceBoost = isFree ? 0.15 : 0
+    const hasGeo = ev.geo && typeof ev.geo.lat === 'number' && typeof ev.geo.lng === 'number'
+    const geoBoost = hasGeo ? 0.05 : 0
+    const pop = Number(ev.attendeesCount || 0)
+    const popBoost = Math.min(0.2, pop / 50)
+    const base = 0.4 + timeProximity * 0.4 + priceBoost + geoBoost + popBoost
+    items.push({ id: d.id, title: ev.title, startAtMillis: t, categories: ev.categories || [], priceMin: ev.price || null, geo: ev.geo || null, score: Number(base.toFixed(3)) })
+  }
+  items.sort((a,b) => b.score - a.score)
+  return items.slice(0, 50)
+}
+
+// Scheduled refresh of cached feeds every 15 minutes (in-process cron)
+async function refreshCachedFeeds() {
+  if (!db) return
+  try {
+    const now = Date.now()
+    // today evening window
+    const sod = new Date(); sod.setHours(0,0,0,0)
+    const eod = new Date(); eod.setHours(23,59,59,999)
+    const todayItems = await computeFeedPreset('today_evening', Math.max(now, sod.getTime()), eod.getTime())
+    await db.collection('cached_feeds').doc('today_evening').set({ items: todayItems, updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true })
+    // tomorrow evening
+    const d = new Date(now + 24*60*60*1000); d.setHours(0,0,0,0)
+    const e = new Date(d); e.setHours(23,59,59,999)
+    const tomorrowItems = await computeFeedPreset('tomorrow_evening', d.getTime(), e.getTime())
+    await db.collection('cached_feeds').doc('tomorrow_evening').set({ items: tomorrowItems, updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true })
+    // weekend (next Sat-Sun)
+    const base = new Date()
+    const day = base.getDay()
+    const daysToSat = (6 - day + 7) % 7
+    const sat = new Date(base.getFullYear(), base.getMonth(), base.getDate() + daysToSat, 0,0,0,0)
+    const sun = new Date(sat.getFullYear(), sat.getMonth(), sat.getDate() + 1, 23,59,59,999)
+    const weekendItems = await computeFeedPreset('weekend', sat.getTime(), sun.getTime())
+    await db.collection('cached_feeds').doc('weekend').set({ items: weekendItems, updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true })
+    console.log('♻️ cached_feeds refreshed')
+  } catch (e) {
+    console.log('refreshCachedFeeds error:', e?.message || e)
+  }
+}
 // Обмен анонимного deeplink-токена на Firebase Custom Token
 app.post('/api/auth/exchange', async (req, res) => {
   try {
@@ -513,6 +666,23 @@ async function saveEventFromText(text, ctx, msg) {
   if (address) {
     geo = await geocodeAddress(address)
   }
+  function encodeGeohash(lat, lon, precision = 7) {
+    const BASE32 = '0123456789bcdefghjkmnpqrstuvwxyz'
+    let idx = 0, bit = 0, evenBit = true, geohash = ''
+    let latMin = -90, latMax = 90, lonMin = -180, lonMax = 180
+    while (geohash.length < precision) {
+      if (evenBit) {
+        const lonMid = (lonMin + lonMax) / 2
+        if (lon >= lonMid) { idx = (idx << 1) + 1; lonMin = lonMid } else { idx = (idx << 1) + 0; lonMax = lonMid }
+      } else {
+        const latMid = (latMin + latMax) / 2
+        if (lat >= latMid) { idx = (idx << 1) + 1; latMin = latMid } else { idx = (idx << 1) + 0; latMax = latMid }
+      }
+      evenBit = !evenBit
+      if (++bit == 5) { geohash += BASE32.charAt(idx); bit = 0; idx = 0 }
+    }
+    return geohash
+  }
   const imageUrls = await extractImageUrls(ctx, msg)
   const links = extractLinksFromMessage(msg || {}, text)
   const normalizedText = (text || '').trim()
@@ -532,6 +702,7 @@ async function saveEventFromText(text, ctx, msg) {
     imageUrls,
     links,
     geo,
+    geohash: (geo && isFinite(geo.lat) && isFinite(geo.lng)) ? encodeGeohash(geo.lat, geo.lng, 7) : null,
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
     source: {
       type: 'telegram',
@@ -564,12 +735,12 @@ bot.start(async (ctx) => {
     const tg = ctx.from || {}
     // payload формата: link_<anonUid>
     const payload = (ctx.startPayload || '') || (ctx.message?.text?.split(' ').slice(1).join(' ') || '')
-    if (payload && /^link_/i.test(payload)) {
-      const anonUid = payload.replace(/^link_/i, '').trim()
+    if (payload && (/^link_/i.test(payload) || /^acc_/i.test(payload))) {
+      const anonUid = payload.replace(/^link_/i, '').replace(/^acc_/i, '').trim()
       if (anonUid && db) {
         await upsertUserProfileFromTelegram(tg, ctx)
         await createLinkTokenForAnon(anonUid, tg)
-        await ctx.reply('✅ Аккаунт найден и привязан. Вернитесь в приложение и нажмите «Я нажал Старт». Токен активен 5 минут.', {
+        await ctx.reply('✅ Аккаунт привязан. Вернитесь в приложение и нажмите «Я нажал Акк». Токен активен 5 минут.', {
           reply_markup: { keyboard: [[{ text: 'Предложить' }]], resize_keyboard: true }
         })
         return
@@ -762,6 +933,10 @@ bot.launch().then(() => {
   if (db) {
     setInterval(sendNotifications, 10 * 60 * 1000)
     console.log('🔔 Уведомления включены (проверка каждые 10 минут)')
+    // Периодическое обновление кеша подборок (каждые 15 минут)
+    setInterval(refreshCachedFeeds, 15 * 60 * 1000)
+    // Первичный прогон
+    refreshCachedFeeds().catch(()=>{})
   }
 }).catch(e => {
   console.error('❌ Ошибка запуска:', e)

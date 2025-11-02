@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OXEM - №1 дизайн-студия Москвы</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Header Section -->
+    <header class="header">
+        <div class="header-container">
+            <!-- Logo -->
+            <div class="logo">
+                <span class="logo-circle">O</span>
+                <span class="logo-text">XEM</span>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="nav">
+                <ul class="nav-list">
+                    <li class="nav-item">
+                        <a href="#services" class="nav-link">
+                            <span class="nav-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="6,9 12,15 18,9"></polyline>
+                                </svg>
+                            </span>
+                            Услуги
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#cases" class="nav-link">Кейсы</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#about" class="nav-link">О компании</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#contacts" class="nav-link">Контакты</a>
+                    </li>
+                </ul>
+            </nav>
+
+            <!-- CTA Button -->
+            <div class="header-cta">
+                <a href="#work" class="cta-button">Работать с нами</a>
+            </div>
+
+            <!-- Mobile Menu Toggle -->
+            <button class="mobile-menu-toggle">
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+            </button>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div class="mobile-menu">
+            <nav class="mobile-nav">
+                <ul class="mobile-nav-list">
+                    <li class="mobile-nav-item">
+                        <a href="#services" class="mobile-nav-link">
+                            <span class="mobile-nav-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="6,9 12,15 18,9"></polyline>
+                                </svg>
+                            </span>
+                            Услуги
+                        </a>
+                    </li>
+                    <li class="mobile-nav-item">
+                        <a href="#cases" class="mobile-nav-link">Кейсы</a>
+                    </li>
+                    <li class="mobile-nav-item">
+                        <a href="#about" class="mobile-nav-link">О компании</a>
+                    </li>
+                    <li class="mobile-nav-item">
+                        <a href="#contacts" class="mobile-nav-link">Контакты</a>
+                    </li>
+                    <li class="mobile-nav-item">
+                        <a href="#work" class="mobile-nav-link cta-mobile">Работать с нами</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="content-container">
+            <!-- Hero Section -->
+            <section class="hero">
+                <div class="hero-content">
+                    <h1 class="hero-title">
+                        <span class="title-line">
+                            <span class="number">№1</span>
+                            <span class="underline"></span>
+                        </span>
+                        <span class="title-line">
+                            дизайн-<br>студия Москвы
+                        </span>
+                    </h1>
+
+                    <div class="hero-subtitle">
+                        <div class="subtitle-left">
+                            <p>В категории веб-дизайн</p>
+                            <p>Рейтинга Рунета'24</p>
+                        </div>
+                        <div class="subtitle-right">
+                            <p>Создаем цифровые продукты,</p>
+                            <p>которые покоряют с первого клика</p>
+                        </div>
+                    </div>
+
+                    <div class="hero-accent">
+                        <div class="blue-dot"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Blog Section -->
+            <section class="blog-section">
+                <div class="container">
+                    <div class="section-header">
+                        <h2 class="section-title">Наш Блог</h2>
+                        <p class="section-description">Последние новости и статьи</p>
+                    </div>
+                    <div id="blogContainer" class="blog-grid">
+                        <!-- Articles will be loaded here -->
+                    </div>
+                    <div class="blog-actions">
+                        <a href="simple-cms.html" class="btn btn-primary">Управление контентом</a>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Contact Form Section -->
+            <section class="contact-form-section">
+                <div class="form-container">
+                    <h2 class="form-title">Связаться с нами</h2>
+                    <p class="form-description">Оставьте заявку и мы свяжемся с вами в течение 15 минут</p>
+                    
+                    <form id="contactForm" class="contact-form">
+                        <div class="form-group">
+                            <input type="text" name="name" placeholder="Ваше имя" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="email" name="email" placeholder="Email" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="tel" name="phone" placeholder="Телефон" required>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="message" placeholder="Сообщение" rows="4" required></textarea>
+                        </div>
+                        <button type="submit" class="submit-btn">
+                            <span class="btn-text">Отправить заявку</span>
+                            <span class="btn-loading" style="display: none;">Отправляем...</span>
+                        </button>
+                    </form>
+                    
+                    <div id="formMessage" class="form-message" style="display: none;"></div>
+                </div>
+            </section>
+
+            <!-- Clients Section -->
+            <section class="clients">
+                <div class="clients-logos">
+                    <div class="client-logo">ТАКСИ РИТМ</div>
+                    <div class="client-logo">NOVA CLINIC</div>
+                    <div class="client-logo">hite</div>
+                    <div class="client-logo">INGRAD</div>
+                    <div class="client-logo">ШЕРЕМЕТЬЕВО ПАРКИНГ</div>
+                    <div class="client-logo">ДОНСПОРТ</div>
+                    <div class="client-logo">рнкб</div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- AmoCRM Integration Scripts -->
+    <script src="amocrm-config.js"></script>
+    <script src="amocrm-api.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

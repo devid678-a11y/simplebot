@@ -11,31 +11,38 @@ export default function EventDetail() {
   const [event, setEvent] = useState<any>(null)
   const [going, setGoing] = useState<boolean>(false)
   const [creator, setCreator] = useState<{displayName?:string; photoUrl?:string} | null>(null)
-  // Определяем коллекцию по префиксу ID из ленты
-  function resolveCollectionAndId(rawId?: string) {
-    if (!rawId) return { col: 'events', realId: '' }
-    if (rawId.startsWith('telegram_')) return { col: 'telegram_events', realId: rawId.replace(/^telegram_/, '') }
-    if (rawId.startsWith('tg_')) return { col: 'tg-events', realId: rawId.replace(/^tg_/, '') }
-    return { col: 'events', realId: rawId }
-  }
-  const { col, realId } = resolveCollectionAndId(id)
+  
+  // Используем ID напрямую (PostgreSQL не использует префиксы)
+  const realId = id || ''
   useEffect(() => {
     if (!realId) return
     
-    // Используем API для получения события из PostgreSQL
-    const apiBase = import.meta.env.VITE_API_BASE || 'http://localhost:3000'
+    // Используем Timeweb API для получения события из PostgreSQL
+    const DEFAULT_API = 'https://devid678-a11y-simplebot-0a93.twc1.net'
+    const envBase = import.meta.env.VITE_API_BASE as string
+    const apiBase = envBase || DEFAULT_API
     
     async function fetchEvent() {
       try {
+        console.log(`[EventDetail] Запрос события ID: ${realId} из ${apiBase}/api/events/${realId}`)
         const response = await fetch(`${apiBase}/api/events/${realId}`)
+        console.log(`[EventDetail] Ответ API: status=${response.status}, ok=${response.ok}`)
+        
         if (response.ok) {
           const data = await response.json()
+          console.log(`[EventDetail] Получено событие:`, data)
           setEvent(data)
         } else if (response.status === 404) {
+          console.warn(`[EventDetail] Событие не найдено: ${realId}`)
+          setEvent(null)
+        } else {
+          const errorText = await response.text()
+          console.error(`[EventDetail] Ошибка API: ${response.status}`, errorText)
           setEvent(null)
         }
-      } catch (e) {
-        console.error('Ошибка загрузки события:', e)
+      } catch (e: any) {
+        console.error('[EventDetail] Ошибка загрузки события:', e.message)
+        console.error('[EventDetail] Детали:', { message: e.message, stack: e.stack })
         setEvent(null)
       }
     }
@@ -51,7 +58,9 @@ export default function EventDetail() {
     if (!uid) return
     
     // Используем API для проверки отметки "Пойду"
-    const apiBase = import.meta.env.VITE_API_BASE || 'https://devid678-a11y-simplebot-cfb4.twc1.net'
+    const DEFAULT_API = 'https://devid678-a11y-simplebot-0a93.twc1.net'
+    const envBase = import.meta.env.VITE_API_BASE as string
+    const apiBase = envBase || DEFAULT_API
     
     async function checkGoing() {
       try {
@@ -76,7 +85,9 @@ export default function EventDetail() {
       if (!uid || !realId) return
       
       // Используем API для отметки "Пойду"
-      const apiBase = import.meta.env.VITE_API_BASE || 'https://devid678-a11y-simplebot-cfb4.twc1.net'
+      const DEFAULT_API = 'https://devid678-a11y-simplebot-0a93.twc1.net'
+      const envBase = import.meta.env.VITE_API_BASE as string
+      const apiBase = envBase || DEFAULT_API
       const url = `${apiBase}/api/events/${realId}/attendees/${uid}`
       
       if (going) {

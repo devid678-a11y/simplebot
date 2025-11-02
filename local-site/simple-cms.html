@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CMS - Управление контентом</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f8f9fa;
+            color: #333;
+        }
+
+        .cms-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .cms-header {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .cms-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 1rem;
+        }
+
+        .cms-description {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .cms-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .cms-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .cms-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 1rem;
+        }
+
+        .card-description {
+            color: #666;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+
+        .form-input, .form-textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-input:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .articles-list {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .article-item {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .article-item:last-child {
+            border-bottom: none;
+        }
+
+        .article-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .article-date {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .article-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-small {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+
+        .btn-edit {
+            background: #17a2b8;
+        }
+
+        .btn-delete {
+            background: #dc3545;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .close-btn:hover {
+            color: #333;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="cms-container">
+        <!-- Header -->
+        <div class="cms-header">
+            <h1 class="cms-title">📝 CMS - Управление контентом</h1>
+            <p class="cms-description">Удобный интерфейс для управления статьями и контентом сайта</p>
+        </div>
+
+        <!-- Success/Error Messages -->
+        <div id="messageContainer"></div>
+
+        <!-- Main Grid -->
+        <div class="cms-grid">
+            <!-- Add Article Card -->
+            <div class="cms-card">
+                <h2 class="card-title">➕ Добавить статью</h2>
+                <p class="card-description">Создайте новую статью для публикации на сайте</p>
+                <button class="btn" onclick="openAddModal()">Создать статью</button>
+            </div>
+
+            <!-- Manage Articles Card -->
+            <div class="cms-card">
+                <h2 class="card-title">📋 Управление статьями</h2>
+                <p class="card-description">Редактируйте, удаляйте и публикуйте существующие статьи</p>
+                <button class="btn btn-secondary" onclick="loadArticles()">Показать статьи</button>
+            </div>
+
+            <!-- Settings Card -->
+            <div class="cms-card">
+                <h2 class="card-title">⚙️ Настройки</h2>
+                <p class="card-description">Настройте параметры сайта и CMS</p>
+                <button class="btn btn-secondary" onclick="openSettings()">Настройки</button>
+            </div>
+
+            <!-- Preview Card -->
+            <div class="cms-card">
+                <h2 class="card-title">👁️ Предварительный просмотр</h2>
+                <p class="card-description">Посмотрите, как будет выглядеть сайт</p>
+                <a href="index.html" class="btn btn-success" target="_blank">Открыть сайт</a>
+            </div>
+        </div>
+
+        <!-- Articles List -->
+        <div id="articlesList" class="articles-list hidden">
+            <div style="padding: 1.5rem; background: #f8f9fa; border-bottom: 1px solid #e9ecef;">
+                <h3 style="margin: 0;">📰 Список статей</h3>
+            </div>
+            <div id="articlesContainer"></div>
+        </div>
+    </div>
+
+    <!-- Add Article Modal -->
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Создать новую статью</h2>
+                <button class="close-btn" onclick="closeModal('addModal')">&times;</button>
+            </div>
+            <form id="addArticleForm">
+                <div class="form-group">
+                    <label class="form-label">Заголовок статьи</label>
+                    <input type="text" class="form-input" name="title" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Краткое описание</label>
+                    <textarea class="form-textarea" name="excerpt" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Содержание статьи</label>
+                    <textarea class="form-textarea" name="content" rows="10" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Категория</label>
+                    <select class="form-input" name="category">
+                        <option value="news">Новости</option>
+                        <option value="articles">Статьи</option>
+                        <option value="cases">Кейсы</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Статус</label>
+                    <select class="form-input" name="status">
+                        <option value="draft">Черновик</option>
+                        <option value="published">Опубликовано</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addModal')">Отмена</button>
+                    <button type="submit" class="btn">Создать статью</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Article Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Редактировать статью</h2>
+                <button class="close-btn" onclick="closeModal('editModal')">&times;</button>
+            </div>
+            <form id="editArticleForm">
+                <input type="hidden" name="id">
+                <div class="form-group">
+                    <label class="form-label">Заголовок статьи</label>
+                    <input type="text" class="form-input" name="title" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Краткое описание</label>
+                    <textarea class="form-textarea" name="excerpt" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Содержание статьи</label>
+                    <textarea class="form-textarea" name="content" rows="10" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Категория</label>
+                    <select class="form-input" name="category">
+                        <option value="news">Новости</option>
+                        <option value="articles">Статьи</option>
+                        <option value="cases">Кейсы</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Статус</label>
+                    <select class="form-input" name="status">
+                        <option value="draft">Черновик</option>
+                        <option value="published">Опубликовано</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('editModal')">Отмена</button>
+                    <button type="submit" class="btn">Сохранить изменения</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="cms-script.js"></script>
+</body>
+</html>

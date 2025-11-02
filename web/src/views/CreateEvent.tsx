@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
-import { db } from '../firebase'
+import { addDoc, collection, serverTimestamp, getDoc, doc } from 'firebase/firestore'
+import { auth, db } from '../firebase'
 import LocationPicker from '../components/LocationPicker'
 import mapboxgl from 'mapbox-gl'
 import { useEffect } from 'react'
@@ -32,6 +32,17 @@ export default function CreateEvent() {
           if (Array.isArray(c) && c.length===2) finalPoint = { lon: c[0], lat: c[1] }
         } catch { /* ignore */ }
       }
+      const uid = auth.currentUser?.uid || null
+      let createdByDisplayName: string | null = null
+      let createdByPhotoUrl: string | null = null
+      try {
+        if (uid) {
+          const u = await getDoc(doc(db, 'users', uid))
+          const d: any = u.exists() ? u.data() : null
+          createdByDisplayName = d?.displayName || (auth.currentUser as any)?.displayName || null
+          createdByPhotoUrl = d?.photoUrl || (auth.currentUser as any)?.photoURL || null
+        }
+      } catch {}
       await addDoc(collection(db, 'events'), {
         title,
         startAtMillis,
@@ -42,7 +53,10 @@ export default function CreateEvent() {
         geo: finalPoint ? { lon: finalPoint.lon, lat: finalPoint.lat } : null,
         imageUrls: [],
         categories,
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
+        createdBy: uid,
+        createdByDisplayName,
+        createdByPhotoUrl
       })
       setTitle(''); setStart(''); setLocation(''); setIsOnline(false)
       alert('Событие создано')

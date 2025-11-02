@@ -165,6 +165,7 @@ app.get('/api/events', async (req, res) => {
 app.get('/api/events/:id', async (req, res) => {
   try {
     const { id } = req.params
+    console.log(`📥 GET /api/events/${id} - запрос события`)
     
     const query = `
       SELECT 
@@ -178,8 +179,10 @@ app.get('/api/events/:id', async (req, res) => {
     `
     
     const result = await pool.query(query, [id])
+    console.log(`📊 Найдено строк: ${result.rows.length}`)
     
     if (result.rows.length === 0) {
+      console.log(`⚠️ Событие не найдено: ${id}`)
       return res.status(404).json({ error: 'Event not found' })
     }
     
@@ -237,6 +240,7 @@ app.get('/api/events/:id', async (req, res) => {
       } : null
     }
     
+    console.log(`✅ Вернуно событие: ${event.id} - ${event.title}`)
     res.json(event)
   } catch (e) {
     console.error('❌ Ошибка получения события:', e.message)

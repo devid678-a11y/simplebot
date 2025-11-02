@@ -97,7 +97,6 @@ export default function BottomNav() {
       >
         <div style={{ display: 'flex', gap: 6 }}>
           <Item to="/" icon={<IconSearch />} label="Найти" />
-          <Item to="/map" icon={<IconMap />} label="Карта" />
           <Item to="/create" icon={<IconPlus />} label="Создать" />
           <Item to="/profile" icon={<IconUser />} label="Профиль" />
         </div>

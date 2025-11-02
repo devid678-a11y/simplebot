@@ -107,7 +107,7 @@ export default function Map() {
       }
 
       // Используем API для получения событий из PostgreSQL
-      const apiBase = import.meta.env.VITE_API_BASE || 'https://devid678-a11y-simplebot-cfb4.twc1.net'
+      const apiBase = import.meta.env.VITE_API_BASE || 'https://devid678-a11y-simplebot-0a93.twc1.net'
       async function loadEvents() {
         try {
           const response = await fetch(`${apiBase}/api/events?limit=200&orderBy=created_at&order=desc`)

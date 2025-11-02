@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { auth, db } from '../firebase'
-import { signInWithCustomToken } from 'firebase/auth'
+import { signInWithCustomToken, onAuthStateChanged } from 'firebase/auth'
 import { getEffectiveUid } from '../auth'
 import { collection, doc, getDoc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
@@ -10,6 +10,7 @@ import { Link } from 'react-router-dom'
 import { formatEventDateText } from '../utils/datetime'
 
 export default function Profile() {
+  const [uidTick, setUidTick] = useState(0)
   const uid = auth.currentUser?.uid
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -20,6 +21,12 @@ export default function Profile() {
   const [interests, setInterests] = useState<string[]>([])
   const [going, setGoing] = useState<any[]>([])
   const [goingDetails, setGoingDetails] = useState<Record<string, any>>({})
+
+  useEffect(() => {
+    // Подписка на смену auth-состояния, чтобы обновить экран после обмена токена
+    const unsub = onAuthStateChanged(auth, () => setUidTick(t => t + 1))
+    return () => unsub()
+  }, [])
 
   useEffect(() => {
     if (!uid) { setLoading(false); return }
@@ -34,7 +41,7 @@ export default function Profile() {
       setLoading(false)
     })
     return () => unsub()
-  }, [uid])
+  }, [uid, uidTick])
 
   useEffect(() => {
     if (!uid) return
@@ -108,16 +115,25 @@ export default function Profile() {
   if (!uid || (auth.currentUser && (auth.currentUser as any).isAnonymous)) {
     const deviceUid = getEffectiveUid() || 'anon'
     const BOT_USERNAME = 'dvizheon_bot' // Укажите @username бота
-    const deeplink = `https://t.me/${BOT_USERNAME}?start=link_${encodeURIComponent(deviceUid)}`
+    const deeplink = `https://t.me/${BOT_USERNAME}?start=acc_${encodeURIComponent(deviceUid)}`
     async function exchange() {
       try {
-        const base = (import.meta as any).env?.VITE_API_BASE || (globalThis as any).__API_BASE__ || ''
-        const url = base ? `${base}/api/auth/exchange` : '/api/auth/exchange'
+        let base = (import.meta as any).env?.VITE_API_BASE || (globalThis as any).__API_BASE__ || 'https://devid678-a11y-simplebot-0a93.twc1.net'
+        try {
+          const url = new URL(location.href)
+          const q = url.searchParams.get('api')
+          if (q) { localStorage.setItem('API_BASE', q); base = base || q }
+          if (!base || base === 'https://devid678-a11y-simplebot-0a93.twc1.net') {
+            const s = localStorage.getItem('API_BASE')
+            if (s && !s.includes('a491') && !s.includes('6b55')) base = s
+          }
+        } catch {}
+        const url = base ? `${base}/api/auth/exchange` : 'https://devid678-a11y-simplebot-0a93.twc1.net/api/auth/exchange'
         const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: deviceUid }) })
         if (!res.ok) { alert('Не удалось обменять токен. Откройте бота, нажмите Старт и попробуйте снова.'); return }
         const { token } = await res.json()
         await signInWithCustomToken(auth as any, token)
-        location.reload()
+        // Без перезагрузки: дождёмся обновления auth и выйдем из анонимного UI
       } catch (e) {
         alert('Ошибка входа. Попробуйте ещё раз.')
       }
@@ -128,7 +144,7 @@ export default function Profile() {
         <a href={deeplink} target="_blank" rel="noreferrer">
           <button style={{ width: '100%', marginBottom: 8 }}>Войти через Telegram</button>
         </a>
-        <button onClick={exchange} style={{ width: '100%' }}>Я нажал Старт</button>
+        <button onClick={exchange} style={{ width: '100%' }}>Я нажал Акк</button>
       </div>
     )
   }
