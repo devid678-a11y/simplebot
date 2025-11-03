@@ -27,8 +27,19 @@ const Blog = () => {
         setCategories(cats)
       } catch (error) {
         console.error('Error loading posts:', error)
-        // Fallback на статические данные при ошибке
-        setPosts([
+        // Fallback на пустой массив при ошибке
+        setPosts([])
+        setCategories(['ALL'])
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    loadPosts()
+  }, [])
+  
+  // Статические посты для fallback (если WordPress недоступен)
+  const fallbackPosts = [
     {
       id: 1,
       title: 'БУДУЩЕЕ ГОРОДСКОЙ АРХИТЕКТУРЫ',
@@ -87,24 +98,32 @@ const Blog = () => {
 
   // Фильтрация постов по категории
   useEffect(() => {
-    if (!posts.length) return
+    if (!displayPosts.length) {
+      setFilteredPosts([])
+      return
+    }
+    
+    // Проверяем, это WordPress посты или fallback
+    const isWordPressPost = displayPosts[0]?.title?.rendered
     
     if (selectedCategory === 'ALL') {
-      setFilteredPosts(posts)
-    } else {
+      setFilteredPosts(displayPosts)
+    } else if (isWordPressPost) {
       // Фильтруем по категориям WordPress
       setFilteredPosts(
-        posts.filter(post => 
-          post.categories?.some(catId => {
-            const category = categories.find(c => c !== 'ALL' && 
-              post._embedded?.['wp:term']?.[0]?.find(t => t.id === catId)?.name?.toUpperCase() === c
-            )
-            return category
-          })
+        displayPosts.filter(post => 
+          post._embedded?.['wp:term']?.[0]?.some(term => 
+            term.name?.toUpperCase() === selectedCategory
+          )
         )
       )
+    } else {
+      // Фильтруем fallback посты
+      setFilteredPosts(
+        displayPosts.filter(post => post.category === selectedCategory)
+      )
     }
-  }, [selectedCategory, posts, categories])
+  }, [selectedCategory, displayPosts, categories])
 
   useEffect(() => {
     const observerOptions = {
