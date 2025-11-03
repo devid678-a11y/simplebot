@@ -1,0 +1,18 @@
+.progress-bar-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: transparent;
+  z-index: 1001;
+  pointer-events: none;
+}
+
+.progress-bar {
+  height: 100%;
+  background: var(--black);
+  transition: width 0.1s ease;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+

@@ -1,0 +1,98 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --black: #000000;
+  --white: #FFFFFF;
+  --gray-dark: #1a1a1a;
+  --gray-light: #f5f5f5;
+  --border-width: 2px;
+  --grid-size: 6px;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: var(--white);
+  color: var(--black);
+  line-height: 1.6;
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+/* Brutalism grid background */
+.brutal-grid {
+  background-image: 
+    linear-gradient(var(--black) 1px, transparent 1px),
+    linear-gradient(90deg, var(--black) 1px, transparent 1px);
+  background-size: var(--grid-size) var(--grid-size);
+  background-position: 0 0, 0 0;
+}
+
+/* Brutalism borders */
+.brutal-border {
+  border: var(--border-width) solid var(--black);
+  box-shadow: var(--border-width) var(--border-width) 0 0 var(--black);
+}
+
+.brutal-border-hover {
+  transition: all 0.1s ease;
+}
+
+.brutal-border-hover:hover {
+  transform: translate(calc(var(--border-width) * -0.5), calc(var(--border-width) * -0.5));
+  box-shadow: calc(var(--border-width) * 1.5) calc(var(--border-width) * 1.5) 0 0 var(--black);
+}
+
+/* Utility classes */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.section {
+  padding: 60px 0;
+}
+
+@media (max-width: 768px) {
+  .section {
+    padding: 32px 0;
+  }
+  
+  :root {
+    --border-width: 2px;
+    --grid-size: 5px;
+  }
+}
+
