@@ -1,0 +1,24 @@
+ФАЙЛЫ ДЛЯ ЗАГРУЗКИ НА СЕРВЕР
+============================
+
+Папка с файлами: C:\Users\RedmiBook Pro 15\NewApp\architecture-site\dist
+
+Что загружать:
+--------------
+
+1. index.html          - главная страница сайта
+2. _redirects         - редиректы для SPA
+3. assets/            - папка со стилями и скриптами
+   - index--kqMEyRz.css  - стили
+   - index-DGqo7nRC.js  - JavaScript
+
+ВСЕ ФАЙЛЫ ИЗ ПАПКИ dist НУЖНО ЗАГРУЗИТЬ В public_html НА СЕРВЕРЕ!
+
+Структура на сервере должна быть:
+public_html/
+  ├── index.html
+  ├── _redirects
+  └── assets/
+      ├── index--kqMEyRz.css
+      └── index-DGqo7nRC.js
+

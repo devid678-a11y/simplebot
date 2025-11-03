@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { Link } from 'react-router-dom'
 import { getPosts, getCategories } from '../services/wordpress'
 import './Blog.css'
 

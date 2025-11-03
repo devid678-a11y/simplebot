@@ -1,0 +1,47 @@
+===========================================
+ССЫЛКИ ДЛЯ РУЧНОЙ УСТАНОВКИ WORDPRESS
+===========================================
+
+1. СКАЧАТЬ WORDPRESS:
+   https://wordpress.org/download/
+   Или русская версия:
+   https://ru.wordpress.org/download/
+
+2. ДОКУМЕНТАЦИЯ ПО УСТАНОВКЕ:
+   https://wordpress.org/support/article/how-to-install-wordpress/
+   Русская версия:
+   https://wp-kama.ru/doc/
+
+3. ГЕНЕРАТОР КЛЮЧЕЙ БЕЗОПАСНОСТИ:
+   https://api.wordpress.org/secret-key/1.1/salt/
+   (Для wp-config.php)
+
+4. ПЛАГИНЫ ДЛЯ CORS:
+   https://wordpress.org/plugins/cors-headers/
+   https://wordpress.org/plugins/wp-cors/
+
+5. РУКОВОДСТВО ПО REST API:
+   https://developer.wordpress.org/rest-api/
+
+===========================================
+ЧТО МОЖНО РЕДАКТИРОВАТЬ В WORDPRESS:
+===========================================
+
+✅ МОЖНО:
+- Посты блога (тексты, заголовки, изображения)
+- Страницы (если создадите)
+- Категории и теги
+- Медиафайлы (изображения, видео)
+- Весь текстовый контент
+
+❌ НЕЛЬЗЯ:
+- Дизайн React сайта
+- Структуру страниц
+- Стили (CSS)
+- JavaScript код
+
+WordPress = управление КОНТЕНТОМ
+React = ОТОБРАЖЕНИЕ и дизайн
+
+===========================================
+
