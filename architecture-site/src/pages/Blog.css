@@ -157,6 +157,12 @@
   flex: 1;
 }
 
+.blog-post {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
 .post-read-more {
   align-self: flex-start;
   font-weight: 600;
@@ -169,9 +175,11 @@
   color: var(--black);
   transition: all 0.2s ease;
   box-shadow: var(--border-width) var(--border-width) 0 0 var(--black);
+  display: inline-block;
+  pointer-events: none;
 }
 
-.post-read-more:hover {
+.blog-post:hover .post-read-more {
   background: var(--black);
   color: var(--white);
   transform: translate(calc(var(--border-width) * -0.5), calc(var(--border-width) * -0.5));

@@ -193,9 +193,13 @@ const Blog = () => {
                   // Получаем категорию
                   const postCategory = post._embedded?.['wp:term']?.[0]?.[0]?.name?.toUpperCase() || 'НОВОСТИ'
                   
+                  // Получаем slug для ссылки
+                  const postSlug = post.slug || `post-${post.id}`
+                  
                   return (
-                    <article
+                    <Link
                       key={post.id}
+                      to={`/blog/${postSlug}`}
                       className="blog-post"
                       style={{ animationDelay: `${index * 0.1}s` }}
                     >
@@ -215,11 +219,11 @@ const Blog = () => {
                           className="post-excerpt" 
                           dangerouslySetInnerHTML={{ __html: post.excerpt.rendered || post.content.rendered.substring(0, 150) + '...' }}
                         ></div>
-                        <button className="post-read-more">
+                        <span className="post-read-more">
                           ЧИТАТЬ →
-                        </button>
+                        </span>
                       </div>
-                    </article>
+                    </Link>
                   )
                 })
               ) : (
