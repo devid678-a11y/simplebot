@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { doc, setDoc, deleteDoc } from 'firebase/firestore'
-import { db, auth } from '../firebase'
+import { auth } from '../firebase'
 import { Link } from 'react-router-dom'
 import { linkify } from '../utils/text'
 import { formatEventDateText, formatTimeUntilEvent } from '../utils/datetime'
@@ -553,7 +552,48 @@ export default function Explore() {
       groups[groupKey].push(e)
     })
     
-    return groups
+    // Сортируем события внутри каждой группы по времени (от ранних к поздним)
+    Object.keys(groups).forEach(key => {
+      groups[key].sort((a: any, b: any) => {
+        if (!a.startAtMillis && !b.startAtMillis) return 0
+        if (!a.startAtMillis) return 1
+        if (!b.startAtMillis) return -1
+        return (a.startAtMillis || 0) - (b.startAtMillis || 0)
+      })
+    })
+    
+    // Сортируем группы: "Сегодня" -> "Завтра" -> остальные даты по порядку -> "Без даты"
+    const sortedGroups = Object.entries(groups).sort(([keyA], [keyB]) => {
+      // "Сегодня" всегда первое
+      if (keyA === 'Сегодня') return -1
+      if (keyB === 'Сегодня') return 1
+      
+      // "Завтра" всегда второе
+      if (keyA === 'Завтра') return -1
+      if (keyB === 'Завтра') return 1
+      
+      // "Без даты" всегда последнее
+      if (keyA === 'Без даты') return 1
+      if (keyB === 'Без даты') return -1
+      
+      // Остальные даты сортируем по дате события (берём первое событие из группы)
+      const eventA = groups[keyA]?.[0]
+      const eventB = groups[keyB]?.[0]
+      
+      if (!eventA?.startAtMillis && !eventB?.startAtMillis) return 0
+      if (!eventA?.startAtMillis) return 1
+      if (!eventB?.startAtMillis) return -1
+      
+      return (eventA.startAtMillis || 0) - (eventB.startAtMillis || 0)
+    })
+    
+    // Преобразуем обратно в объект с правильным порядком
+    const sortedGroupsObj: Record<string, any[]> = {}
+    sortedGroups.forEach(([key, events]) => {
+      sortedGroupsObj[key] = events
+    })
+    
+    return sortedGroupsObj
   }, [filtered, feedItems, preset, nearby])
 
   return (

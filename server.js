@@ -121,14 +121,22 @@ app.get('/api/events', async (req, res) => {
         COUNT(DISTINCT a.user_id) as attendees_count
       FROM events e
       LEFT JOIN attendees a ON e.id = a.event_id
-      WHERE (e.start_at_millis IS NULL OR e.start_at_millis > $1 OR e.created_at > NOW() - INTERVAL '30 days')
+      WHERE (e.start_at_millis IS NULL OR CAST(e.start_at_millis AS BIGINT) >= $1)
       GROUP BY e.id
       ORDER BY ${orderBy === 'start_at_millis' ? 'COALESCE(e.start_at_millis, 9999999999999)' : (orderBy === 'attendees_count' ? 'COUNT(DISTINCT a.user_id)' : `e.${orderBy}`)} ${order}
       LIMIT $2
     `
     
-    const now = Date.now() - (7 * 24 * 60 * 60 * 1000) // Показываем события на 7 дней назад и вперед
-    const result = await pool.query(query, [now, limit])
+    // Получаем начало сегодняшнего дня (00:00:00 локального времени)
+    const today = new Date()
+    const todayYear = today.getFullYear()
+    const todayMonth = today.getMonth()
+    const todayDate = today.getDate()
+    const todayStart = new Date(todayYear, todayMonth, todayDate, 0, 0, 0, 0)
+    const todayStartMs = todayStart.getTime()
+    
+    // Показываем только будущие события или события с сегодняшнего дня
+    const result = await pool.query(query, [todayStartMs, limit])
     
     // Преобразуем данные в формат, похожий на Firestore
     // bigint из PostgreSQL может быть строкой, нужно преобразовать в число

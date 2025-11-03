@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { addDoc, collection, serverTimestamp, getDoc, doc } from 'firebase/firestore'
+import { getDoc, doc } from 'firebase/firestore'
 import { auth, db } from '../firebase'
 import LocationPicker from '../components/LocationPicker'
 import mapboxgl from 'mapbox-gl'
@@ -43,7 +43,10 @@ export default function CreateEvent() {
           createdByPhotoUrl = d?.photoUrl || (auth.currentUser as any)?.photoURL || null
         }
       } catch {}
-      await addDoc(collection(db, 'events'), {
+      
+      // Создаем событие через API Timeweb вместо Firestore
+      const apiBase = 'https://devid678-a11y-simplebot-0a93.twc1.net'
+      const eventData = {
         title,
         startAtMillis,
         isOnline,
@@ -53,11 +56,22 @@ export default function CreateEvent() {
         geo: finalPoint ? { lon: finalPoint.lon, lat: finalPoint.lat } : null,
         imageUrls: [],
         categories,
-        createdAt: serverTimestamp(),
         createdBy: uid,
         createdByDisplayName,
         createdByPhotoUrl
+      }
+      
+      const response = await fetch(`${apiBase}/api/events`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(eventData)
       })
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(`API error: ${response.status} ${errorText}`)
+      }
+      
       setTitle(''); setStart(''); setLocation(''); setIsOnline(false)
       alert('Событие создано')
     } catch (e) {

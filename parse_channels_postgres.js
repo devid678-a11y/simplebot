@@ -567,13 +567,18 @@ async function saveEvent(channel, text, imageUrls, postUrl, extraLinks) {
     return { deduped: false, id: null, skipped: 'no_date' }
   }
   
+  // Логируем для отладки
+  const parsedDate = new Date(parsed.startMs)
+  console.log(`  📅 Распарсена дата: ${parsedDate.toLocaleString('ru-RU')} (${parsed.startMs})`)
+  
   // Проверка: событие должно быть не раньше завтра
   const tomorrowStart = new Date()
   tomorrowStart.setDate(tomorrowStart.getDate() + 1)
   tomorrowStart.setHours(0, 0, 0, 0)
+  const tomorrowStartMs = tomorrowStart.getTime()
   
-  if (parsed.startMs < tomorrowStart.getTime()) {
-    console.log(`  ⏭ Пропущено (дата раньше завтра)`)
+  if (parsed.startMs < tomorrowStartMs) {
+    console.log(`  ⏭ Пропущено (дата раньше завтра: ${parsedDate.toLocaleDateString('ru-RU')} < ${tomorrowStart.toLocaleDateString('ru-RU')})`)
     return { deduped: false, id: null, skipped: 'too_early' }
   }
   
@@ -595,9 +600,10 @@ async function saveEvent(channel, text, imageUrls, postUrl, extraLinks) {
   
   const geohash = (geo && isFinite(geo.lat) && isFinite(geo.lng)) ? encodeGeohash(geo.lat, geo.lng, 7) : null
   
-  if (!address || !geo) {
-    return { deduped: false, id: null, skipped: 'no_address' }
-  }
+  // Разрешаем сохранение без адреса (адрес может быть указан как "Место уточняется")
+  // if (!address || !geo) {
+  //   return { deduped: false, id: null, skipped: 'no_address' }
+  // }
   
   const titleAi = sanitizeTitle((ai?.title && String(ai.title).trim()) || '')
   const titleGen = await aiGenerateTitle(normalizeForAI(normalizedText))
@@ -642,8 +648,8 @@ async function saveEvent(channel, text, imageUrls, postUrl, extraLinks) {
       null,
       false,
       address || 'Место уточняется',
-      geo.lat,
-      geo.lng,
+      geo ? geo.lat : null,
+      geo ? geo.lng : null,
       geohash,
       category ? [category] : ['Сходка'],
       Array.isArray(imageUrls) ? imageUrls : [],

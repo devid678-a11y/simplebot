@@ -6,7 +6,9 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "parse": "node parse_channels_postgres.js",
+    "delete-past": "node delete-past-events.js"
   },
   "dependencies": {
     "cheerio": "^1.1.2",

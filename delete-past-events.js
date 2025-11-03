@@ -7,9 +7,12 @@ dotenv.config()
 
 const { Pool } = pg
 
+// Встроенные учетные данные для Timeweb PostgreSQL
+const DATABASE_URL = 'postgresql://gen_user:c%-5Yc01xe*Bdf@7cedb753215efecb1de53f8c.twc1.net:5432/default_db?sslmode=require'
+
 let pool = null
 try {
-  const connectionString = process.env.DATABASE_URL || process.env.TIMEWEB_DB_URL
+  const connectionString = process.env.DATABASE_URL || process.env.TIMEWEB_DB_URL || DATABASE_URL
   
   function getSSLOptions() {
     const sslCertPath = process.env.PGSSLROOTCERT || process.env.DB_SSL_CERT
@@ -58,18 +61,27 @@ try {
 
 async function deletePastEvents() {
   try {
-    const now = Date.now()
+    // Получаем начало сегодняшнего дня (00:00:00 локального времени)
+    const today = new Date()
+    const todayYear = today.getFullYear()
+    const todayMonth = today.getMonth()
+    const todayDate = today.getDate()
+    const todayStart = new Date(todayYear, todayMonth, todayDate, 0, 0, 0, 0)
+    const todayStartMs = todayStart.getTime()
     
-    // Находим прошедшие мероприятия (с start_at_millis в прошлом)
+    console.log(`📅 Удаляем мероприятия раньше: ${todayStart.toLocaleString('ru-RU')}`)
+    
+    // Находим прошедшие мероприятия (с start_at_millis раньше начала сегодняшнего дня)
+    // Используем CAST для явного приведения типа, так как bigint может быть строкой
     const findQuery = `
       SELECT id, title, start_at_millis 
       FROM events 
       WHERE start_at_millis IS NOT NULL 
-        AND start_at_millis < $1
-      ORDER BY start_at_millis DESC
+        AND CAST(start_at_millis AS BIGINT) < $1
+      ORDER BY CAST(start_at_millis AS BIGINT) DESC
     `
     
-    const findResult = await pool.query(findQuery, [now])
+    const findResult = await pool.query(findQuery, [todayStartMs])
     const pastEvents = findResult.rows
     
     console.log(`📊 Найдено прошедших мероприятий: ${pastEvents.length}`)
@@ -96,19 +108,19 @@ async function deletePastEvents() {
       WHERE event_id IN (
         SELECT id FROM events 
         WHERE start_at_millis IS NOT NULL 
-          AND start_at_millis < $1
+          AND CAST(start_at_millis AS BIGINT) < $1
       )
     `
-    const attendeesResult = await pool.query(deleteAttendeesQuery, [now])
+    const attendeesResult = await pool.query(deleteAttendeesQuery, [todayStartMs])
     console.log(`\n🗑️ Удалено записей из attendees: ${attendeesResult.rowCount}`)
     
     // Затем удаляем сами мероприятия
     const deleteEventsQuery = `
       DELETE FROM events 
       WHERE start_at_millis IS NOT NULL 
-        AND start_at_millis < $1
+        AND CAST(start_at_millis AS BIGINT) < $1
     `
-    const eventsResult = await pool.query(deleteEventsQuery, [now])
+    const eventsResult = await pool.query(deleteEventsQuery, [todayStartMs])
     console.log(`🗑️ Удалено мероприятий: ${eventsResult.rowCount}`)
     
     console.log('\n✅ Прошедшие мероприятия успешно удалены')
@@ -133,4 +145,5 @@ deletePastEvents()
     console.error('❌ Фатальная ошибка:', e.message)
     process.exit(1)
   })
+
 

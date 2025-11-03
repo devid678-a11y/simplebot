@@ -89,13 +89,21 @@ app.get('/api/events', async (req, res) => {
         geo_lat, geo_lng, geohash,
         categories, image_urls, links, source, dedupe_key, created_at
       FROM events
-      WHERE (start_at_millis IS NULL OR start_at_millis > $1 OR created_at > NOW() - INTERVAL '30 days')
+      WHERE (start_at_millis IS NULL OR CAST(start_at_millis AS BIGINT) >= $1)
       ORDER BY ${orderBy === 'start_at_millis' ? 'COALESCE(start_at_millis, 9999999999999)' : orderBy} ${order}
       LIMIT $2
     `
     
-    const now = Date.now() - (7 * 24 * 60 * 60 * 1000) // Показываем события на 7 дней назад и вперед
-    const result = await pool.query(query, [now, limit])
+    // Получаем начало сегодняшнего дня (00:00:00 локального времени)
+    const today = new Date()
+    const todayYear = today.getFullYear()
+    const todayMonth = today.getMonth()
+    const todayDate = today.getDate()
+    const todayStart = new Date(todayYear, todayMonth, todayDate, 0, 0, 0, 0)
+    const todayStartMs = todayStart.getTime()
+    
+    // Показываем только будущие события или события с сегодняшнего дня
+    const result = await pool.query(query, [todayStartMs, limit])
     
     // Преобразуем данные в формат, похожий на Firestore
     // bigint из PostgreSQL может быть строкой, нужно преобразовать в число
@@ -157,6 +165,82 @@ app.get('/api/events', async (req, res) => {
     res.json(events)
   } catch (e) {
     console.error('❌ Ошибка получения событий:', e.message)
+    res.status(500).json({ error: e.message })
+  }
+})
+
+// POST /api/events - создать событие
+app.post('/api/events', async (req, res) => {
+  try {
+    const {
+      title,
+      startAtMillis,
+      endAtMillis,
+      isOnline = false,
+      isFree = true,
+      price = 0,
+      location,
+      geo,
+      categories = [],
+      imageUrls = [],
+      createdBy,
+      createdByDisplayName,
+      createdByPhotoUrl
+    } = req.body
+    
+    if (!title) {
+      return res.status(400).json({ error: 'Title is required' })
+    }
+    
+    if (!startAtMillis) {
+      return res.status(400).json({ error: 'startAtMillis is required' })
+    }
+    
+    // Генерируем ID события
+    const { randomUUID } = await import('crypto')
+    const eventId = randomUUID()
+    
+    // Подготавливаем данные для вставки
+    const geoLat = geo?.lat || null
+    const geoLng = geo?.lng || geo?.lon || null
+    
+    const insertQuery = `
+      INSERT INTO events (
+        id, title, description, start_at_millis, end_at_millis,
+        is_free, price, is_online, location,
+        geo_lat, geo_lng,
+        categories, image_urls, links, source,
+        created_by, created_by_display_name, created_by_photo_url
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+      RETURNING id
+    `
+    
+    const result = await pool.query(insertQuery, [
+      eventId,
+      title,
+      req.body.description || null,
+      BigInt(startAtMillis),
+      endAtMillis ? BigInt(endAtMillis) : null,
+      isFree,
+      price || 0,
+      isOnline,
+      location || null,
+      geoLat,
+      geoLng,
+      Array.isArray(categories) ? categories : [],
+      Array.isArray(imageUrls) ? imageUrls : [],
+      JSON.stringify([]), // links
+      JSON.stringify({ type: 'manual', created: new Date().toISOString() }), // source
+      createdBy || null,
+      createdByDisplayName || null,
+      createdByPhotoUrl || null
+    ])
+    
+    console.log(`✅ Событие создано: ${eventId}`)
+    res.status(201).json({ id: eventId, success: true })
+  } catch (e) {
+    console.error('❌ Ошибка создания события:', e.message)
     res.status(500).json({ error: e.message })
   }
 })
