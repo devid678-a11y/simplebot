@@ -241,7 +241,30 @@ export default function Explore() {
   }
 
   const filtered = useMemo(() => {
+    // Получаем начало сегодняшнего дня для фильтрации старых событий
+    const today = new Date()
+    const todayYear = today.getFullYear()
+    const todayMonth = today.getMonth()
+    const todayDate = today.getDate()
+    const todayStart = new Date(todayYear, todayMonth, todayDate, 0, 0, 0, 0)
+    const todayStartMs = todayStart.getTime()
+    
     let result = events.filter((e:any) => {
+      // Удаляем события, которые уже прошли (раньше сегодня)
+      if (e.startAtMillis != null) {
+        const eventDate = new Date(e.startAtMillis)
+        const eventYear = eventDate.getFullYear()
+        const eventMonth = eventDate.getMonth()
+        const eventDay = eventDate.getDate()
+        const eventStart = new Date(eventYear, eventMonth, eventDay, 0, 0, 0, 0)
+        const eventStartMs = eventStart.getTime()
+        
+        // Пропускаем события, которые уже прошли
+        if (eventStartMs < todayStartMs) {
+          return false
+        }
+      }
+      
       // Фильтр "Мои мероприятия"
       if (myEvents && !goingMap[e.id]) return false
 
@@ -478,6 +501,18 @@ export default function Explore() {
     const groups: Record<string, any[]> = {}
     const eventsToShow = (preset || nearby) && feedItems.length > 0 ? feedItems : filtered
     
+    // Получаем начало сегодняшнего дня (00:00:00)
+    const today = new Date()
+    const todayYear = today.getFullYear()
+    const todayMonth = today.getMonth()
+    const todayDate = today.getDate()
+    const todayStart = new Date(todayYear, todayMonth, todayDate, 0, 0, 0, 0)
+    const todayStartMs = todayStart.getTime()
+    
+    // Получаем начало завтрашнего дня
+    const tomorrow = new Date(todayYear, todayMonth, todayDate + 1, 0, 0, 0, 0)
+    const tomorrowStartMs = tomorrow.getTime()
+    
     eventsToShow.forEach((e: any) => {
       if (!e.startAtMillis) {
         if (!groups['Без даты']) groups['Без даты'] = []
@@ -485,18 +520,32 @@ export default function Explore() {
         return
       }
       
-      const date = new Date(e.startAtMillis)
-      const today = new Date()
-      const tomorrow = new Date(today)
-      tomorrow.setDate(tomorrow.getDate() + 1)
+      // Фильтруем старые события (раньше сегодня)
+      const eventDate = new Date(e.startAtMillis)
+      const eventYear = eventDate.getFullYear()
+      const eventMonth = eventDate.getMonth()
+      const eventDay = eventDate.getDate()
+      const eventStart = new Date(eventYear, eventMonth, eventDay, 0, 0, 0, 0)
+      const eventStartMs = eventStart.getTime()
+      
+      // Пропускаем события, которые уже прошли (раньше сегодня)
+      if (eventStartMs < todayStartMs) {
+        return
+      }
       
       let groupKey = ''
-      if (isToday(e.startAtMillis)) {
+      
+      // Проверка "Сегодня" - сравниваем год, месяц и день
+      if (eventYear === todayYear && eventMonth === todayMonth && eventDay === todayDate) {
         groupKey = 'Сегодня'
-      } else if (date.getDate() === tomorrow.getDate() && date.getMonth() === tomorrow.getMonth()) {
+      } 
+      // Проверка "Завтра" - сравниваем год, месяц и день завтрашнего дня
+      else if (eventYear === tomorrow.getFullYear() && eventMonth === tomorrow.getMonth() && eventDay === tomorrow.getDate()) {
         groupKey = 'Завтра'
-      } else {
-        groupKey = date.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' })
+      } 
+      // Остальные даты
+      else {
+        groupKey = eventDate.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' })
         groupKey = groupKey.charAt(0).toUpperCase() + groupKey.slice(1)
       }
       
@@ -717,11 +766,14 @@ export default function Explore() {
                       <div style={{ flex: 1 }}>
                         <div className="muted" style={{ fontSize: 13, marginBottom: 4 }}>
                           {formatEventDateText(e)}
-                          {e.startAtMillis && formatTimeUntilEvent(e.startAtMillis) && (
-                            <span style={{ marginLeft: 8, opacity: 0.7 }}>
-                              • {formatTimeUntilEvent(e.startAtMillis)}
-                            </span>
-                          )}
+                          {e.startAtMillis && (() => {
+                            const timeUntil = formatTimeUntilEvent(e.startAtMillis)
+                            return timeUntil ? (
+                              <span style={{ marginLeft: 8, opacity: 0.7 }}>
+                                • {timeUntil}
+                              </span>
+                            ) : null
+                          })()}
                         </div>
                         <div className="muted" style={{ fontSize: 13, marginBottom: 4 }}>
                           {e.isOnline ? (
