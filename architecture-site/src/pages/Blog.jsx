@@ -1,14 +1,34 @@
 import { useState, useEffect, useRef } from 'react'
+import { getPosts, getCategories } from '../services/wordpress'
 import './Blog.css'
 
 const Blog = () => {
   const [selectedCategory, setSelectedCategory] = useState('ALL')
   const [filteredPosts, setFilteredPosts] = useState([])
+  const [posts, setPosts] = useState([])
+  const [categories, setCategories] = useState(['ALL'])
+  const [loading, setLoading] = useState(true)
   const postsRef = useRef(null)
 
-  const categories = ['ALL', 'ПРОЕКТЫ', 'ИДЕИ', 'НОВОСТИ', 'ИНТЕРВЬЮ']
-
-  const posts = [
+  // Загружаем посты из WordPress
+  useEffect(() => {
+    const loadPosts = async () => {
+      try {
+        setLoading(true)
+        const [wpPosts, wpCategories] = await Promise.all([
+          getPosts(),
+          getCategories()
+        ])
+        
+        setPosts(wpPosts)
+        
+        // Формируем список категорий
+        const cats = ['ALL', ...wpCategories.map(cat => cat.name.toUpperCase())]
+        setCategories(cats)
+      } catch (error) {
+        console.error('Error loading posts:', error)
+        // Fallback на статические данные при ошибке
+        setPosts([
     {
       id: 1,
       title: 'БУДУЩЕЕ ГОРОДСКОЙ АРХИТЕКТУРЫ',
@@ -65,13 +85,26 @@ const Blog = () => {
     }
   ]
 
+  // Фильтрация постов по категории
   useEffect(() => {
+    if (!posts.length) return
+    
     if (selectedCategory === 'ALL') {
       setFilteredPosts(posts)
     } else {
-      setFilteredPosts(posts.filter(post => post.category === selectedCategory))
+      // Фильтруем по категориям WordPress
+      setFilteredPosts(
+        posts.filter(post => 
+          post.categories?.some(catId => {
+            const category = categories.find(c => c !== 'ALL' && 
+              post._embedded?.['wp:term']?.[0]?.find(t => t.id === catId)?.name?.toUpperCase() === c
+            )
+            return category
+          })
+        )
+      )
     }
-  }, [selectedCategory])
+  }, [selectedCategory, posts, categories])
 
   useEffect(() => {
     const observerOptions = {
@@ -118,34 +151,64 @@ const Blog = () => {
             ))}
           </div>
 
-          <div className="blog-posts" ref={postsRef}>
-            {filteredPosts.map((post, index) => (
-              <article
-                key={post.id}
-                className="blog-post"
-                style={{ animationDelay: `${index * 0.1}s` }}
-              >
-                <div className="post-image-wrapper">
-                  <div
-                    className="post-image"
-                    style={{ backgroundImage: `url(${post.image})` }}
-                  ></div>
-                  <div className="post-category-badge">{post.category}</div>
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '60px 0' }}>
+              <p>Загрузка...</p>
+            </div>
+          ) : (
+            <div className="blog-posts" ref={postsRef}>
+              {filteredPosts.length > 0 ? (
+                filteredPosts.map((post, index) => {
+                  // Получаем изображение из WordPress
+                  const featuredImage = post._embedded?.['wp:featuredmedia']?.[0]?.source_url || 
+                                       'https://images.unsplash.com/photo-1487958449943-2429e8be8625?w=800&h=600&fit=crop'
+                  
+                  // Форматируем дату
+                  const postDate = new Date(post.date).toLocaleDateString('ru-RU', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  }).toUpperCase()
+                  
+                  // Получаем категорию
+                  const postCategory = post._embedded?.['wp:term']?.[0]?.[0]?.name?.toUpperCase() || 'НОВОСТИ'
+                  
+                  return (
+                    <article
+                      key={post.id}
+                      className="blog-post"
+                      style={{ animationDelay: `${index * 0.1}s` }}
+                    >
+                      <div className="post-image-wrapper">
+                        <div
+                          className="post-image"
+                          style={{ backgroundImage: `url(${featuredImage})` }}
+                        ></div>
+                        <div className="post-category-badge">{postCategory}</div>
+                      </div>
+                      <div className="post-content">
+                        <div className="post-meta">
+                          <span className="post-date">{postDate}</span>
+                        </div>
+                        <h2 className="post-title" dangerouslySetInnerHTML={{ __html: post.title.rendered }}></h2>
+                        <div 
+                          className="post-excerpt" 
+                          dangerouslySetInnerHTML={{ __html: post.excerpt.rendered || post.content.rendered.substring(0, 150) + '...' }}
+                        ></div>
+                        <button className="post-read-more">
+                          ЧИТАТЬ →
+                        </button>
+                      </div>
+                    </article>
+                  )
+                })
+              ) : (
+                <div style={{ textAlign: 'center', padding: '60px 0' }}>
+                  <p>Постов не найдено</p>
                 </div>
-                <div className="post-content">
-                  <div className="post-meta">
-                    <span className="post-date">{post.date}</span>
-                    <span className="post-read-time">{post.readTime}</span>
-                  </div>
-                  <h2 className="post-title">{post.title}</h2>
-                  <p className="post-excerpt">{post.excerpt}</p>
-                  <button className="post-read-more">
-                    ЧИТАТЬ →
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
