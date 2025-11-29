@@ -8,15 +8,14 @@ RUN apt-get update && \
 # Установка рабочей директории
 WORKDIR /app
 
-# Копируем файлы зависимостей
-COPY requirements.txt .
+# Копируем файлы из папки video_downloader_bot (так как контекст сборки - корень репозитория)
+COPY video_downloader_bot/requirements.txt .
 
 # Установка Python-зависимостей
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Копируем код бота
-COPY bot.py .
+COPY video_downloader_bot/bot.py .
 
 # Запуск бота
 CMD ["python", "bot.py"]
-

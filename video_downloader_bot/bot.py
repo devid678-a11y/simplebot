@@ -11,8 +11,8 @@ import yt_dlp
 API_TOKEN = "8440327310:AAHhKU4uUm_YfHJsPbum2v7gMw3ogIX5cs0"
 
 # Прокси для скачивания (формат: http://user:pass@host:port или http://host:port)
-# Оставьте пустым, если прокси не нужен
-PROXY_URL = ""
+# Можно задать тут или через переменную окружения PROXY_URL в Timeweb
+PROXY_URL = os.getenv("PROXY_URL", "")
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
