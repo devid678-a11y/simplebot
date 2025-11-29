@@ -10,6 +10,10 @@ import yt_dlp
 # ВСТАВЬ СЮДА СВОЙ ТОКЕН ОТ @BotFather
 API_TOKEN = "8440327310:AAHhKU4uUm_YfHJsPbum2v7gMw3ogIX5cs0"
 
+# Прокси для скачивания (формат: http://user:pass@host:port или http://host:port)
+# Оставьте пустым, если прокси не нужен
+PROXY_URL = ""
+
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
 
@@ -36,6 +40,9 @@ def download_video(url):
         'quiet': True,
         'no_warnings': True,
     }
+
+    if PROXY_URL:
+        ydl_opts['proxy'] = PROXY_URL
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
