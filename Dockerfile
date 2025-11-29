@@ -1,12 +1,22 @@
-FROM node:20-alpine
+FROM python:3.10-slim
 
+# Установка системных зависимостей (ffmpeg нужен для yt-dlp)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ffmpeg && \
+    rm -rf /var/lib/apt/lists/*
+
+# Установка рабочей директории
 WORKDIR /app
 
-COPY package.json ./
-RUN npm install
+# Копируем зависимости
+COPY requirements.txt .
 
-COPY . .
+# Установка Python-зависимостей
+RUN pip install --no-cache-dir -r requirements.txt
 
-EXPOSE 3000
+# Копируем код бота
+COPY bot.py .
 
-CMD ["node", "simple-index.js"]
+# Запуск бота
+CMD ["python", "bot.py"]
+
