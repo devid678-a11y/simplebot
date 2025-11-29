@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
-import { auth } from '../firebase'
+import { doc, setDoc, deleteDoc } from 'firebase/firestore'
+import { db, auth } from '../firebase'
 import { Link } from 'react-router-dom'
 import { linkify } from '../utils/text'
 import { formatEventDateText, formatTimeUntilEvent } from '../utils/datetime'
+import Map from '../components/Map'
+import { API_BASE } from '../apiConfig'
 
 type Ev = { 
   id: string
@@ -23,6 +26,7 @@ type PriceFilter = 'free' | 'low' | 'medium' | 'high' | ''
 type SourceFilter = 'telegram' | 'website' | ''
 
 export default function Explore() {
+  const [viewMode, setViewMode] = useState<'feed' | 'map'>('feed')
   const [eventsMain, setEventsMain] = useState<Ev[]>([])
   const [today, setToday] = useState(false)
   const [weekend, setWeekend] = useState(false)
@@ -97,8 +101,8 @@ export default function Explore() {
   }, [eventsMain])
 
   useEffect(() => {
-    const apiBase = 'https://devid678-a11y-simplebot-0a93.twc1.net'
-    const apiUrl = `${apiBase}/api/events`
+    // Используем API из конфига
+    const apiUrl = `${API_BASE}/api/events`
     
     async function fetchEvents() {
       try {
@@ -139,11 +143,11 @@ export default function Explore() {
             
             // Загружаем статусы "Пойду"
             setTimeout(() => {
-              const uid = auth.currentUser?.uid
+              const uid = auth.currentUser?.uid || 'dev_user'
               if (uid && events.length > 0) {
                 const checkPromises = events.slice(0, 50).map(async (e: any) => {
                   try {
-                    const checkUrl = `${apiBase}/api/events/${e.id}/attendees/${uid}`
+                    const checkUrl = `${API_BASE}/api/events/${e.id}/attendees/${uid}`
                     const checkRes = await fetch(checkUrl)
                     if (checkRes.ok) {
                       const checkData = await checkRes.json()
@@ -352,17 +356,12 @@ export default function Explore() {
     }
   }, [])
 
-  function getApiBase() {
-    return 'https://devid678-a11y-simplebot-0a93.twc1.net'
-  }
-
   // Fetch feed by preset
   useEffect(() => {
     if (!preset) return
     setNearby(false)
     setLoadingFeed(true)
-    const base = getApiBase()
-    const url = `${base}/api/feed?preset=${encodeURIComponent(preset)}`
+    const url = `${API_BASE}/api/feed?preset=${encodeURIComponent(preset)}`
     fetch(url).then(r=>r.json()).then(j=>{
       const arr = Array.isArray(j?.items) ? j.items : []
       setFeedItems(arr)
@@ -376,8 +375,7 @@ export default function Explore() {
     setPreset('')
     setLoadingFeed(true)
     const now = Date.now()
-    const base = getApiBase()
-    const url = `${base}/api/nearby?lat=${pos.lat}&lng=${pos.lon}&radiusKm=${nearbyRadius}&from=${now}&to=${now+48*60*60*1000}`
+    const url = `${API_BASE}/api/nearby?lat=${pos.lat}&lng=${pos.lon}&radiusKm=${nearbyRadius}&from=${now}&to=${now+48*60*60*1000}`
     fetch(url).then(r=>r.json()).then(j=>{
       const arr = Array.isArray(j?.items) ? j.items : []
       setFeedItems(arr)
@@ -385,7 +383,7 @@ export default function Explore() {
   }, [nearby, pos, nearbyRadius])
 
   async function toggleGoing(eid: string) {
-    let uid = auth.currentUser?.uid
+    let uid = auth.currentUser?.uid || 'dev_user'
     let telegramId: string | null = null
     
     try {
@@ -420,10 +418,9 @@ export default function Explore() {
       return
     }
     
-    const apiBase = 'https://devid678-a11y-simplebot-0a93.twc1.net'
     const isGoing = !!goingMap[eid]
     try {
-      const url = `${apiBase}/api/events/${eid}/attendees/${uid}`
+      const url = `${API_BASE}/api/events/${eid}/attendees/${uid}`
       const response = isGoing 
         ? await fetch(url, { method: 'DELETE' })
         : await fetch(url, { 
@@ -552,359 +549,385 @@ export default function Explore() {
       groups[groupKey].push(e)
     })
     
-    // Сортируем события внутри каждой группы по времени (от ранних к поздним)
-    Object.keys(groups).forEach(key => {
-      groups[key].sort((a: any, b: any) => {
-        if (!a.startAtMillis && !b.startAtMillis) return 0
-        if (!a.startAtMillis) return 1
-        if (!b.startAtMillis) return -1
-        return (a.startAtMillis || 0) - (b.startAtMillis || 0)
-      })
-    })
-    
-    // Сортируем группы: "Сегодня" -> "Завтра" -> остальные даты по порядку -> "Без даты"
-    const sortedGroups = Object.entries(groups).sort(([keyA], [keyB]) => {
-      // "Сегодня" всегда первое
-      if (keyA === 'Сегодня') return -1
-      if (keyB === 'Сегодня') return 1
-      
-      // "Завтра" всегда второе
-      if (keyA === 'Завтра') return -1
-      if (keyB === 'Завтра') return 1
-      
-      // "Без даты" всегда последнее
-      if (keyA === 'Без даты') return 1
-      if (keyB === 'Без даты') return -1
-      
-      // Остальные даты сортируем по дате события (берём первое событие из группы)
-      const eventA = groups[keyA]?.[0]
-      const eventB = groups[keyB]?.[0]
-      
-      if (!eventA?.startAtMillis && !eventB?.startAtMillis) return 0
-      if (!eventA?.startAtMillis) return 1
-      if (!eventB?.startAtMillis) return -1
-      
-      return (eventA.startAtMillis || 0) - (eventB.startAtMillis || 0)
-    })
-    
-    // Преобразуем обратно в объект с правильным порядком
-    const sortedGroupsObj: Record<string, any[]> = {}
-    sortedGroups.forEach(([key, events]) => {
-      sortedGroupsObj[key] = events
-    })
-    
-    return sortedGroupsObj
+    return groups
   }, [filtered, feedItems, preset, nearby])
 
   return (
-    <div style={{ padding: 16, paddingBottom: 88, maxWidth: 520, margin: '0 auto' }}>
-      <div style={{ position:'sticky', top:0, background:'var(--bg)', paddingBottom:8, zIndex:5 }}>
-        <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-          <input 
-            value={queryText} 
-            onChange={e=>setQueryText(e.target.value)} 
-            placeholder="Поиск: описание, дата, локация, категория" 
-            style={{ flex: 1, padding:'10px 12px', borderRadius:10 }} 
-          />
-          <button 
-            onClick={() => setShowFilters(!showFilters)}
-            style={{ padding:'10px 12px', borderRadius:10, background: showFilters ? 'var(--accent)' : 'rgba(255,255,255,0.06)' }}
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)', position: 'relative' }}>
+      {viewMode === 'map' && (
+        <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
+          <Map events={filtered} />
+        </div>
+      )}
+
+      <div style={{ 
+        padding: 16, 
+        paddingBottom: 8, 
+        maxWidth: 520, 
+        margin: '0 auto', 
+        width: '100%', 
+        position: viewMode === 'map' ? 'absolute' : 'sticky', 
+        top: 0, 
+        left: 0, 
+        right: 0,
+        zIndex: 10, 
+        background: viewMode === 'map' ? 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 100%)' : 'var(--bg)',
+        pointerEvents: 'none'
+      }}>
+        <div style={{ pointerEvents: 'auto' }}>
+        {/* Переключатель видов */}
+        <div style={{ display: 'flex', background: 'rgba(255,255,255,0.06)', padding: 4, borderRadius: 12, marginBottom: 12 }}>
+          <button
+            onClick={() => setViewMode('feed')}
+            style={{
+              flex: 1,
+              padding: '8px',
+              borderRadius: 10,
+              background: viewMode === 'feed' ? 'var(--accent)' : 'transparent',
+              color: viewMode === 'feed' ? '#000' : 'var(--text)',
+              fontWeight: 600,
+              fontSize: 14,
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
           >
-            🔍
+            📜 Лента
+          </button>
+          <button
+            onClick={() => setViewMode('map')}
+            style={{
+              flex: 1,
+              padding: '8px',
+              borderRadius: 10,
+              background: viewMode === 'map' ? 'var(--accent)' : 'transparent',
+              color: viewMode === 'map' ? '#000' : 'var(--text)',
+              fontWeight: 600,
+              fontSize: 14,
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+          >
+            🗺️ Карта
           </button>
         </div>
-        
-        {showFilters && (
-          <div style={{ background: 'rgba(255,255,255,0.03)', padding: 12, borderRadius: 10, marginBottom: 8 }}>
-            <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>Сортировка</div>
-            <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:12 }}>
-              <FilterChip label="По дате" active={sortBy==='date'} onClick={()=>setSortBy('date')} />
-              <FilterChip label="По популярности" active={sortBy==='popularity'} onClick={()=>setSortBy('popularity')} />
-              <FilterChip label="По алфавиту" active={sortBy==='alphabet'} onClick={()=>setSortBy('alphabet')} />
-              {pos && <FilterChip label="По расстоянию" active={sortBy==='distance'} onClick={()=>setSortBy('distance')} />}
+
+        {viewMode === 'feed' && (
+          <>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+              <input 
+                value={queryText} 
+                onChange={e=>setQueryText(e.target.value)} 
+                placeholder="Поиск: описание, дата, локация, категория" 
+                style={{ flex: 1, padding:'10px 12px', borderRadius:10, border: 'none', background: 'rgba(255,255,255,0.1)', color: 'var(--text)' }} 
+              />
+              <button 
+                onClick={() => setShowFilters(!showFilters)}
+                style={{ padding:'10px 12px', borderRadius:10, background: showFilters ? 'var(--accent)' : 'rgba(255,255,255,0.06)', border: 'none', cursor: 'pointer' }}
+              >
+                🔍
+              </button>
             </div>
             
-            <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>Дата</div>
-            <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:12 }}>
-              <FilterChip label="Сегодня" active={dateFilter==='today'} onClick={()=>setDateFilter(dateFilter==='today'?'':'today')} />
-              <FilterChip label="Выходные" active={dateFilter==='weekend'} onClick={()=>setDateFilter(dateFilter==='weekend'?'':'weekend')} />
-              <FilterChip label="Неделя" active={dateFilter==='week'} onClick={()=>setDateFilter(dateFilter==='week'?'':'week')} />
-              <FilterChip label="Месяц" active={dateFilter==='month'} onClick={()=>setDateFilter(dateFilter==='month'?'':'month')} />
-            </div>
-            
-            <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>Тип</div>
-            <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:12 }}>
-              <FilterChip label="Онлайн" active={onlineOnly===true} onClick={()=>setOnlineOnly(onlineOnly===true?null:true)} />
-              <FilterChip label="Офлайн" active={onlineOnly===false} onClick={()=>setOnlineOnly(onlineOnly===false?null:false)} />
-            </div>
-            
-            <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>Цена</div>
-            <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:12 }}>
-              <FilterChip label="Бесплатно" active={priceFilter==='free'} onClick={()=>setPriceFilter(priceFilter==='free'?'':'free')} />
-              <FilterChip label="До 500₽" active={priceFilter==='low'} onClick={()=>setPriceFilter(priceFilter==='low'?'':'low')} />
-              <FilterChip label="500-2000₽" active={priceFilter==='medium'} onClick={()=>setPriceFilter(priceFilter==='medium'?'':'medium')} />
-              <FilterChip label="2000+₽" active={priceFilter==='high'} onClick={()=>setPriceFilter(priceFilter==='high'?'':'high')} />
-            </div>
-            
-            <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>Источник</div>
-            <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:12 }}>
-              <FilterChip label="Telegram" active={sourceFilter==='telegram'} onClick={()=>setSourceFilter(sourceFilter==='telegram'?'':'telegram')} />
-              <FilterChip label="Сайты" active={sourceFilter==='website'} onClick={()=>setSourceFilter(sourceFilter==='website'?'':'website')} />
-            </div>
-            
-            {allCategories.length > 0 && (
-              <>
-                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>Категории</div>
+            {showFilters && (
+              <div style={{ background: 'rgba(255,255,255,0.03)', padding: 12, borderRadius: 10, marginBottom: 8 }}>
+                {/* ... фильтры (оставляем как есть, но они внутри условия viewMode === 'feed') ... */}
+                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>Сортировка</div>
                 <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:12 }}>
-                  {allCategories.slice(0, 10).map(cat => (
-                    <FilterChip 
-                      key={cat}
-                      label={cat} 
-                      active={selectedCategories.has(cat)} 
-                      onClick={()=>{
-                        const newSet = new Set(selectedCategories)
-                        if (newSet.has(cat)) {
-                          newSet.delete(cat)
-                        } else {
-                          newSet.add(cat)
-                        }
-                        setSelectedCategories(newSet)
-                      }} 
-                    />
-                  ))}
-                  {selectedCategories.size > 0 && (
-                    <FilterChip 
-                      label="Очистить" 
-                      active={false} 
-                      onClick={()=>setSelectedCategories(new Set())} 
-                    />
+                  <FilterChip label="По дате" active={sortBy==='date'} onClick={()=>setSortBy('date')} />
+                  <FilterChip label="По популярности" active={sortBy==='popularity'} onClick={()=>setSortBy('popularity')} />
+                  <FilterChip label="По алфавиту" active={sortBy==='alphabet'} onClick={()=>setSortBy('alphabet')} />
+                  {pos && <FilterChip label="По расстоянию" active={sortBy==='distance'} onClick={()=>setSortBy('distance')} />}
+                </div>
+                
+                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>Дата</div>
+                <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:12 }}>
+                  <FilterChip label="Сегодня" active={dateFilter==='today'} onClick={()=>setDateFilter(dateFilter==='today'?'':'today')} />
+                  <FilterChip label="Выходные" active={dateFilter==='weekend'} onClick={()=>setDateFilter(dateFilter==='weekend'?'':'weekend')} />
+                  <FilterChip label="Неделя" active={dateFilter==='week'} onClick={()=>setDateFilter(dateFilter==='week'?'':'week')} />
+                  <FilterChip label="Месяц" active={dateFilter==='month'} onClick={()=>setDateFilter(dateFilter==='month'?'':'month')} />
+                </div>
+                
+                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>Тип</div>
+                <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:12 }}>
+                  <FilterChip label="Онлайн" active={onlineOnly===true} onClick={()=>setOnlineOnly(onlineOnly===true?null:true)} />
+                  <FilterChip label="Офлайн" active={onlineOnly===false} onClick={()=>setOnlineOnly(onlineOnly===false?null:false)} />
+                </div>
+                
+                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>Цена</div>
+                <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:12 }}>
+                  <FilterChip label="Бесплатно" active={priceFilter==='free'} onClick={()=>setPriceFilter(priceFilter==='free'?'':'free')} />
+                  <FilterChip label="До 500₽" active={priceFilter==='low'} onClick={()=>setPriceFilter(priceFilter==='low'?'':'low')} />
+                  <FilterChip label="500-2000₽" active={priceFilter==='medium'} onClick={()=>setPriceFilter(priceFilter==='medium'?'':'medium')} />
+                  <FilterChip label="2000+₽" active={priceFilter==='high'} onClick={()=>setPriceFilter(priceFilter==='high'?'':'high')} />
+                </div>
+                
+                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>Источник</div>
+                <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:12 }}>
+                  <FilterChip label="Telegram" active={sourceFilter==='telegram'} onClick={()=>setSourceFilter(sourceFilter==='telegram'?'':'telegram')} />
+                  <FilterChip label="Сайты" active={sourceFilter==='website'} onClick={()=>setSourceFilter(sourceFilter==='website'?'':'website')} />
+                </div>
+                
+                {allCategories.length > 0 && (
+                  <>
+                    <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>Категории</div>
+                    <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:12 }}>
+                      {allCategories.slice(0, 10).map(cat => (
+                        <FilterChip 
+                          key={cat}
+                          label={cat} 
+                          active={selectedCategories.has(cat)} 
+                          onClick={()=>{
+                            const newSet = new Set(selectedCategories)
+                            if (newSet.has(cat)) {
+                              newSet.delete(cat)
+                            } else {
+                              newSet.add(cat)
+                            }
+                            setSelectedCategories(newSet)
+                          }} 
+                        />
+                      ))}
+                      {selectedCategories.size > 0 && (
+                        <FilterChip 
+                          label="Очистить" 
+                          active={false} 
+                          onClick={()=>setSelectedCategories(new Set())} 
+                        />
+                      )}
+                    </div>
+                  </>
+                )}
+                
+                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>Рядом</div>
+                <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:12, alignItems: 'center' }}>
+                  <FilterChip label="Рядом" active={nearby} onClick={()=>{
+                    setNearby(v=>!v)
+                    if (!nearby && navigator.geolocation) {
+                      navigator.geolocation.getCurrentPosition((p)=>setPos({ lat:p.coords.latitude, lon:p.coords.longitude }), ()=>{}, { enableHighAccuracy:true, timeout:5000 })
+                    }
+                  }} />
+                  {nearby && (
+                    <select 
+                      value={nearbyRadius} 
+                      onChange={e=>setNearbyRadius(parseInt(e.target.value, 10))}
+                      style={{ padding:'6px 10px', borderRadius:8, background:'rgba(255,255,255,0.06)', color:'var(--text)', border:'none' }}
+                    >
+                      <option value={1}>1 км</option>
+                      <option value={2}>2 км</option>
+                      <option value={5}>5 км</option>
+                      <option value={10}>10 км</option>
+                    </select>
                   )}
                 </div>
-              </>
+              </div>
             )}
-            
-            <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>Рядом</div>
-            <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:12, alignItems: 'center' }}>
-              <FilterChip label="Рядом" active={nearby} onClick={()=>{
-                setNearby(v=>!v)
-                if (!nearby && navigator.geolocation) {
-                  navigator.geolocation.getCurrentPosition((p)=>setPos({ lat:p.coords.latitude, lon:p.coords.longitude }), ()=>{}, { enableHighAccuracy:true, timeout:5000 })
-                }
-              }} />
-              {nearby && (
-                <select 
-                  value={nearbyRadius} 
-                  onChange={e=>setNearbyRadius(parseInt(e.target.value, 10))}
-                  style={{ padding:'6px 10px', borderRadius:8, background:'rgba(255,255,255,0.06)', color:'var(--text)', border:'none' }}
-                >
-                  <option value={1}>1 км</option>
-                  <option value={2}>2 км</option>
-                  <option value={5}>5 км</option>
-                  <option value={10}>10 км</option>
-                </select>
-              )}
+          </>
+        )}
+        </div>
+      </div>
+
+      <div style={{ flex: 1, overflowY: viewMode === 'map' ? 'hidden' : 'auto', paddingBottom: 88, position: 'relative', zIndex: viewMode === 'map' ? -1 : 5 }}>
+        {viewMode === 'feed' && (
+          <div style={{ padding: 16, maxWidth: 520, margin: '0 auto' }}>
+            {/* Контент ленты */}
+            <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:12 }}>
+              <FilterChip label="Мои мероприятия" active={myEvents} onClick={()=>setMyEvents(v=>!v)} />
+              <FilterChip label="Бесплатно" active={freeOnly} onClick={()=>setFreeOnly(v=>!v)} />
+              <FilterChip label="Для вас" active={preset==='today_evening'} onClick={()=>setPreset(preset==='today_evening'?'': 'today_evening')} />
+              <FilterChip label="Завтра" active={preset==='tomorrow_evening'} onClick={()=>setPreset(preset==='tomorrow_evening'?'': 'tomorrow_evening')} />
+              <FilterChip label="Выходные" active={preset==='weekend'} onClick={()=>setPreset(preset==='weekend'?'': 'weekend')} />
             </div>
+            
+            {loadingFeed && <div className="muted">Загрузка…</div>}
+            {!loadingFeed && preset && feedItems.length === 0 && <div className="muted">Нет подборок для выбранного пресета</div>}
+            {!loadingFeed && nearby && feedItems.length === 0 && <div className="muted">Рядом ничего не найдено</div>}
+            {!loadingFeed && !preset && !nearby && filtered.length === 0 && <div className="muted">События не найдены</div>}
+            
+            <div style={{ display: 'grid', gap: 12 }}>
+              {Object.entries(groupedEvents).map(([groupKey, groupEvents]) => (
+                <div key={groupKey}>
+                  <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, marginTop: groupKey !== Object.keys(groupedEvents)[0] ? 16 : 0 }}>
+                    {groupKey}
+                  </div>
+                  {groupEvents.map((e:any) => {
+                    const indicators = getEventIndicators(e)
+                    return (
+                      <div key={e.id} className="card" style={{ padding: 0, overflow: 'hidden', marginBottom: 12 }}>
+                        {(e.createdBy || e.createdByDisplayName || e.createdByPhotoUrl) && (
+                          <div className="row" style={{ alignItems:'center', gap:10, padding:'10px 12px' }}>
+                            <div style={{ fontSize:12, opacity:.8 }}>Мероприятие создал</div>
+                            <div style={{ width:22, height:22, borderRadius:999, overflow:'hidden', background:'#222' }}>
+                              {e.createdByPhotoUrl ? <img src={e.createdByPhotoUrl} alt="avatar" style={{ width:'100%', height:'100%', objectFit:'cover' }} /> : null}
+                            </div>
+                            <div style={{ fontSize:12, fontWeight:600 }}>{e.createdByDisplayName || 'Пользователь'}</div>
+                          </div>
+                        )}
+                        
+                        {Array.isArray(e.imageUrls) && e.imageUrls[0] && (
+                          <Link to={`/event/${e.id}`} style={{ display:'block' }} onClick={()=>{
+                            sessionStorage.setItem('feedScroll',''+window.scrollY)
+                            markAsViewed(e.id)
+                          }}>
+                            <img src={e.imageUrls[0]} loading="lazy" alt="cover" style={{ width:'100%', height:140, objectFit:'cover', objectPosition:'center' }} />
+                          </Link>
+                        )}
+                        
+                        <div style={{ padding: 14 }}>
+                          <div className="row" style={{ justifyContent:'space-between', alignItems:'flex-start', marginBottom: 6 }}>
+                            <Link to={`/event/${e.id}`} style={{ textDecoration:'none', color:'inherit', flex: 1 }} onClick={()=>{
+                              sessionStorage.setItem('feedScroll',''+window.scrollY)
+                              markAsViewed(e.id)
+                            }}>
+                              <div style={{ fontWeight: 700, marginBottom: 6 }}>{e.title}</div>
+                            </Link>
+                            <div style={{ display: 'flex', gap: 4 }}>
+                              <button 
+                                onClick={()=>toggleFavorite(e.id)} 
+                                className="btn-ghost" 
+                                style={{ padding:'4px 8px', borderRadius: 8, fontSize: 16 }}
+                                title={favorites.has(e.id) ? 'Убрать из избранного' : 'В избранное'}
+                              >
+                                {favorites.has(e.id) ? '⭐' : '☆'}
+                              </button>
+                              <button 
+                                onClick={()=>shareEvent(e)} 
+                                className="btn-ghost" 
+                                style={{ padding:'4px 8px', borderRadius: 8, fontSize: 16 }}
+                                title="Поделиться"
+                              >
+                                📤
+                              </button>
+                            </div>
+                          </div>
+                          
+                          {indicators.length > 0 && (
+                            <div style={{ display: 'flex', gap: 6, marginBottom: 6, flexWrap: 'wrap' }}>
+                              {indicators.map((ind, idx) => (
+                                <span 
+                                  key={idx}
+                                  style={{ 
+                                    fontSize: 11, 
+                                    padding: '2px 6px', 
+                                    borderRadius: 6, 
+                                    background: ind.color + '20',
+                                    color: ind.color,
+                                    fontWeight: 600
+                                  }}
+                                >
+                                  {ind.text}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          
+                          <div className="row" style={{ justifyContent:'space-between', alignItems:'center', marginBottom: 6 }}>
+                            <div style={{ flex: 1 }}>
+                              <div className="muted" style={{ fontSize: 13, marginBottom: 4 }}>
+                                {formatEventDateText(e)}
+                                {e.startAtMillis && (() => {
+                                  const timeUntil = formatTimeUntilEvent(e.startAtMillis)
+                                  return timeUntil ? (
+                                    <span style={{ marginLeft: 8, opacity: 0.7 }}>
+                                      • {timeUntil}
+                                    </span>
+                                  ) : null
+                                })()}
+                              </div>
+                              <div className="muted" style={{ fontSize: 13, marginBottom: 4 }}>
+                                {e.isOnline ? (
+                                  <span style={{ color: 'var(--accent)' }}>🌐 Онлайн</span>
+                                ) : (
+                                  e.location ? (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                                      <span>{e.location}</span>
+                                      <a 
+                                        href={`https://yandex.ru/maps/?text=${encodeURIComponent(e.location)}`} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        style={{ 
+                                          fontSize: 12, 
+                                          color: 'var(--accent)', 
+                                          textDecoration: 'none',
+                                          padding: '2px 6px',
+                                          borderRadius: 4,
+                                          background: 'rgba(0,229,255,0.1)'
+                                        }}
+                                      >
+                                        🗺️ Карта
+                                      </a>
+                                    </div>
+                                  ) : '—'
+                                )}
+                              </div>
+                              {e.attendeesCount > 0 && (
+                                <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>
+                                  👥 Пойдут: {e.attendeesCount}
+                                </div>
+                              )}
+                            </div>
+                            <button 
+                              onClick={()=>toggleGoing(e.id)} 
+                              className="btn-ghost" 
+                              style={{ padding:'6px 10px', borderRadius: 10, whiteSpace: 'nowrap' }}
+                            >
+                              {goingMap[e.id] ? 'Не пойду' : 'Пойду'}
+                            </button>
+                          </div>
+                          
+                          {typeof (e as any).description === 'string' && (e as any).description && (
+                            <div className="muted" style={{ fontSize: 13, marginBottom: 8, display:'-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient:'vertical', overflow:'hidden' }}
+                                 dangerouslySetInnerHTML={{ __html: (e as any).description ? linkify((e as any).description) : '' }} />
+                          )}
+                          
+                          {Array.isArray(e.categories) && e.categories.length>0 && (
+                            <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom: 8 }}>
+                              {e.categories.slice(0,4).map((c:string) => (
+                                <span key={c} style={{ fontSize:12, padding:'4px 8px', background:'rgba(255,255,255,0.06)', borderRadius:8 }}>{c}</span>
+                              ))}
+                            </div>
+                          )}
+                          
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+                            <Link to={`/event/${e.id}`} style={{ fontSize:12, textDecoration:'none' }} onClick={()=>{
+                              sessionStorage.setItem('feedScroll',''+window.scrollY)
+                              markAsViewed(e.id)
+                            }}>
+                              Открыть →
+                            </Link>
+                            {viewedEvents.has(e.id) && (
+                              <span style={{ fontSize: 11, opacity: 0.5 }}>✓ Просмотрено</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              ))}
+            </div>
+            
+            {filtered.length >= limit && (
+              <div style={{ textAlign: 'center', marginTop: 16 }}>
+                <button 
+                  onClick={() => setLimit(limit + 50)}
+                  style={{ padding: '10px 20px', borderRadius: 10, background: 'rgba(255,255,255,0.06)' }}
+                >
+                  Загрузить еще
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
-      
-      <div style={{ marginBottom: 12 }}>
-        <div style={{ fontSize: 18, fontWeight: 700 }}>События</div>
-      </div>
-      
-      <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:12 }}>
-        <FilterChip label="Мои мероприятия" active={myEvents} onClick={()=>setMyEvents(v=>!v)} />
-        <FilterChip label="Бесплатно" active={freeOnly} onClick={()=>setFreeOnly(v=>!v)} />
-        <FilterChip label="Для вас" active={preset==='today_evening'} onClick={()=>setPreset(preset==='today_evening'?'': 'today_evening')} />
-        <FilterChip label="Завтра" active={preset==='tomorrow_evening'} onClick={()=>setPreset(preset==='tomorrow_evening'?'': 'tomorrow_evening')} />
-        <FilterChip label="Выходные" active={preset==='weekend'} onClick={()=>setPreset(preset==='weekend'?'': 'weekend')} />
-      </div>
-      
-      {loadingFeed && <div className="muted">Загрузка…</div>}
-      {!loadingFeed && preset && feedItems.length === 0 && <div className="muted">Нет подборок для выбранного пресета</div>}
-      {!loadingFeed && nearby && feedItems.length === 0 && <div className="muted">Рядом ничего не найдено</div>}
-      {!loadingFeed && !preset && !nearby && filtered.length === 0 && <div className="muted">События не найдены</div>}
-      
-      <div style={{ display: 'grid', gap: 12 }}>
-        {Object.entries(groupedEvents).map(([groupKey, groupEvents]) => (
-          <div key={groupKey}>
-            <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, marginTop: groupKey !== Object.keys(groupedEvents)[0] ? 16 : 0 }}>
-              {groupKey}
-            </div>
-            {groupEvents.map((e:any) => {
-              const indicators = getEventIndicators(e)
-              return (
-                <div key={e.id} className="card" style={{ padding: 0, overflow: 'hidden', marginBottom: 12 }}>
-                  {(e.createdBy || e.createdByDisplayName || e.createdByPhotoUrl) && (
-                    <div className="row" style={{ alignItems:'center', gap:10, padding:'10px 12px' }}>
-                      <div style={{ fontSize:12, opacity:.8 }}>Мероприятие создал</div>
-                      <div style={{ width:22, height:22, borderRadius:999, overflow:'hidden', background:'#222' }}>
-                        {e.createdByPhotoUrl ? <img src={e.createdByPhotoUrl} alt="avatar" style={{ width:'100%', height:'100%', objectFit:'cover' }} /> : null}
-                      </div>
-                      <div style={{ fontSize:12, fontWeight:600 }}>{e.createdByDisplayName || 'Пользователь'}</div>
-                    </div>
-                  )}
-                  
-                  {Array.isArray(e.imageUrls) && e.imageUrls[0] && (
-                    <Link to={`/event/${e.id}`} style={{ display:'block' }} onClick={()=>{
-                      sessionStorage.setItem('feedScroll',''+window.scrollY)
-                      markAsViewed(e.id)
-                    }}>
-                      <img src={e.imageUrls[0]} loading="lazy" alt="cover" style={{ width:'100%', height:140, objectFit:'cover', objectPosition:'center' }} />
-                    </Link>
-                  )}
-                  
-                  <div style={{ padding: 14 }}>
-                    <div className="row" style={{ justifyContent:'space-between', alignItems:'flex-start', marginBottom: 6 }}>
-                      <Link to={`/event/${e.id}`} style={{ textDecoration:'none', color:'inherit', flex: 1 }} onClick={()=>{
-                        sessionStorage.setItem('feedScroll',''+window.scrollY)
-                        markAsViewed(e.id)
-                      }}>
-                        <div style={{ fontWeight: 700, marginBottom: 6 }}>{e.title}</div>
-                      </Link>
-                      <div style={{ display: 'flex', gap: 4 }}>
-                        <button 
-                          onClick={()=>toggleFavorite(e.id)} 
-                          className="btn-ghost" 
-                          style={{ padding:'4px 8px', borderRadius: 8, fontSize: 16 }}
-                          title={favorites.has(e.id) ? 'Убрать из избранного' : 'В избранное'}
-                        >
-                          {favorites.has(e.id) ? '⭐' : '☆'}
-                        </button>
-                        <button 
-                          onClick={()=>shareEvent(e)} 
-                          className="btn-ghost" 
-                          style={{ padding:'4px 8px', borderRadius: 8, fontSize: 16 }}
-                          title="Поделиться"
-                        >
-                          📤
-                        </button>
-                      </div>
-                    </div>
-                    
-                    {indicators.length > 0 && (
-                      <div style={{ display: 'flex', gap: 6, marginBottom: 6, flexWrap: 'wrap' }}>
-                        {indicators.map((ind, idx) => (
-                          <span 
-                            key={idx}
-                            style={{ 
-                              fontSize: 11, 
-                              padding: '2px 6px', 
-                              borderRadius: 6, 
-                              background: ind.color + '20',
-                              color: ind.color,
-                              fontWeight: 600
-                            }}
-                          >
-                            {ind.text}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    
-                    <div className="row" style={{ justifyContent:'space-between', alignItems:'center', marginBottom: 6 }}>
-                      <div style={{ flex: 1 }}>
-                        <div className="muted" style={{ fontSize: 13, marginBottom: 4 }}>
-                          {formatEventDateText(e)}
-                          {e.startAtMillis && (() => {
-                            const timeUntil = formatTimeUntilEvent(e.startAtMillis)
-                            return timeUntil ? (
-                              <span style={{ marginLeft: 8, opacity: 0.7 }}>
-                                • {timeUntil}
-                              </span>
-                            ) : null
-                          })()}
-                        </div>
-                        <div className="muted" style={{ fontSize: 13, marginBottom: 4 }}>
-                          {e.isOnline ? (
-                            <span style={{ color: 'var(--accent)' }}>🌐 Онлайн</span>
-                          ) : (
-                            e.location ? (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                                <span>{e.location}</span>
-                                <a 
-                                  href={`https://yandex.ru/maps/?text=${encodeURIComponent(e.location)}`} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  style={{ 
-                                    fontSize: 12, 
-                                    color: 'var(--accent)', 
-                                    textDecoration: 'none',
-                                    padding: '2px 6px',
-                                    borderRadius: 4,
-                                    background: 'rgba(0,229,255,0.1)'
-                                  }}
-                                >
-                                  🗺️ Карта
-                                </a>
-                              </div>
-                            ) : '—'
-                          )}
-                        </div>
-                        {e.attendeesCount > 0 && (
-                          <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>
-                            👥 Пойдут: {e.attendeesCount}
-                          </div>
-                        )}
-                      </div>
-                      <button 
-                        onClick={()=>toggleGoing(e.id)} 
-                        className="btn-ghost" 
-                        style={{ padding:'6px 10px', borderRadius: 10, whiteSpace: 'nowrap' }}
-                      >
-                        {goingMap[e.id] ? 'Не пойду' : 'Пойду'}
-                      </button>
-                    </div>
-                    
-                    {typeof (e as any).description === 'string' && (e as any).description && (
-                      <div className="muted" style={{ fontSize: 13, marginBottom: 8, display:'-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient:'vertical', overflow:'hidden' }}
-                           dangerouslySetInnerHTML={{ __html: (e as any).description ? linkify((e as any).description) : '' }} />
-                    )}
-                    
-                    {Array.isArray(e.categories) && e.categories.length>0 && (
-                      <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom: 8 }}>
-                        {e.categories.slice(0,4).map((c:string) => (
-                          <span key={c} style={{ fontSize:12, padding:'4px 8px', background:'rgba(255,255,255,0.06)', borderRadius:8 }}>{c}</span>
-                        ))}
-                      </div>
-                    )}
-                    
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
-                      <Link to={`/event/${e.id}`} style={{ fontSize:12, textDecoration:'none' }} onClick={()=>{
-                        sessionStorage.setItem('feedScroll',''+window.scrollY)
-                        markAsViewed(e.id)
-                      }}>
-                        Открыть →
-                      </Link>
-                      {viewedEvents.has(e.id) && (
-                        <span style={{ fontSize: 11, opacity: 0.5 }}>✓ Просмотрено</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        ))}
-      </div>
-      
-      {filtered.length >= limit && (
-        <div style={{ textAlign: 'center', marginTop: 16 }}>
-          <button 
-            onClick={() => setLimit(limit + 50)}
-            style={{ padding: '10px 20px', borderRadius: 10, background: 'rgba(255,255,255,0.06)' }}
-          >
-            Загрузить еще
-          </button>
-        </div>
-      )}
     </div>
   )
 }
 
 function FilterChip({ label, active, onClick }:{label:string, active:boolean, onClick:()=>void}){
   return (
-    <button onClick={onClick} style={{ padding:'8px 10px', borderRadius:999, background: active? 'var(--accent)' : 'rgba(255,255,255,0.06)', color: active? '#000':'var(--text)', fontSize: 13 }}>
+    <button onClick={onClick} style={{ padding:'8px 10px', borderRadius:999, background: active? 'var(--accent)' : 'rgba(255,255,255,0.06)', color: active? '#000':'var(--text)', fontSize: 13, border: 'none', cursor: 'pointer' }}>
       {label}
     </button>
   )

@@ -7,6 +7,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
+    "build": "npm install --prefix web && npm run build --prefix web",
     "parse": "node parse_channels_postgres.js",
     "delete-past": "node delete-past-events.js"
   },

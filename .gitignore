@@ -1,13 +1,9 @@
-<<<<<<< HEAD
-node_modules/
-.env
-*.log
-.DS_Store
-Thumbs.db
-=======
-# Node
 node_modules/
 npm-debug.log*
+*.log
+.env
+.DS_Store
+Thumbs.db
 
 # Android build
 app/build/
@@ -16,19 +12,11 @@ app/build/
 # Web build
 web/dist/
 
-# Functions/bot deps
-functions/node_modules/
-bot/node_modules/
+# Keys/secrets
+service-account.json
+local_db.json
+credentials.json
 
-# Keys/secrets (DO NOT COMMIT!)
-*.json
-!app/google-services.json
-
-# IDE/others
+# IDE
 .vscode/
 .idea/
-.DS_Store
-
-node_modules/
-*.local
->>>>>>> 82bb116 (Initial commit)

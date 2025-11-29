@@ -11,7 +11,7 @@ const Footer = () => {
           <div className="footer-section">
             <div className="footer-logo">
               <span className="logo-icon">👨‍🍳</span>
-              <span className="logo-text">Кулинарная Школа</span>
+              <span className="logo-text">StarCook School</span>
             </div>
             <p className="footer-description">
               Онлайн курсы по кулинарии от профессиональных шеф-поваров. 
@@ -56,7 +56,7 @@ const Footer = () => {
         </div>
         
         <div className="footer-bottom">
-          <p>&copy; {currentYear} Кулинарная Школа. Все права защищены.</p>
+          <p>&copy; {currentYear} StarCook School. Все права защищены.</p>
           <div className="footer-legal">
             <Link to="/">Политика конфиденциальности</Link>
             <Link to="/">Условия использования</Link>

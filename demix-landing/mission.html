@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Миссия и ценности — DEMEX</title>
+    <meta name="description" content="Миссия и ценности DEMEX RUS. Мы создаем будущее профессионального ремонта.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .mission-page {
+            min-height: 100vh;
+            background: var(--bg-light);
+            padding-top: 100px;
+            padding-bottom: 80px;
+        }
+
+        .mission-header {
+            text-align: center;
+            margin-bottom: 80px;
+            padding: 0 20px;
+        }
+
+        .mission-header h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--text);
+        }
+
+        .mission-section {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            margin-bottom: 80px;
+        }
+
+        .mission-section h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 24px;
+            color: var(--text);
+        }
+
+        .mission-section p {
+            font-size: 1.1rem;
+            color: var(--text-light);
+            line-height: 1.8;
+            margin-bottom: 20px;
+        }
+
+        .mission-section .intro-text {
+            font-size: 1.5rem;
+            color: var(--primary);
+            font-weight: 600;
+            margin-bottom: 30px;
+        }
+
+        .values-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .value-card {
+            background: white;
+            padding: 40px 30px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            text-align: center;
+        }
+
+        .value-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .value-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            font-weight: 400;
+            line-height: 1;
+        }
+
+        .value-card h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text);
+        }
+
+        .value-card p {
+            font-size: 1rem;
+            color: var(--text-light);
+            line-height: 1.6;
+            margin-bottom: 0;
+        }
+
+        .solutions-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .solution-card {
+            background: white;
+            padding: 40px 30px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            border-left: 4px solid var(--primary);
+        }
+
+        .solution-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .solution-card h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text);
+        }
+
+        .solution-card p {
+            font-size: 1rem;
+            color: var(--text-light);
+            line-height: 1.6;
+            margin-bottom: 0;
+        }
+
+        .mission-text {
+            background: white;
+            padding: 40px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 60px;
+        }
+
+        .mission-text p {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+
+        @media (max-width: 1024px) {
+            .solutions-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .mission-page {
+                padding-top: 80px;
+                padding-bottom: 60px;
+            }
+
+            .mission-section {
+                padding: 0 16px;
+            }
+
+            .mission-text {
+                padding: 30px 20px;
+            }
+
+            .values-grid,
+            .solutions-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-wrapper">
+            <div class="container">
+                <div class="header-content">
+                    <div class="logo">
+                        <a href="index.html">
+                            <img src="logo.png" alt="DEMEX" class="logo-img">
+                        </a>
+                    </div>
+                    <nav class="nav">
+                        <div class="nav-item-dropdown">
+                            <a href="index.html#about" class="nav-link">
+                                О нас
+                                <span class="dropdown-arrow">▼</span>
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a href="mission.html" class="dropdown-link">Миссия и цели</a></li>
+                                <li><a href="production.html" class="dropdown-link">Производство</a></li>
+                                <li><a href="certificates.html" class="dropdown-link">Сертификаты</a></li>
+                                <li><a href="index.html#media" class="dropdown-link">СМИ о нас</a></li>
+                                <li><a href="index.html#blog" class="dropdown-link">Блог</a></li>
+                            </ul>
+                        </div>
+                        <a href="index.html#catalog" class="nav-link">Каталог</a>
+                        <div class="nav-item-dropdown">
+                            <a href="index.html#buyers" class="nav-link">
+                                Покупателям
+                                <span class="dropdown-arrow">▼</span>
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a href="index.html#delivery" class="dropdown-link">Доставка</a></li>
+                                <li><a href="index.html#calculator" class="dropdown-link">Калькулятор</a></li>
+                                <li><a href="index.html#video-reviews" class="dropdown-link">Видеоотзывы</a></li>
+                                <li><a href="index.html#video-instructions" class="dropdown-link">Видеоинструкции</a></li>
+                            </ul>
+                        </div>
+                        <a href="index.html#partners" class="nav-link">Партнерам</a>
+                        <a href="index.html#where-to-buy" class="nav-link">Где купить</a>
+                        <a href="index.html#contacts" class="nav-link">Контакты</a>
+                        <div class="header-contact mobile-contact">
+                            <div class="header-contact-row">
+                                <div class="header-phone-block">
+                                    <a href="tel:88005338618" class="phone-number">8 800 533 8618</a>
+                                    <div class="social-icons">
+                                        <a href="#" class="social-icon" aria-label="WhatsApp">
+                                            <img src="icons/whatsapp.svg" alt="WhatsApp">
+                                        </a>
+                                        <a href="#" class="social-icon" aria-label="Telegram">
+                                            <img src="icons/telegram.svg" alt="Telegram">
+                                        </a>
+                                        <a href="#" class="social-icon" aria-label="VK">
+                                            <img src="icons/vk.svg" alt="VK">
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="header-address-block">
+                                    <p class="address-text">г. Москва, ул. Золоторожский Вал,<br>11с22, офис 373</p>
+                                    <p class="work-hours">9:00-19:00</p>
+                                </div>
+                            </div>
+                        </div>
+                    </nav>
+                    <div class="header-contact desktop-contact">
+                        <div class="header-contact-row">
+                            <div class="header-phone-block">
+                                <a href="tel:88005338618" class="phone-number">8 800 533 8618</a>
+                                <div class="social-icons">
+                                    <a href="#" class="social-icon" aria-label="WhatsApp">
+                                        <img src="icons/whatsapp.svg" alt="WhatsApp">
+                                    </a>
+                                    <a href="#" class="social-icon" aria-label="Telegram">
+                                        <img src="icons/telegram.svg" alt="Telegram">
+                                    </a>
+                                    <a href="#" class="social-icon" aria-label="VK">
+                                        <img src="icons/vk.svg" alt="VK">
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="header-address-block">
+                                <p class="address-text">г. Москва, ул. Золоторожский Вал,<br>11с22, офис 373</p>
+                                <p class="work-hours">9:00-19:00</p>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="menu-toggle" aria-label="Меню">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                </div>
+            </div>
+            <div class="header-calculator">
+                <button class="calculator-btn" aria-label="Калькулятор">
+                    <img src="icons/calculator.svg" alt="Калькулятор">
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Mission Page -->
+    <section class="mission-page">
+        <div class="mission-header">
+            <h1>О компании</h1>
+        </div>
+
+        <div class="mission-section">
+            <h2>Кто мы</h2>
+            <p class="intro-text">DEMEX RUS — официальное представительство международного бренда эпоксидной плиточной затирки в России.</p>
+        </div>
+
+        <div class="mission-section">
+            <h2>Наша миссия</h2>
+            <div class="mission-text">
+                <p>Мы создаем будущее профессионального ремонта, делая его проще, эффективнее и доступнее для каждого.</p>
+                <p>Наша миссия — изменить подход к оформлению плиточных швов, предлагая российским мастерам и энтузиастам DIY передовые решения, которые меняют представление о качестве и скорости работы. Мы не просто поставляем продукцию — мы меняем индустрию, делая её более доступной, понятной и результативной. Для каждого.</p>
+            </div>
+        </div>
+
+        <div class="mission-section">
+            <h2>Мы верим, что каждый заслуживает</h2>
+            <div class="values-grid">
+                <div class="value-card">
+                    <div class="value-icon">✨</div>
+                    <h3>Безупречного результата без сложных технологий</h3>
+                </div>
+                <div class="value-card">
+                    <div class="value-icon">⏰</div>
+                    <h3>Экономии времени без потери качества</h3>
+                </div>
+                <div class="value-card">
+                    <div class="value-icon">🔒</div>
+                    <h3>Надежности в каждом шве</h3>
+                </div>
+                <div class="value-card">
+                    <div class="value-icon">😊</div>
+                    <h3>Удовольствия от процесса работы</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="mission-section">
+            <h2>Мы создаем решения, которые</h2>
+            <div class="solutions-grid">
+                <div class="solution-card">
+                    <h3>Делают работу проще и эффективнее</h3>
+                    <p>Наши продукты разработаны с учетом потребностей мастеров и упрощают процесс работы, экономя время и силы.</p>
+                </div>
+                <div class="solution-card">
+                    <h3>Обеспечивают профессиональный результат даже начинающим</h3>
+                    <p>Интуитивно понятные решения позволяют достигать высокого качества работы независимо от уровня опыта.</p>
+                </div>
+                <div class="solution-card">
+                    <h3>Соответствуют высоким стандартам качества</h3>
+                    <p>Вся наша продукция проходит строгий контроль качества и соответствует международным стандартам.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <div class="logo">
+                        <a href="index.html">
+                            <img src="logo.png" alt="DEMEX" class="logo-img" style="height: 40px;">
+                        </a>
+                    </div>
+                    <p>Эпоксидная затирка нового поколения</p>
+                </div>
+                <div class="footer-links">
+                    <a href="index.html#about">О продукте</a>
+                    <a href="index.html#applications">Применение</a>
+                    <a href="certificates.html">Сертификаты</a>
+                    <a href="production.html">Производство</a>
+                    <a href="mission.html">Миссия и ценности</a>
+                    <a href="index.html#contacts">Контакты</a>
+                </div>
+                <div class="footer-meta">
+                    <p>© 2025 DEMIX. Все права защищены.</p>
+                </div>
+            </div>
+        </div>
+        <button class="scroll-top" aria-label="Наверх">↑</button>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
+

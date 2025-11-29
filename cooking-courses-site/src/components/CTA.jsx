@@ -17,11 +17,13 @@ const CTA = () => {
       <div className="container">
         <div className="cta-content">
           <div className="cta-badge">🎁 Специальное предложение</div>
-          <h2 className="cta-title">
-            Начните готовить
-            <br />
-            <span className="gradient-text">уже сегодня</span>
-          </h2>
+          <div className="cta-title-wrapper">
+            <h2 className="cta-title">
+              Начните готовить
+              <br />
+              <span className="gradient-text">уже сегодня</span>
+            </h2>
+          </div>
           <p className="cta-description">
             Получите первый урок бесплатно и 10 рецептов в подарок. 
             Начните свой путь к мастерству в кулинарии прямо сейчас.

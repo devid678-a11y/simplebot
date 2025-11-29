@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Лофт - Особняк Кости — Премиальное пространство для событий</title>
+    <meta name="description" content="Эксклюзивный лофт в особняке на Бульваре Рокоссовского для проведения мероприятий, вечеринок и частных событий">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <img src="images/Layer 01.png" alt="Особняк Кости" class="brand-logo">
+            </div>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="#events">Мероприятия</a></li>
+                <li><a href="#calendar">Календарь</a></li>
+                <li><a href="#booking">Бронирование</a></li>
+                <li><a href="#faq">FAQ</a></li>
+                <li><a href="#about">О нас</a></li>
+                <li><a href="#contact" class="nav-cta">Контакты</a></li>
+            </ul>
+            <button class="menu-toggle" id="menuToggle" aria-label="Меню">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero Section with Background Video -->
+    <section class="hero" id="home">
+        <div class="hero-background">
+            <video class="hero-video" autoplay muted loop playsinline>
+                <source src="videos/IMG_3869.MOV" type="video/mp4">
+            </video>
+            <div class="hero-image-overlay"></div>
+            <div class="hero-gradient"></div>
+            <div class="particles" id="particles"></div>
+        </div>
+        <div class="hero-content">
+            <div class="hero-badge">
+                <span class="pulse-dot"></span>
+                Эксклюзивное пространство
+            </div>
+            <h1 class="hero-title">
+                <span class="title-line">Лофт</span>
+                <span class="title-line">Особняк Кости</span>
+            </h1>
+            <p class="hero-description">
+                Эксклюзивное пространство в особняке на Бульваре Рокоссовского для незабываемых событий, вечеринок и частных мероприятий
+            </p>
+            <div class="hero-actions">
+                <a href="#booking" class="btn btn-primary">Забронировать</a>
+                <a href="#events" class="btn btn-secondary">Мероприятия</a>
+            </div>
+        </div>
+        <div class="scroll-indicator">
+            <span>Скролл</span>
+            <div class="mouse">
+                <div class="wheel"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section class="section about" id="about">
+        <div class="container">
+            <div class="about-content" data-animate="fade-up">
+                <span class="section-label">О нас</span>
+                <h2 class="section-title">Уникальное пространство</h2>
+                <p>
+                    Лофт - Особняк Кости — это эксклюзивное пространство, расположенное в особняке на Бульваре Рокоссовского. 
+                    Пространство сочетает в себе архитектурное наследие прошлого и современный дизайн, 
+                    создавая идеальную атмосферу для любых событий.
+                </p>
+                <p>
+                    Мы специализируемся на организации незабываемых вечеринок, корпоративных мероприятий, 
+                    концертов и частных событий. Вся важная информация о райдере, правилах и как добраться 
+                    доступна в нашем Telegram канале.
+                </p>
+                <div class="stats-grid">
+                    <div class="stat-item" data-animate="fade-up">
+                        <span class="stat-number" data-count="200">0</span>
+                        <span class="stat-label">Гостей</span>
+                    </div>
+                    <div class="stat-item" data-animate="fade-up" data-delay="0.1">
+                        <span class="stat-number" data-count="500">0</span>
+                        <span class="stat-label">Событий</span>
+                    </div>
+                    <div class="stat-item" data-animate="fade-up" data-delay="0.2">
+                        <span class="stat-number" data-count="10">0</span>
+                        <span class="stat-label">Лет опыта</span>
+                    </div>
+                </div>
+                <div class="about-actions" data-animate="fade-up" data-delay="0.3">
+                    <a href="#booking" class="btn btn-primary">Забронировать</a>
+                    <a href="https://t.me/OsobnyakKosti" target="_blank" rel="noopener" class="btn btn-secondary">Telegram канал</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Gallery Section -->
+    <section class="section gallery" id="gallery">
+        <div class="container">
+            <div class="gallery-header" data-animate="fade-up">
+                <span class="section-label">Галерея</span>
+                <h2 class="section-title">Пространство в деталях</h2>
+            </div>
+        </div>
+        <div class="gallery-scroll-container">
+            <div class="gallery-scroll" id="galleryScroll">
+                <div class="gallery-item" data-animate="fade-up">
+                    <div class="gallery-image-wrapper">
+                        <img src="images/photo_2025-03-30_20-17-26.jpg" alt="Интерьер лофта" loading="lazy">
+                        <div class="gallery-overlay">
+                            <div class="gallery-info">
+                                <h3>Главный зал</h3>
+                                <p>Просторное помещение для мероприятий</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="gallery-item" data-animate="fade-up" data-delay="0.1">
+                    <div class="gallery-image-wrapper">
+                        <img src="images/photo_2025-06-14_11-13-28.jpg" alt="Особняк Кости" loading="lazy">
+                        <div class="gallery-overlay">
+                            <div class="gallery-info">
+                                <h3>Архитектура</h3>
+                                <p>Уникальное сочетание стилей</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="gallery-item" data-animate="fade-up" data-delay="0.2">
+                    <div class="gallery-image-wrapper">
+                        <img src="images/photo_2025-09-23_20-58-36.jpg" alt="Вечеринка в лофте" loading="lazy">
+                        <div class="gallery-overlay">
+                            <div class="gallery-info">
+                                <h3>Атмосфера</h3>
+                                <p>Незабываемые события</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="gallery-item" data-animate="fade-up" data-delay="0.3">
+                    <div class="gallery-image-wrapper">
+                        <img src="images/photo_2025-10-04_19-54-22.jpg" alt="Мероприятие" loading="lazy">
+                        <div class="gallery-overlay">
+                            <div class="gallery-info">
+                                <h3>События</h3>
+                                <p>Профессиональная организация</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="container">
+                <div class="gallery-scroll-indicator">
+                    <span>Прокрутите вправо</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Events Schedule Section -->
+    <section class="section events" id="events">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label">Расписание</span>
+                <h2 class="section-title">Ближайшие мероприятия</h2>
+            </div>
+            <div class="events-grid" id="eventsGrid">
+                <!-- Events will be populated by JavaScript -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Calendar Section -->
+    <section class="section calendar-section" id="calendar">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label">Календарь</span>
+                <h2 class="section-title">Выберите дату</h2>
+            </div>
+            <div class="calendar-wrapper">
+                <div class="calendar-header">
+                    <button class="calendar-nav" id="prevMonth">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                    </button>
+                    <h3 class="calendar-month" id="currentMonth"></h3>
+                    <button class="calendar-nav" id="nextMonth">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </button>
+                </div>
+                <div class="calendar-grid" id="calendarGrid">
+                    <!-- Calendar will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Booking Section -->
+    <section class="section booking" id="booking">
+        <div class="container">
+            <div class="booking-wrapper">
+                <div class="booking-content">
+                    <div class="section-header">
+                        <span class="section-label">Бронирование</span>
+                        <h2 class="section-title">Забронируйте место</h2>
+                        <p class="section-description">
+                            Заполните форму ниже, и мы свяжемся с вами для подтверждения бронирования
+                        </p>
+                    </div>
+                    <form class="booking-form" id="bookingForm">
+                        <div class="form-group">
+                            <label for="name">Ваше имя</label>
+                            <input type="text" id="name" name="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" name="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Телефон</label>
+                            <input type="tel" id="phone" name="phone" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="date">Дата мероприятия</label>
+                                <input type="date" id="date" name="date" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="time">Время</label>
+                                <select id="time" name="time" required>
+                                    <option value="">Выберите время</option>
+                                    <option value="10:00">10:00</option>
+                                    <option value="12:00">12:00</option>
+                                    <option value="14:00">14:00</option>
+                                    <option value="16:00">16:00</option>
+                                    <option value="18:00">18:00</option>
+                                    <option value="20:00">20:00</option>
+                                    <option value="22:00">22:00</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="guests">Количество гостей</label>
+                            <input type="number" id="guests" name="guests" min="1" max="200" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="eventType">Тип мероприятия</label>
+                            <select id="eventType" name="eventType" required>
+                                <option value="">Выберите тип</option>
+                                <option value="party">Вечеринка</option>
+                                <option value="corporate">Корпоратив</option>
+                                <option value="wedding">Свадьба</option>
+                                <option value="birthday">День рождения</option>
+                                <option value="concert">Концерт</option>
+                                <option value="other">Другое</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="message">Дополнительная информация</label>
+                            <textarea id="message" name="message" rows="4"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-large">
+                            <span>Отправить заявку</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12 5 19 12 12 19"></polyline>
+                            </svg>
+                        </button>
+                    </form>
+                </div>
+                <div class="booking-visual">
+                    <div class="visual-card">
+                        <div class="card-glow"></div>
+                        <div class="card-content">
+                            <h3>Премиум пространство</h3>
+                            <ul class="features-list">
+                                <li>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                    <span>До 200 гостей</span>
+                                </li>
+                                <li>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                    <span>Профессиональное оборудование</span>
+                                </li>
+                                <li>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                    <span>Кейтеринг</span>
+                                </li>
+                                <li>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                    <span>Парковка</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="section faq" id="faq">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label">FAQ</span>
+                <h2 class="section-title">Часто задаваемые вопросы</h2>
+            </div>
+            <div class="faq-grid">
+                <div class="faq-item" data-animate="fade-up">
+                    <div class="faq-question">
+                        <h3>Как забронировать пространство?</h3>
+                        <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Заполните форму бронирования на сайте или свяжитесь с нами через Telegram. Мы ответим в течение 2 часов и подтвердим доступность даты.</p>
+                    </div>
+                </div>
+                <div class="faq-item" data-animate="fade-up" data-delay="0.1">
+                    <div class="faq-question">
+                        <h3>Какая стоимость аренды?</h3>
+                        <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Стоимость зависит от даты, времени, количества гостей и типа мероприятия. Базовая аренда от 50 000₽ за вечер. Точную стоимость рассчитаем индивидуально.</p>
+                    </div>
+                </div>
+                <div class="faq-item" data-animate="fade-up" data-delay="0.2">
+                    <div class="faq-question">
+                        <h3>Что входит в аренду?</h3>
+                        <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </div>
+                    <div class="faq-answer">
+                        <p>В базовую стоимость входит: пространство, звуковое оборудование, базовое освещение, Wi-Fi, парковка. Кейтеринг, дополнительное оборудование и декорации оплачиваются отдельно.</p>
+                    </div>
+                </div>
+                <div class="faq-item" data-animate="fade-up" data-delay="0.3">
+                    <div class="faq-question">
+                        <h3>Как добраться до лофта?</h3>
+                        <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Мы находимся на Бульваре Рокоссовского. Ближайшее метро: Бульвар Рокоссовского (5 минут пешком). Есть бесплатная парковка на 50 мест. Подробная схема проезда в Telegram канале.</p>
+                    </div>
+                </div>
+                <div class="faq-item" data-animate="fade-up" data-delay="0.4">
+                    <div class="faq-question">
+                        <h3>Можно ли отменить бронирование?</h3>
+                        <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Да, отмена возможна. При отмене за 14+ дней до мероприятия - возврат 100%, за 7-14 дней - 50%, менее 7 дней - возврат не предусмотрен. Все условия указаны в договоре.</p>
+                    </div>
+                </div>
+                <div class="faq-item" data-animate="fade-up" data-delay="0.5">
+                    <div class="faq-question">
+                        <h3>Есть ли техническое оснащение?</h3>
+                        <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Да, у нас профессиональное звуковое оборудование, световое оборудование, проектор и экран, микрофоны, Wi-Fi. Дополнительное оборудование можно арендовать по запросу.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="section testimonials" id="testimonials">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label">Отзывы</span>
+                <h2 class="section-title">Что говорят наши гости</h2>
+            </div>
+            <div class="testimonials-grid">
+                <div class="testimonial-card" data-animate="fade-up">
+                    <div class="testimonial-rating">
+                        <span>★★★★★</span>
+                    </div>
+                    <p class="testimonial-text">"Потрясающее пространство! Провели корпоратив на 150 человек. Все было идеально: звук, свет, сервис. Обязательно вернемся!"</p>
+                    <div class="testimonial-author">
+                        <strong>Анна Петрова</strong>
+                        <span>Корпоративное мероприятие</span>
+                    </div>
+                </div>
+                <div class="testimonial-card" data-animate="fade-up" data-delay="0.1">
+                    <div class="testimonial-rating">
+                        <span>★★★★★</span>
+                    </div>
+                    <p class="testimonial-text">"Лучшая вечеринка в этом году! Атмосфера просто невероятная, диджеи на высоте. Особняк Кости - это место силы для вечеринок."</p>
+                    <div class="testimonial-author">
+                        <strong>Дмитрий Соколов</strong>
+                        <span>DJ Night</span>
+                    </div>
+                </div>
+                <div class="testimonial-card" data-animate="fade-up" data-delay="0.2">
+                    <div class="testimonial-rating">
+                        <span>★★★★★</span>
+                    </div>
+                    <p class="testimonial-text">"Отпраздновали здесь день рождения. Пространство уникальное, команда профессиональная. Все гости были в восторге!"</p>
+                    <div class="testimonial-author">
+                        <strong>Мария Иванова</strong>
+                        <span>День рождения</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section class="section contact" id="contact">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label">Контакты</span>
+                <h2 class="section-title">Свяжитесь с нами</h2>
+            </div>
+            <div class="contact-grid">
+                <div class="contact-card">
+                    <div class="contact-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                        </svg>
+                    </div>
+                    <h3>Адрес</h3>
+                    <p>Москва, Бульвар Рокоссовского</p>
+                    <p><a href="https://t.me/OsobnyakKosti" target="_blank" rel="noopener">Telegram канал</a></p>
+                </div>
+                <div class="contact-card">
+                    <div class="contact-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                        </svg>
+                    </div>
+                    <h3>Телефон</h3>
+                    <p><a href="tel:+74951234567">+7 (495) 123-45-67</a></p>
+                </div>
+                <div class="contact-card">
+                    <div class="contact-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                    </div>
+                    <h3>Email</h3>
+                    <p><a href="mailto:info@loftmansion.ru">info@loftmansion.ru</a></p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <div class="brand">
+                        <img src="images/Layer 01.png" alt="Особняк Кости" class="brand-logo footer-logo">
+                    </div>
+                    <p>Эксклюзивное пространство в особняке на Бульваре Рокоссовского</p>
+                </div>
+                <div class="footer-links">
+                    <a href="#events">Мероприятия</a>
+                    <a href="#calendar">Календарь</a>
+                    <a href="#booking">Бронирование</a>
+                    <a href="#faq">FAQ</a>
+                    <a href="#about">О нас</a>
+                    <a href="#contact">Контакты</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Лофт - Особняк Кости. Все права защищены.</p>
+                <p><a href="https://t.me/OsobnyakKosti" target="_blank" rel="noopener">Telegram канал</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Booking Modal -->
+    <div class="modal" id="bookingModal">
+        <div class="modal-content">
+            <button class="modal-close" id="modalClose">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+            <div class="modal-body">
+                <h3>Спасибо за заявку!</h3>
+                <p>Мы свяжемся с вами в ближайшее время для подтверждения бронирования.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scroll to Top Button -->
+    <button class="scroll-top" id="scrollTop" aria-label="Наверх">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="18 15 12 9 6 15"></polyline>
+        </svg>
+    </button>
+
+    <script src="script.js"></script>
+</body>
+</html>
+

@@ -7,9 +7,9 @@ export default function BottomNav() {
   function IconSearch({ dimmed }: { dimmed?: boolean }) {
     const opacity = dimmed ? 0.7 : 1
     return (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ opacity }}>
-        <circle cx="11" cy="11" r="7" stroke="#fff" strokeWidth="2" />
-        <path d="M20 20L17 17" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ opacity }}>
+        <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
+        <path d="M20 20L17 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       </svg>
     )
   }
@@ -17,10 +17,10 @@ export default function BottomNav() {
   function IconMap({ dimmed }: { dimmed?: boolean }) {
     const opacity = dimmed ? 0.7 : 1
     return (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ opacity }}>
-        <path d="M9 3L3 5V21L9 19L15 21L21 19V3L15 5L9 3Z" stroke="#fff" strokeWidth="2" strokeLinejoin="round"/>
-        <path d="M9 3V19" stroke="#fff" strokeWidth="2"/>
-        <path d="M15 5V21" stroke="#fff" strokeWidth="2"/>
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ opacity }}>
+        <path d="M9 3L3 5V21L9 19L15 21L21 19V3L15 5L9 3Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
+        <path d="M9 3V19" stroke="currentColor" strokeWidth="2"/>
+        <path d="M15 5V21" stroke="currentColor" strokeWidth="2"/>
       </svg>
     )
   }
@@ -28,9 +28,9 @@ export default function BottomNav() {
   function IconPlus({ dimmed }: { dimmed?: boolean }) {
     const opacity = dimmed ? 0.7 : 1
     return (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ opacity }}>
-        <path d="M12 5V19" stroke="#fff" strokeWidth="2" strokeLinecap="round"/>
-        <path d="M5 12H19" stroke="#fff" strokeWidth="2" strokeLinecap="round"/>
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ opacity }}>
+        <path d="M12 5V19" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        <path d="M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
       </svg>
     )
   }
@@ -38,9 +38,9 @@ export default function BottomNav() {
   function IconUser({ dimmed }: { dimmed?: boolean }) {
     const opacity = dimmed ? 0.7 : 1
     return (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ opacity }}>
-        <circle cx="12" cy="8" r="4" stroke="#fff" strokeWidth="2"/>
-        <path d="M5 20C5.8 16.667 8.4 15 12 15C15.6 15 18.2 16.667 19 20" stroke="#fff" strokeWidth="2" strokeLinecap="round"/>
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ opacity }}>
+        <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="2"/>
+        <path d="M5 20C5.8 16.667 8.4 15 12 15C15.6 15 18.2 16.667 19 20" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
       </svg>
     )
   }
@@ -57,9 +57,9 @@ export default function BottomNav() {
             gap: 6,
             padding: '10px 8px',
             borderRadius: 14,
-            color: isActive ? '#0a0a0a' : 'var(--text)',
-            background: isActive ? 'var(--accent)' : 'transparent',
-            transition: 'background .2s ease, color .2s ease'
+            color: isActive ? 'var(--accent)' : 'var(--text)',
+            background: isActive ? 'rgba(255,255,255,0.1)' : 'transparent',
+            transition: 'all .2s ease'
           }}
         >
           <div
@@ -69,10 +69,10 @@ export default function BottomNav() {
               borderRadius: 999,
               display: 'grid',
               placeItems: 'center',
-              background: isActive ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.06)'
+              background: isActive ? 'rgba(0,0,0,0.08)' : 'transparent'
             }}
           >
-            {typeof icon === 'string' ? <span style={{ fontSize: 18, color: '#fff' }}>{icon}</span> : icon}
+            {typeof icon === 'string' ? <span style={{ fontSize: 18, color: 'currentColor' }}>{icon}</span> : icon}
           </div>
           <div style={{ fontSize: 12, fontWeight: 600 }}>{label}</div>
         </div>
@@ -88,11 +88,11 @@ export default function BottomNav() {
           maxWidth: 520,
           padding: 8,
           borderRadius: 20,
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          background: 'rgba(255,255,255,0.08)',
-          border: '1px solid rgba(255,255,255,0.14)',
-          boxShadow: '0 12px 40px rgba(0,0,0,0.35)'
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          background: 'var(--card-bg, rgba(255,255,255,0.8))',
+          border: '1px solid rgba(0,0,0,0.05)',
+          boxShadow: '0 10px 30px rgba(0,0,0,0.1)'
         }}
       >
         <div style={{ display: 'flex', gap: 6 }}>

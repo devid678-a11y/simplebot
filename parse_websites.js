@@ -1,8 +1,10 @@
-// Parse events from websites (Timepad, Artbene, etc.)
+// Parse events from websites (Timepad, Artbene, etc.) - сохраняет в PostgreSQL
 import admin from 'firebase-admin'
 import * as cheerio from 'cheerio'
 import crypto from 'crypto'
 import puppeteer from 'puppeteer'
+import pg from 'pg'
+import dotenv from 'dotenv'
 
 // ===== AI config (reuse from parse_channels.js) =====
 const AI_URL_BASE = process.env.TIMEWEB_AI_URL || process.env.AI_URL || 'https://agent.timeweb.cloud/api/v1/cloud-ai/agents/3ef82647-9ad7-492b-a959-c5a78be61e2b/v1'
@@ -10,7 +12,59 @@ const AI_TOKEN = process.env.TIMEWEB_AI_TOKEN || process.env.AI_TOKEN || 'sk-eyJ
 const AI_URL = AI_URL_BASE.endsWith('/v1') ? `${AI_URL_BASE}/chat/completions` : AI_URL_BASE
 const AI_MODEL = process.env.TIMEWEB_AI_MODEL || process.env.AI_MODEL || 'gpt-4o-mini'
 
-// ===== Firebase Admin init =====
+// ===== PostgreSQL connection =====
+dotenv.config()
+const { Pool } = pg
+let pool = null
+try {
+  const connectionString = process.env.DATABASE_URL || process.env.TIMEWEB_DB_URL || 'postgresql://gen_user:c%-5Yc01xe*Bdf@7cedb753215efecb1de53f8c.twc1.net:5432/default_db?sslmode=require'
+  
+  function getSSLOptions() {
+    const sslCertPath = process.env.PGSSLROOTCERT || process.env.DB_SSL_CERT
+    if (sslCertPath && fs.existsSync(sslCertPath)) {
+      try {
+        return {
+          ca: fs.readFileSync(sslCertPath).toString(),
+          rejectUnauthorized: true
+        }
+      } catch {}
+    }
+    return { rejectUnauthorized: false }
+  }
+  
+  let poolConfig
+  if (connectionString) {
+    const match = connectionString.match(/postgresql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/([^?]+)/)
+    if (match) {
+      const [, user, password, host, port, database] = match
+      poolConfig = {
+        host, port: parseInt(port, 10), database, user, password,
+        ssl: getSSLOptions() !== false ? getSSLOptions() : { rejectUnauthorized: false },
+        max: 20, idleTimeoutMillis: 30000
+      }
+    } else {
+      throw new Error('Не удалось распарсить connection string')
+    }
+  } else {
+    poolConfig = {
+      host: process.env.DB_HOST || 'localhost',
+      port: parseInt(process.env.DB_PORT || '5432', 10),
+      database: process.env.DB_NAME || 'default_db',
+      user: process.env.DB_USER || 'postgres',
+      password: process.env.DB_PASSWORD || '',
+      ssl: getSSLOptions() !== false ? getSSLOptions() : { rejectUnauthorized: false },
+      max: 20, idleTimeoutMillis: 30000
+    }
+  }
+  
+  pool = new Pool(poolConfig)
+  console.log('✅ PostgreSQL подключен')
+} catch (e) {
+  console.error('❌ PostgreSQL init error:', e.message)
+  process.exit(1)
+}
+
+// ===== Firebase Admin init (для обратной совместимости, если нужно) =====
 import fs from 'fs'
 let db = null
 try {
@@ -22,15 +76,15 @@ try {
       if (m && m[1]) b64 = m[1].replace(/\s+/g, '')
     } catch {}
   }
-  if (!b64) throw new Error('No service account base64')
-  const rawJson = Buffer.from(b64, 'base64').toString('utf8')
-  const creds = JSON.parse(rawJson)
-  if (!admin.apps.length) admin.initializeApp({ credential: admin.credential.cert(creds), projectId: creds.project_id })
-  db = admin.firestore()
-  console.log('✅ Firebase Admin подключен')
+  if (b64) {
+    const rawJson = Buffer.from(b64, 'base64').toString('utf8')
+    const creds = JSON.parse(rawJson)
+    if (!admin.apps.length) admin.initializeApp({ credential: admin.credential.cert(creds), projectId: creds.project_id })
+    db = admin.firestore()
+    console.log('✅ Firebase Admin подключен (для обратной совместимости)')
+  }
 } catch (e) {
-  console.error('❌ Firebase Admin init error:', e.message)
-  process.exit(1)
+  console.warn('⚠️ Firebase Admin не подключен (не критично):', e.message)
 }
 
 // ===== Shared utilities (from parse_channels.js) =====
@@ -142,12 +196,15 @@ function normalizeCategoryName(input, textFallback) {
 }
 
 async function saveEvent(sourceUrl, title, description, address, imageUrls, dateTime, price, category) {
-  if (!db) throw new Error('db not ready')
+  if (!pool) throw new Error('PostgreSQL pool not ready')
   const normalizedText = `${title}\n${description}`.trim()
   const dedupeKey = crypto.createHash('sha1').update(`web::${sourceUrl}`).digest('hex')
   
-  const existsEarly = await db.collection('events').where('dedupeKey','==',dedupeKey).limit(1).get()
-  if (!existsEarly.empty) return { deduped: true, id: existsEarly.docs[0].id }
+  // Проверяем существование события
+  const existsCheck = await pool.query('SELECT id FROM events WHERE dedupe_key = $1 LIMIT 1', [dedupeKey])
+  if (existsCheck.rows.length > 0) {
+    return { deduped: true, id: existsCheck.rows[0].id }
+  }
 
   let geo = null
   try {
@@ -166,32 +223,64 @@ async function saveEvent(sourceUrl, title, description, address, imageUrls, date
   const finalCategory = normalizeCategoryName(category || '', normalizedText)
   const isFree = !price || price === 0 || String(price).toLowerCase().includes('бесплат')
 
-  const eventData = {
-    title: String(title || 'Событие').slice(0, 100),
-    description: String(description || '').slice(0, 2000),
-    startAtMillis: parsed?.startMs || (dateTime?.startMs || (Date.now() + 86400000)),
-    endAtMillis: parsed?.endMs || dateTime?.endMs || null,
-    isFree,
-    price: isFree ? 0 : (price || null),
-    isOnline: false,
-    location: address || 'Место уточняется',
-    categories: finalCategory ? [finalCategory] : ['Сходка'],
-    imageUrls: Array.isArray(imageUrls) ? imageUrls : [],
-    links: [{ type: 'url', url: sourceUrl }],
-    geo,
-    geohash: geohash || null,
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    source: { type: 'website', sourceUrl }
-  }
+  const eventTitle = String(title || 'Событие').slice(0, 200)
+  const eventDescription = String(description || '').slice(0, 5000)
+  const startAtMillis = parsed?.startMs || (dateTime?.startMs || (Date.now() + 86400000))
+  const endAtMillis = parsed?.endMs || dateTime?.endMs || null
+  const eventPrice = isFree ? 0 : (price || null)
+  const eventLocation = address || 'Место уточняется'
+  const eventCategories = finalCategory ? [finalCategory] : ['Сходка']
+  const eventImageUrls = Array.isArray(imageUrls) ? imageUrls : []
+  const eventLinks = JSON.stringify([{ type: 'url', url: sourceUrl }])
+  const eventSource = JSON.stringify({ type: 'website', sourceUrl })
+  
+  const eventId = crypto.randomUUID()
+
+  const insertSQL = `
+    INSERT INTO events (
+      id, title, description, start_at_millis, end_at_millis,
+      is_free, price, is_online, location, geo_lat, geo_lng, geohash,
+      categories, image_urls, links, source, dedupe_key, created_at
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW())
+    ON CONFLICT (dedupe_key) DO UPDATE SET
+      title = EXCLUDED.title,
+      description = EXCLUDED.description,
+      start_at_millis = EXCLUDED.start_at_millis,
+      end_at_millis = EXCLUDED.end_at_millis,
+      location = EXCLUDED.location,
+      geo_lat = EXCLUDED.geo_lat,
+      geo_lng = EXCLUDED.geo_lng,
+      geohash = EXCLUDED.geohash,
+      categories = EXCLUDED.categories,
+      image_urls = EXCLUDED.image_urls
+    RETURNING id
+  `
 
   try {
-    const exists = await db.collection('events').where('dedupeKey','==',dedupeKey).limit(1).get()
-    if (!exists.empty) return { deduped: true, id: exists.docs[0].id }
-    const withKey = { ...eventData, dedupeKey }
-    const ref = await db.collection('events').add(withKey)
-    return { deduped: false, id: ref.id }
+    const result = await pool.query(insertSQL, [
+      eventId,
+      eventTitle,
+      eventDescription,
+      startAtMillis,
+      endAtMillis,
+      isFree,
+      eventPrice,
+      false, // is_online
+      eventLocation,
+      geo?.lat || null,
+      geo?.lng || null,
+      geohash,
+      eventCategories.length > 0 ? eventCategories : null,
+      eventImageUrls.length > 0 ? eventImageUrls : null,
+      eventLinks,
+      eventSource,
+      dedupeKey
+    ])
+    
+    const savedId = result.rows[0]?.id || eventId
+    return { deduped: false, id: savedId }
   } catch (e) {
-    console.error(`  ✖ Firestore error:`, e.message)
+    console.error(`  ✖ PostgreSQL error:`, e.message)
     throw e
   }
 }

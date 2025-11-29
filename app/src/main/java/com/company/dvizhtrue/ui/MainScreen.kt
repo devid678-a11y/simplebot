@@ -88,13 +88,18 @@ fun MainScreen(
     ) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding)) {
             when (selectedTab) {
-                0 -> MyEventsScreen(onBack = { /* Bottom nav не нужен back */ }) // Мои события - индивидуальная лента
-                    1 -> HomeScreen(
-                        onNavigateToEventDetail = { event ->
-                            android.util.Log.d("MainScreen", "Event selected: ${event.title}")
-                            selectedEvent = event
-                        }
-                    ) // Найти - поиск мероприятий
+                0 -> MyEventsScreen(
+                    onBack = { /* Bottom nav не нужен back */ },
+                    onEventClick = { event ->
+                        selectedEvent = event
+                    }
+                )
+                1 -> HomeScreenNew(
+                    onNavigateToEventDetail = { event ->
+                        android.util.Log.d("MainScreen", "Event selected: ${event.title}")
+                        selectedEvent = event
+                    }
+                ) // Найти - поиск мероприятий
                 2 -> NotificationsScreen() // Уведомления
                 3 -> ProfileScreen(
                     onBack = { /* Bottom nav не нужен back */ },

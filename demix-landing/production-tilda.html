@@ -1,0 +1,468 @@
+<!-- Блок "Производство" для Tilda -->
+<!-- Вставьте этот код в блок "HTML-код" в Tilda -->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<div class="production-block-tilda">
+    <style>
+        * {
+            font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        .production-block-tilda {
+            padding: 80px 0;
+            background: #f9fafc;
+        }
+
+        .production-block-tilda .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .production-block-tilda .production-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .production-block-tilda .production-header h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #12141b;
+        }
+
+        .production-block-tilda .production-header p {
+            font-size: 1.1rem;
+            color: #5f6573;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .production-block-tilda .factories-section {
+            margin-bottom: 80px;
+        }
+
+        .production-block-tilda .factories-section h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 40px;
+            color: #12141b;
+            text-align: center;
+        }
+
+        .production-block-tilda .factories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 60px;
+        }
+
+        .production-block-tilda .factory-card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .production-block-tilda .factory-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .production-block-tilda .factory-card h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #12141b;
+        }
+
+        .production-block-tilda .factory-card .location {
+            font-size: 1.1rem;
+            color: #4CAF50;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .production-block-tilda .factory-card p {
+            color: #5f6573;
+            line-height: 1.6;
+        }
+
+        .production-block-tilda .stats-section {
+            margin-bottom: 80px;
+            box-sizing: border-box;
+        }
+
+        .production-block-tilda .stats-section h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 40px;
+            color: #12141b;
+            text-align: center;
+        }
+
+        .production-block-tilda .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+        }
+
+        .production-block-tilda .stat-card {
+            background: white;
+            padding: 40px 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .production-block-tilda .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .production-block-tilda .stat-number {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #4CAF50;
+            margin-bottom: 10px;
+            line-height: 1;
+        }
+
+        .production-block-tilda .stat-label {
+            font-size: 1.1rem;
+            color: #5f6573;
+            font-weight: 500;
+        }
+
+        .production-block-tilda .representatives-section {
+            margin-bottom: 80px;
+        }
+
+        .production-block-tilda .representatives-section h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 40px;
+            color: #12141b;
+            text-align: center;
+        }
+
+        .production-block-tilda .representatives-section > p {
+            text-align: center;
+            color: #5f6573;
+            margin-bottom: 40px;
+        }
+
+        .production-block-tilda .representatives-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 30px;
+        }
+
+        .production-block-tilda .representative-card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .production-block-tilda .representative-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .production-block-tilda .representative-card .flag {
+            font-size: 3rem;
+            margin-bottom: 16px;
+        }
+
+        .production-block-tilda .representative-card h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #12141b;
+            margin-bottom: 8px;
+        }
+
+        .production-block-tilda .representative-card p {
+            color: #5f6573;
+            font-size: 0.95rem;
+        }
+
+        .production-block-tilda .gallery-section {
+            margin-bottom: 0;
+        }
+
+        .production-block-tilda .gallery-section h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 40px;
+            color: #12141b;
+            text-align: center;
+        }
+
+        .production-block-tilda .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        .production-block-tilda .gallery-item {
+            position: relative;
+            overflow: hidden;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            aspect-ratio: 4/3;
+            background: #f5f5f5;
+        }
+
+        .production-block-tilda .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+            display: block;
+        }
+
+        .production-block-tilda .gallery-item:hover img {
+            transform: scale(1.05);
+        }
+
+        /* Lightbox */
+        .production-block-tilda .lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .production-block-tilda .lightbox.active {
+            display: flex;
+        }
+
+        .production-block-tilda .lightbox-content {
+            position: relative;
+            max-width: 90vw;
+            max-height: 90vh;
+        }
+
+        .production-block-tilda .lightbox-image {
+            max-width: 100%;
+            max-height: 90vh;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+
+        .production-block-tilda .lightbox-close {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 3rem;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            transition: transform 0.3s ease;
+        }
+
+        .production-block-tilda .lightbox-close:hover {
+            transform: scale(1.2);
+        }
+
+        @media (max-width: 1024px) {
+            .production-block-tilda .gallery-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .production-block-tilda {
+                padding: 60px 0;
+            }
+
+            .production-block-tilda .container {
+                padding: 0 16px;
+            }
+
+            .production-block-tilda .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 16px;
+            }
+
+            .production-block-tilda .stat-card {
+                padding: 24px 16px;
+            }
+
+            .production-block-tilda .stat-number {
+                font-size: 2rem;
+            }
+
+            .production-block-tilda .stat-label {
+                font-size: 0.9rem;
+            }
+
+            .production-block-tilda .gallery-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+
+    <div class="container">
+        <div class="production-header">
+            <h1>Производство</h1>
+            <p>Современные производственные мощности с автоматизированным оборудованием и строгим контролем качества</p>
+        </div>
+
+        <!-- Factories -->
+        <div class="factories-section">
+            <h2>Наши заводы</h2>
+            <div class="factories-grid">
+                <div class="factory-card">
+                    <h3>Завод №1</h3>
+                    <div class="location">Цзиньхуа, Чжэцзян</div>
+                    <p>Основное производственное предприятие, оснащенное современным автоматизированным оборудованием и системами контроля качества.</p>
+                </div>
+                <div class="factory-card">
+                    <h3>Завод №2</h3>
+                    <div class="location">Шицзячжуан, Хэбэй</div>
+                    <p>Второй производственный комплекс, расширяющий наши возможности по выпуску продукции и обеспечивающий высокую производительность.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="stats-section">
+            <h2>Производственные показатели</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">50 000</div>
+                    <div class="stat-label">м² — площадь производственных помещений</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">30 000</div>
+                    <div class="stat-label">м² — площадь складских помещений</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">300</div>
+                    <div class="stat-label">автоматизированных производственных машин</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">100 млн</div>
+                    <div class="stat-label">единиц продукции выпускается в год</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Representatives -->
+        <div class="representatives-section">
+            <h2>Страны-представители</h2>
+            <p>Прямые представительства:</p>
+            <div class="representatives-grid">
+                <div class="representative-card">
+                    <div class="flag">&#127479;&#127482;</div>
+                    <h3>Россия</h3>
+                    <p>Прямое представительство</p>
+                </div>
+                <div class="representative-card">
+                    <div class="flag">&#127482;&#127480;</div>
+                    <h3>США</h3>
+                    <p>Прямое представительство</p>
+                </div>
+                <div class="representative-card">
+                    <div class="flag">&#127483;&#127475;</div>
+                    <h3>Вьетнам</h3>
+                    <p>Прямое представительство</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gallery -->
+        <div class="gallery-section">
+            <h2>Фотогалерея производства</h2>
+            <div class="gallery-grid">
+                <div class="gallery-item">
+                    <img src="https://i.postimg.cc/MTZtf1bn/1.png" alt="Производство DEMEX" loading="lazy">
+                </div>
+                <div class="gallery-item">
+                    <img src="https://i.postimg.cc/MTs57X9S/11.png" alt="Производство DEMEX" loading="lazy">
+                </div>
+                <div class="gallery-item">
+                    <img src="https://i.postimg.cc/cHDhR6Fq/2.png" alt="Производство DEMEX" loading="lazy">
+                </div>
+                <div class="gallery-item">
+                    <img src="https://i.postimg.cc/W398GtXC/5.png" alt="Производство DEMEX" loading="lazy">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lightbox для просмотра фотографий -->
+    <div class="lightbox" id="production-lightbox">
+        <div class="lightbox-content">
+            <button class="lightbox-close" aria-label="Закрыть">×</button>
+            <img class="lightbox-image" src="" alt="">
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // Lightbox для просмотра фотографий галереи
+            const galleryItems = document.querySelectorAll('.production-block-tilda .gallery-item img');
+            const lightbox = document.getElementById('production-lightbox');
+            const lightboxImage = lightbox.querySelector('.lightbox-image');
+            const lightboxClose = lightbox.querySelector('.lightbox-close');
+
+            galleryItems.forEach(img => {
+                img.addEventListener('click', () => {
+                    lightboxImage.src = img.src;
+                    lightboxImage.alt = img.alt || '';
+                    lightbox.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                });
+            });
+
+            if (lightboxClose) {
+                lightboxClose.addEventListener('click', () => {
+                    lightbox.classList.remove('active');
+                    document.body.style.overflow = '';
+                });
+            }
+
+            lightbox.addEventListener('click', (e) => {
+                if (e.target === lightbox) {
+                    lightbox.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+
+            // Закрытие по Escape
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && lightbox.classList.contains('active')) {
+                    lightbox.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+        })();
+    </script>
+</div>
+

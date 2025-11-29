@@ -2,16 +2,17 @@ import { useEffect, useState } from 'react'
 import { auth, db } from '../firebase'
 import { signInWithCustomToken, onAuthStateChanged } from 'firebase/auth'
 import { getEffectiveUid } from '../auth'
-import { collection, doc, getDoc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore'
+import { doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { storage } from '../firebase'
 import CategorySelector from '../components/CategorySelector'
 import { Link } from 'react-router-dom'
 import { formatEventDateText } from '../utils/datetime'
+import { API_BASE } from '../apiConfig'
 
 export default function Profile() {
   const [uidTick, setUidTick] = useState(0)
-  const uid = auth.currentUser?.uid
+  const uid = auth.currentUser?.uid || 'dev_user' // DEV MODE: Всегда авторизован
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [displayName, setDisplayName] = useState('')
@@ -21,15 +22,24 @@ export default function Profile() {
   const [interests, setInterests] = useState<string[]>([])
   const [going, setGoing] = useState<any[]>([])
   const [goingDetails, setGoingDetails] = useState<Record<string, any>>({})
+  const [myCommunities, setMyCommunities] = useState<any[]>([])
 
   useEffect(() => {
-    // Подписка на смену auth-состояния, чтобы обновить экран после обмена токена
+    // Подписка на смену auth-состояния
     const unsub = onAuthStateChanged(auth, () => setUidTick(t => t + 1))
     return () => unsub()
   }, [])
 
   useEffect(() => {
     if (!uid) { setLoading(false); return }
+    
+    if (uid === 'dev_user') {
+      setDisplayName('Разработчик')
+      setCity('Localhost')
+      setLoading(false)
+      return
+    }
+
     const ref = doc(db, 'users', uid)
     const unsub = onSnapshot(ref, (snap) => {
       const data: any = snap.data() || {}
@@ -45,39 +55,40 @@ export default function Profile() {
 
   useEffect(() => {
     if (!uid) return
-    // Мои события («Пойду»)
-    const unsub = onSnapshot(collection(db, 'users', uid, 'going'), (snap) => {
-      setGoing(snap.docs.map(d => ({ id: d.id, ...(d.data() as any) })))
-    })
-    return () => unsub()
-  }, [uid])
-
-  // Загружаем детали событий для отображения названия и времени
-  useEffect(() => {
-    let cancelled = false
-    async function loadDetails() {
-      const out: Record<string, any> = {}
-      for (const g of going) {
-        const { col, realId } = resolveCollectionAndId(g.id)
-        if (!realId) continue
-        try {
-          const d = await getDoc(doc(db, col, realId))
-          if (d.exists()) out[g.id] = { id: g.id, ...(d.data() as any) }
-        } catch {}
+    
+    // Используем API из конфига
+    
+    async function loadMyEvents() {
+      try {
+        const response = await fetch(`${API_BASE}/api/users/${uid}/events`)
+        if (response.ok) {
+          const events = await response.json()
+          setGoing(events.map((e: any) => ({ id: e.id, eventId: e.id })))
+          const details: Record<string, any> = {}
+          events.forEach((e: any) => {
+            details[e.id] = e
+          })
+          setGoingDetails(details)
+        } else {
+          setGoing([])
+          setGoingDetails({})
+        }
+      } catch (e) {
+        console.error('Ошибка загрузки моих событий:', e)
       }
-      if (!cancelled) setGoingDetails(out)
     }
-    if (going.length > 0) loadDetails()
-    else setGoingDetails({})
-    return () => { cancelled = true }
-  }, [going])
-
-  function resolveCollectionAndId(rawId?: string) {
-    if (!rawId) return { col: 'events', realId: '' }
-    if (rawId.startsWith('telegram_')) return { col: 'telegram_events', realId: rawId.replace(/^telegram_/, '') }
-    if (rawId.startsWith('tg_')) return { col: 'tg-events', realId: rawId.replace(/^tg_/, '') }
-    return { col: 'events', realId: rawId }
-  }
+    
+    loadMyEvents()
+    
+    // Загрузка сообществ
+    fetch(`${API_BASE}/api/users/${uid}/communities`)
+      .then(r => r.json())
+      .then(data => { if(Array.isArray(data)) setMyCommunities(data) })
+      .catch(console.error)
+    
+    const interval = setInterval(loadMyEvents, 30000)
+    return () => clearInterval(interval)
+  }, [uid])
 
   async function save() {
     if (!uid) return
@@ -112,56 +123,32 @@ export default function Profile() {
     } catch {}
   }
 
+/*
   if (!uid || (auth.currentUser && (auth.currentUser as any).isAnonymous)) {
-    const deviceUid = getEffectiveUid() || 'anon'
-    const BOT_USERNAME = 'dvizheon_bot' // Укажите @username бота
-    const deeplink = `https://t.me/${BOT_USERNAME}?start=acc_${encodeURIComponent(deviceUid)}`
-    async function exchange() {
-      try {
-        // ВСЕГДА используем новый URL Timeweb API (жестко прописан)
-        const base = 'https://devid678-a11y-simplebot-0a93.twc1.net'
-        const url = `${base}/api/auth/exchange`
-        const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: deviceUid }) })
-        if (!res.ok) { alert('Не удалось обменять токен. Откройте бота, нажмите Старт и попробуйте снова.'); return }
-        const { token } = await res.json()
-        await signInWithCustomToken(auth as any, token)
-        // Без перезагрузки: дождёмся обновления auth и выйдем из анонимного UI
-      } catch (e) {
-        alert('Ошибка входа. Попробуйте ещё раз.')
-      }
-    }
-    return (
-      <div style={{ padding: 16 }}>
-        <div style={{ marginBottom: 12 }}>Войдите через Telegram, чтобы открыть профиль.</div>
-        <a href={deeplink} target="_blank" rel="noreferrer">
-          <button style={{ width: '100%', marginBottom: 8 }}>Войти через Telegram</button>
-        </a>
-        <button onClick={exchange} style={{ width: '100%' }}>Я нажал Акк</button>
-      </div>
-    )
+    // Блок авторизации скрыт для DEV режима
+    return null
   }
-  if (loading) return <div style={{ padding: 16 }}>Загрузка…</div>
+*/
+  if (loading && uid !== 'dev_user') return <div style={{ padding: 16 }}>Загрузка…</div>
 
   return (
     <div style={{ padding: 16, paddingBottom: 96 }}>
       <div className="card" style={{ padding: 16, marginBottom: 16 }}>
         <div style={{ display:'flex', gap:12, alignItems:'center' }}>
-          <div style={{ width:64, height:64, borderRadius:12, background:'#222', overflow:'hidden' }}>
-            {photoUrl ? <img src={photoUrl} alt="avatar" style={{ width:'100%', height:'100%', objectFit:'cover' }} /> : null}
+          <div style={{ width:64, height:64, borderRadius:12, background:'#222', overflow:'hidden', position: 'relative' }}>
+            {photoUrl ? <img src={photoUrl} alt="avatar" style={{ width:'100%', height:'100%', objectFit:'cover' }} /> : <div style={{ width:'100%', height:'100%', display:'grid', placeItems:'center', fontSize:24 }}>👤</div>}
+            <input type="file" accept="image/*" onChange={uploadAvatar} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} />
           </div>
           <div>
             <div style={{ fontWeight: 700 }}>{displayName || 'Без имени'}</div>
             {telegram?.username && <div className="muted">@{telegram.username}</div>}
-            <div className="muted" style={{ fontSize:12 }}>UID: {uid}</div>
+            <div className="muted" style={{ fontSize:12 }}>UID: {uid.substring(0, 6)}...</div>
           </div>
-        </div>
-        <div style={{ marginTop: 12 }}>
-          <input type="file" accept="image/*" onChange={uploadAvatar} />
         </div>
       </div>
 
       <div className="card" style={{ padding: 16 }}>
-        <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>Профиль</div>
+        <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>Настройки</div>
         <div style={{ display:'grid', gap:16 }}>
           <div>
             <div className="muted" style={{ marginBottom: 6 }}>Имя</div>
@@ -183,6 +170,24 @@ export default function Profile() {
       </div>
 
       <div style={{ marginTop: 24 }}>
+        <div style={{ fontWeight: 700, marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>Мои сообщества</span>
+          <Link to="/create-community" style={{ fontSize: 14, color: 'var(--accent)', textDecoration: 'none' }}>+ Создать</Link>
+        </div>
+        {myCommunities.length === 0 && <div className="muted">Нет сообществ</div>}
+        <div style={{ display: 'grid', gap: 8 }}>
+          {myCommunities.map(c => (
+            <Link key={c.id} to={`/community/${c.id}`} className="card" style={{ padding: 10, textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#333', overflow: 'hidden', flexShrink: 0 }}>
+                {c.avatar_url ? <img src={c.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width:'100%', height:'100%', display:'grid', placeItems:'center' }}>👥</div>}
+              </div>
+              <div style={{ fontWeight: 600 }}>{c.name}</div>
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ marginTop: 24 }}>
         <div style={{ fontWeight: 700, marginBottom: 12 }}>Мои события</div>
         {going.length === 0 && <div className="muted">Пока пусто</div>}
         <div style={{ display:'grid', gap:8 }}>
@@ -196,7 +201,7 @@ export default function Profile() {
                   <div style={{ fontWeight: 600 }}>{title}</div>
                   {when && <div className="muted" style={{ fontSize:12 }}>{when}</div>}
                 </div>
-                <Link to={`/event/${g.id}`}>Открыть</Link>
+                <Link to={`/event/${g.id}`} style={{ color: 'var(--accent)' }}>Открыть</Link>
               </div>
             )
           })}
@@ -205,5 +210,3 @@ export default function Profile() {
     </div>
   )
 }
-
-

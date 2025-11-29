@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { auth, db } from '../firebase'
 import { formatEventDateText, formatTimeUntilEvent } from '../utils/datetime'
 import { linkify } from '../utils/text'
+import { API_BASE } from '../apiConfig'
 
 export default function EventDetail() {
   const { id } = useParams()
@@ -12,19 +13,20 @@ export default function EventDetail() {
   const [going, setGoing] = useState<boolean>(false)
   const [creator, setCreator] = useState<{displayName?:string; photoUrl?:string} | null>(null)
   const [attendeesCount, setAttendeesCount] = useState<number>(0)
+  const [showGallery, setShowGallery] = useState(false)
+  const [galleryIndex, setGalleryIndex] = useState(0)
   
   // Используем ID напрямую (PostgreSQL не использует префиксы)
   const realId = id || ''
   useEffect(() => {
     if (!realId) return
     
-    // ВСЕГДА используем новый URL Timeweb API (жестко прописан)
-    const apiBase = 'https://devid678-a11y-simplebot-0a93.twc1.net'
+    // Используем API из конфига
     
     async function fetchEvent() {
       try {
-        console.log(`[EventDetail] Запрос события ID: ${realId} из ${apiBase}/api/events/${realId}`)
-        const response = await fetch(`${apiBase}/api/events/${realId}`)
+        console.log(`[EventDetail] Запрос события ID: ${realId} из ${API_BASE}/api/events/${realId}`)
+        const response = await fetch(`${API_BASE}/api/events/${realId}`)
         console.log(`[EventDetail] Ответ API: status=${response.status}, ok=${response.ok}`)
         
         if (response.ok) {
@@ -54,15 +56,14 @@ export default function EventDetail() {
   }, [realId])
   useEffect(() => {
     if (!realId) return
-    const uid = auth.currentUser?.uid
+    const uid = auth.currentUser?.uid || 'dev_user'
     if (!uid) return
     
-    // ВСЕГДА используем новый URL Timeweb API (жестко прописан)
-    const apiBase = 'https://devid678-a11y-simplebot-0a93.twc1.net'
+    // Используем API из конфига
     
     async function checkGoing() {
       try {
-        const response = await fetch(`${apiBase}/api/events/${realId}/attendees/${uid}`)
+        const response = await fetch(`${API_BASE}/api/events/${realId}/attendees/${uid}`)
         if (response.ok) {
           const data = await response.json()
           setGoing(data.going || false)
@@ -74,7 +75,7 @@ export default function EventDetail() {
     
     async function fetchAttendeesCount() {
       try {
-        const response = await fetch(`${apiBase}/api/events/${realId}/attendees`)
+        const response = await fetch(`${API_BASE}/api/events/${realId}/attendees`)
         if (response.ok) {
           const data = await response.json()
           setAttendeesCount(Array.isArray(data) ? data.length : 0)
@@ -95,12 +96,11 @@ export default function EventDetail() {
   if (!event) return <div style={{ padding: 16 }}>Загрузка…</div>
   async function toggleGoing() {
     try {
-      const uid = auth.currentUser?.uid
+      const uid = auth.currentUser?.uid || 'dev_user'
       if (!uid || !realId) return
       
-      // ВСЕГДА используем новый URL Timeweb API (жестко прописан)
-      const apiBase = 'https://devid678-a11y-simplebot-0a93.twc1.net'
-      const url = `${apiBase}/api/events/${realId}/attendees/${uid}`
+      // Используем API из конфига
+      const url = `${API_BASE}/api/events/${realId}/attendees/${uid}`
       
       let telegramId: string | null = null
       try {
@@ -150,7 +150,17 @@ export default function EventDetail() {
       )}
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         {Array.isArray(event.imageUrls) && event.imageUrls[0] && (
-          <img src={event.imageUrls[0]} loading="lazy" alt="cover" style={{ width:'100%', height:200, objectFit:'cover', objectPosition:'center' }} />
+          <div 
+            style={{ position: 'relative', cursor: 'pointer' }}
+            onClick={() => { setGalleryIndex(0); setShowGallery(true) }}
+          >
+            <img src={event.imageUrls[0]} loading="lazy" alt="cover" style={{ width:'100%', height:200, objectFit:'cover', objectPosition:'center', display: 'block' }} />
+            {event.imageUrls.length > 1 && (
+              <div style={{ position: 'absolute', bottom: 10, right: 10, background: 'rgba(0,0,0,0.6)', color: '#fff', padding: '4px 8px', borderRadius: 6, fontSize: 12, fontWeight: 600 }}>
+                1 / {event.imageUrls.length}
+              </div>
+            )}
+          </div>
         )}
         <div style={{ padding: 16 }}>
         <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>{event.title}</div>
@@ -237,6 +247,52 @@ export default function EventDetail() {
         </div>
         </div>
       </div>
+      
+      {showGallery && event.imageUrls && (
+        <div 
+          style={{ position: 'fixed', inset: 0, background: 'black', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center' }} 
+          onClick={() => setShowGallery(false)}
+        >
+          <img 
+            src={event.imageUrls[galleryIndex]} 
+            alt="gallery"
+            style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} 
+          />
+          
+          <button 
+            onClick={(e) => { e.stopPropagation(); setShowGallery(false) }}
+            style={{ position: 'absolute', top: 20, right: 20, background: 'rgba(255,255,255,0.2)', color: 'white', border: 'none', borderRadius: '50%', width: 40, height: 40, fontSize: 20, cursor: 'pointer', display: 'grid', placeItems: 'center' }}
+          >
+            ✕
+          </button>
+
+          {event.imageUrls.length > 1 && (
+            <>
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setGalleryIndex(prev => prev > 0 ? prev - 1 : event.imageUrls.length - 1)
+                }}
+                style={{ position: 'absolute', left: 20, background: 'rgba(255,255,255,0.2)', color: 'white', border: 'none', borderRadius: '50%', width: 40, height: 40, fontSize: 20, cursor: 'pointer', display: 'grid', placeItems: 'center' }}
+              >
+                ←
+              </button>
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setGalleryIndex(prev => prev < event.imageUrls.length - 1 ? prev + 1 : 0)
+                }}
+                style={{ position: 'absolute', right: 20, background: 'rgba(255,255,255,0.2)', color: 'white', border: 'none', borderRadius: '50%', width: 40, height: 40, fontSize: 20, cursor: 'pointer', display: 'grid', placeItems: 'center' }}
+              >
+                →
+              </button>
+              <div style={{ position: 'absolute', bottom: 20, left: '50%', transform: 'translateX(-50%)', color: 'white', background: 'rgba(0,0,0,0.5)', padding: '4px 12px', borderRadius: 20 }}>
+                {galleryIndex + 1} / {event.imageUrls.length}
+              </div>
+            </>
+          )}
+        </div>
+      )}
     </div>
   )
 }

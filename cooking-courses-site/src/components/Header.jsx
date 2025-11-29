@@ -20,7 +20,7 @@ const Header = () => {
         <div className="header-content">
           <Link to="/" className="logo">
             <span className="logo-icon">👨‍🍳</span>
-            <span className="logo-text">Кулинарная Школа</span>
+            <span className="logo-text">StarCook School</span>
           </Link>
           
           <nav className={`nav ${isMobileMenuOpen ? 'open' : ''}`}>

@@ -1,0 +1,237 @@
+<!-- Блок "Миссия и ценности" для Tilda -->
+<!-- Вставьте этот код в блок "HTML-код" в Tilda -->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<div class="mission-block-tilda">
+    <style>
+        * {
+            font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        .mission-block-tilda {
+            min-height: 100vh;
+            background: #f9fafc;
+            padding: 80px 0;
+        }
+
+        .mission-block-tilda .mission-header {
+            text-align: center;
+            margin-bottom: 80px;
+            padding: 0 20px;
+        }
+
+        .mission-block-tilda .mission-header h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #12141b;
+        }
+
+        .mission-block-tilda .mission-section {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            margin-bottom: 80px;
+        }
+
+        .mission-block-tilda .mission-section h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 24px;
+            color: #12141b;
+        }
+
+        .mission-block-tilda .mission-section p {
+            font-size: 1.1rem;
+            color: #5f6573;
+            line-height: 1.8;
+            margin-bottom: 20px;
+        }
+
+        .mission-block-tilda .mission-section .intro-text {
+            font-size: 1.5rem;
+            color: #4CAF50;
+            font-weight: 600;
+            margin-bottom: 30px;
+        }
+
+        .mission-block-tilda .values-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .mission-block-tilda .value-card {
+            background: white;
+            padding: 40px 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .mission-block-tilda .value-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .mission-block-tilda .value-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            font-weight: 400;
+            line-height: 1;
+        }
+
+        .mission-block-tilda .value-card h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #12141b;
+        }
+
+        .mission-block-tilda .value-card p {
+            font-size: 1rem;
+            color: #5f6573;
+            line-height: 1.6;
+            margin-bottom: 0;
+        }
+
+        .mission-block-tilda .solutions-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .mission-block-tilda .solution-card {
+            background: white;
+            padding: 40px 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border-left: 4px solid #4CAF50;
+        }
+
+        .mission-block-tilda .solution-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .mission-block-tilda .solution-card h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #12141b;
+        }
+
+        .mission-block-tilda .solution-card p {
+            font-size: 1rem;
+            color: #5f6573;
+            line-height: 1.6;
+            margin-bottom: 0;
+        }
+
+        .mission-block-tilda .mission-text {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            margin-bottom: 60px;
+        }
+
+        .mission-block-tilda .mission-text p {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+
+        @media (max-width: 1024px) {
+            .mission-block-tilda .values-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .mission-block-tilda .solutions-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .mission-block-tilda {
+                padding: 60px 0;
+            }
+
+            .mission-block-tilda .mission-section {
+                padding: 0 16px;
+            }
+
+            .mission-block-tilda .mission-text {
+                padding: 30px 20px;
+            }
+
+            .mission-block-tilda .values-grid,
+            .mission-block-tilda .solutions-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+        }
+    </style>
+
+    <div class="mission-header">
+        <h1>О компании</h1>
+    </div>
+
+    <div class="mission-section">
+        <h2>Кто мы</h2>
+        <p class="intro-text">DEMEX RUS — официальное представительство международного бренда эпоксидной плиточной затирки в России.</p>
+    </div>
+
+    <div class="mission-section">
+        <h2>Наша миссия</h2>
+        <div class="mission-text">
+            <p>Мы создаем будущее профессионального ремонта, делая его проще, эффективнее и доступнее для каждого.</p>
+            <p>Наша миссия — изменить подход к оформлению плиточных швов, предлагая российским мастерам и энтузиастам DIY передовые решения, которые меняют представление о качестве и скорости работы. Мы не просто поставляем продукцию — мы меняем индустрию, делая её более доступной, понятной и результативной. Для каждого.</p>
+        </div>
+    </div>
+
+    <div class="mission-section">
+        <h2>Мы верим, что каждый заслуживает</h2>
+        <div class="values-grid">
+            <div class="value-card">
+                <div class="value-icon">&#10024;</div>
+                <h3>Безупречного результата без сложных технологий</h3>
+            </div>
+            <div class="value-card">
+                <div class="value-icon">&#9200;</div>
+                <h3>Экономии времени без потери качества</h3>
+            </div>
+            <div class="value-card">
+                <div class="value-icon">&#128274;</div>
+                <h3>Надежности в каждом шве</h3>
+            </div>
+            <div class="value-card">
+                <div class="value-icon">&#128522;</div>
+                <h3>Удовольствия от процесса работы</h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="mission-section">
+        <h2>Мы создаем решения, которые</h2>
+        <div class="solutions-grid">
+            <div class="solution-card">
+                <h3>Делают работу проще и эффективнее</h3>
+                <p>Наши продукты разработаны с учетом потребностей мастеров и упрощают процесс работы, экономя время и силы.</p>
+            </div>
+            <div class="solution-card">
+                <h3>Обеспечивают профессиональный результат даже начинающим</h3>
+                <p>Интуитивно понятные решения позволяют достигать высокого качества работы независимо от уровня опыта.</p>
+            </div>
+            <div class="solution-card">
+                <h3>Соответствуют высоким стандартам качества</h3>
+                <p>Вся наша продукция проходит строгий контроль качества и соответствует международным стандартам.</p>
+            </div>
+        </div>
+    </div>
+</div>
+

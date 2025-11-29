@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Обновление изображений - Особняк Кости</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #0a0a0a;
+            color: #fff;
+        }
+        h1 { color: #ffd700; }
+        .step {
+            background: #1a1a1a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #ff006e;
+        }
+        code {
+            background: #000;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+        .command {
+            background: #000;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>📸 Инструкция по получению фотографий из Telegram</h1>
+    
+    <div class="step">
+        <h2>Вариант 1: Ручное скачивание (рекомендуется)</h2>
+        <ol>
+            <li>Откройте канал <a href="https://t.me/OsobnyakKosti" target="_blank" style="color: #00f5ff;">@OsobnyakKosti</a> в Telegram</li>
+            <li>Сохраните нужные фотографии на компьютер</li>
+            <li>Поместите их в папку <code>loft-mansion/images/</code></li>
+            <li>Переименуйте главное фото в <code>hero-bg.jpg</code></li>
+            <li>Обновите пути в CSS файле</li>
+        </ol>
+    </div>
+
+    <div class="step">
+        <h2>Вариант 2: Автоматическое скачивание</h2>
+        <p>Запустите скрипт для автоматического получения изображений:</p>
+        <div class="command">
+            node get-telegram-images.js
+        </div>
+        <p><small>Примечание: Скрипт может не получить все изображения из-за ограничений Telegram</small></p>
+    </div>
+
+    <div class="step">
+        <h2>После получения изображений:</h2>
+        <p>Обновите пути в файле <code>styles.css</code>:</p>
+        <ul>
+            <li>Строка ~150: фоновое изображение хедера</li>
+            <li>Строка ~650: изображения в галерее</li>
+        </ul>
+        <p>Пример:</p>
+        <div class="command">
+            background-image: url('images/hero-bg.jpg');
+        </div>
+    </div>
+
+    <div class="step">
+        <h2>Важно:</h2>
+        <p>⚠️ Убедитесь, что у вас есть разрешение на использование фотографий из канала!</p>
+        <p>📧 Свяжитесь с владельцем канала через Telegram для получения разрешения.</p>
+    </div>
+</body>
+</html>
+

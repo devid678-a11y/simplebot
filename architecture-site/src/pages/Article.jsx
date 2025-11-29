@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { getPostBySlug, getPosts } from '../services/wordpress'
+import { blogPostsData } from '../data/blogPosts'
 import './Article.css'
 
 const Article = () => {
@@ -14,18 +15,62 @@ const Article = () => {
     const loadPost = async () => {
       try {
         setLoading(true)
-        const postData = await getPostBySlug(slug)
+        
+        // Проверяем, есть ли URL WordPress API
+        const wpApiUrl = import.meta.env.VITE_WORDPRESS_API_URL
+        const useWordPress = wpApiUrl && !wpApiUrl.includes('your-wordpress-site')
+        
+        let postData = null
+        
+        if (useWordPress) {
+          // Пытаемся загрузить из WordPress
+          try {
+            postData = await getPostBySlug(slug)
+          } catch (error) {
+            console.log('WordPress API недоступен, используем fallback')
+          }
+        }
+        
+        // Если не получилось из WordPress, ищем в fallback данных
+        if (!postData) {
+          postData = blogPostsData.find(p => p.slug === slug || `post-${p.id}` === slug)
+        }
         
         if (!postData) {
           navigate('/blog')
           return
         }
         
-        setPost(postData)
+        // Форматируем данные для единого формата
+        const formattedPost = {
+          id: postData.id,
+          slug: postData.slug || slug,
+          title: { rendered: postData.title },
+          content: { rendered: postData.content || '' },
+          excerpt: { rendered: postData.excerpt || '' },
+          date: postData.date || new Date().toISOString(),
+          category: postData.category,
+          image: postData.image,
+          isFallback: !useWordPress || !postData._embedded
+        }
+        
+        setPost(formattedPost)
         
         // Загружаем похожие посты
-        const posts = await getPosts({ per_page: 3, exclude: postData.id })
-        setRelatedPosts(posts)
+        if (useWordPress && !formattedPost.isFallback) {
+          try {
+            const posts = await getPosts({ per_page: 3, exclude: postData.id })
+            setRelatedPosts(posts)
+          } catch (error) {
+            // Используем fallback посты
+            const related = blogPostsData.filter(p => p.id !== postData.id).slice(0, 3)
+            setRelatedPosts(related)
+          }
+        } else {
+          // Используем fallback посты
+          const related = blogPostsData.filter(p => p.id !== postData.id).slice(0, 3)
+          setRelatedPosts(related)
+        }
       } catch (error) {
         console.error('Error loading post:', error)
         navigate('/blog')
@@ -55,15 +100,25 @@ const Article = () => {
     return null
   }
 
-  const featuredImage = post._embedded?.['wp:featuredmedia']?.[0]?.source_url
-  const postDate = new Date(post.date).toLocaleDateString('ru-RU', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  }).toUpperCase()
+  const featuredImage = post.isFallback 
+    ? post.image 
+    : (post._embedded?.['wp:featuredmedia']?.[0]?.source_url)
+  
+  const postDate = post.isFallback
+    ? post.date
+    : new Date(post.date).toLocaleDateString('ru-RU', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      }).toUpperCase()
 
-  const postCategory = post._embedded?.['wp:term']?.[0]?.[0]?.name?.toUpperCase() || 'НОВОСТИ'
-  const author = post._embedded?.author?.[0]?.name || 'АРХИТЕКТУРНОЕ БЮРО'
+  const postCategory = post.isFallback
+    ? post.category
+    : (post._embedded?.['wp:term']?.[0]?.[0]?.name?.toUpperCase() || 'НОВОСТИ')
+  
+  const author = post.isFallback
+    ? 'АРХИТЕКТУРНОЕ БЮРО'
+    : (post._embedded?.author?.[0]?.name || 'АРХИТЕКТУРНОЕ БЮРО')
 
   return (
     <div className="article-page">
@@ -112,17 +167,28 @@ const Article = () => {
                 <h2 className="related-posts-title">ПОХОЖИЕ СТАТЬИ</h2>
                 <div className="related-posts-grid">
                   {relatedPosts.map((relatedPost) => {
-                    const relatedImage = relatedPost._embedded?.['wp:featuredmedia']?.[0]?.source_url
-                    const relatedDate = new Date(relatedPost.date).toLocaleDateString('ru-RU', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    }).toUpperCase()
+                    const isRelatedFallback = relatedPost.slug !== undefined && !relatedPost._embedded
+                    const relatedImage = isRelatedFallback
+                      ? relatedPost.image
+                      : (relatedPost._embedded?.['wp:featuredmedia']?.[0]?.source_url)
+                    
+                    const relatedDate = isRelatedFallback
+                      ? relatedPost.date
+                      : new Date(relatedPost.date).toLocaleDateString('ru-RU', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        }).toUpperCase()
+                    
+                    const relatedSlug = relatedPost.slug || `post-${relatedPost.id}`
+                    const relatedTitle = isRelatedFallback
+                      ? relatedPost.title
+                      : relatedPost.title.rendered
                     
                     return (
                       <Link 
                         key={relatedPost.id}
-                        to={`/blog/${relatedPost.slug}`}
+                        to={`/blog/${relatedSlug}`}
                         className="related-post-card"
                       >
                         {relatedImage && (
@@ -135,7 +201,7 @@ const Article = () => {
                           <span className="related-post-date">{relatedDate}</span>
                           <h3 
                             className="related-post-title"
-                            dangerouslySetInnerHTML={{ __html: relatedPost.title.rendered }}
+                            dangerouslySetInnerHTML={{ __html: relatedTitle }}
                           ></h3>
                         </div>
                       </Link>

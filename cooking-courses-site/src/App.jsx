@@ -6,6 +6,8 @@ import Course from './pages/Course'
 import './App.css'
 
 function App() {
+  console.log('App компонент рендерится')
+  
   return (
     <Router>
       <div className="app">

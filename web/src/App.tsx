@@ -8,6 +8,8 @@ import SouvenirsLanding from './views/SouvenirsLanding'
 import ElevateGiftsLanding from './views/ElevateGiftsLanding'
 const EventDetail = lazy(() => import('./views/EventDetail'))
 const CreateEvent = lazy(() => import('./views/CreateEvent'))
+const CreateCommunity = lazy(() => import('./views/CreateCommunity'))
+const CommunityProfile = lazy(() => import('./views/CommunityProfile'))
 const Profile = lazy(() => import('./views/Profile'))
 const GroutCalc = lazy(() => import('./views/GroutCalc'))
 const About = lazy(() => import('./views/About'))
@@ -58,6 +60,8 @@ export default function App() {
               <Route path="/landing" element={<Landing />} />
               <Route path="/event/:id" element={<EventDetail />} />
               <Route path="/create" element={<CreateEvent />} />
+              <Route path="/create-community" element={<CreateCommunity />} />
+              <Route path="/community/:id" element={<CommunityProfile />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/calc" element={<GroutCalc />} />
               <Route path="/about" element={<About />} />

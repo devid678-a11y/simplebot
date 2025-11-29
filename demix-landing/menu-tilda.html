@@ -1,0 +1,526 @@
+<!-- Меню DEMIX для Tilda -->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<div class="demix-nav-block">
+    <style>
+        .demix-nav-block * {
+            box-sizing: border-box;
+            font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+                    .demix-nav-block {
+                        background: #000;
+                        color: #fff;
+                        padding-top: 0;
+                        margin-bottom: 0;
+                    }
+                    /* Удален маргин для следующего блока, теперь используется spacer */
+                    .demix-header-spacer {
+                        display: block;
+                        height: 80px; /* Будет пересчитано скриптом */
+                        width: 100%;
+                    }
+                    .demix-header {
+                        position: fixed;
+                        top: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
+            z-index: 1000;
+            background: #000000;
+        }
+        .demix-header .container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 12px 100px 12px 100px; /* Увеличен отступ справа до 100px */
+            display: flex;
+            align-items: center;
+            gap: 60px; /* Чуть уменьшен gap, чтобы вместить отступы */
+            position: relative;
+            box-sizing: border-box;
+        }
+        .demix-header .logo {
+            flex: 0 0 auto;
+        }
+        .demix-header .logo img {
+            height: 36px;
+            width: auto;
+            display: block;
+        }
+        .demix-header .nav {
+            flex: 1;
+            display: flex;
+            gap: 40px;
+            align-items: center;
+            justify-content: flex-start;
+            margin: 0 auto;
+        }
+        .demix-header .nav-link {
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: color 0.3s ease;
+            position: relative;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+        .demix-header .nav-link,
+        .demix-header .nav-link:visited {
+            color: #ffffff !important;
+        }
+        .demix-header .nav-link:hover {
+            color: #4CAF50;
+        }
+        .demix-header .nav-item-dropdown {
+            position: relative;
+        }
+        .demix-header .nav-item-dropdown > .nav-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: default;
+        }
+        .demix-header .dropdown-arrow {
+            font-size: 0.7rem;
+        }
+        .demix-header .dropdown-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            min-width: 220px;
+            padding: 12px 0;
+            background: #1a1a1a;
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            list-style: none;
+            z-index: 1000;
+        }
+        .demix-header .nav-item-dropdown:hover .dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        .demix-header .dropdown-link {
+            display: block;
+            padding: 10px 20px;
+            color: #ffffff !important;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+        .demix-header .dropdown-link:visited {
+            color: #ffffff !important;
+        }
+        .demix-header .dropdown-link:hover {
+            color: #4CAF50;
+            background: rgba(76, 175, 80, 0.1);
+        }
+        .demix-header .header-contact {
+            flex: 0 0 auto;
+            display: flex;
+            align-items: flex-start;
+            gap: 40px;
+            margin-left: auto;
+        }
+        .demix-header .header-phone-block {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            align-items: flex-start;
+        }
+        .demix-header .header-address-block {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            align-items: flex-end;
+            text-align: right;
+            min-width: 200px;
+            color: #ffffff !important;
+            font-size: 0.85rem;
+        }
+        .demix-header .phone-number {
+            color: #fff;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            white-space: nowrap;
+        }
+        .demix-header .phone-number:hover {
+            color: #4CAF50;
+        }
+        .demix-header .social-icons {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .demix-header .social-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            transition: background 0.3s ease;
+        }
+        .demix-header .social-icon:hover {
+            background: rgba(76, 175, 80, 0.3);
+        }
+        .demix-header .social-icon img {
+            width: 18px;
+            height: 18px;
+            object-fit: contain;
+            filter: brightness(0) invert(1);
+        }
+        .demix-header .header-address-block p {
+            color: #ffffff !important;
+        }
+        .demix-header .menu-toggle {
+            display: none;
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: none;
+            flex-direction: column;
+            gap: 5px;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            flex: 0 0 auto;
+        }
+        .demix-header .menu-toggle span {
+            width: 24px;
+            height: 2px;
+            background: #fff;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .demix-header .menu-toggle.active span:nth-child(1) {
+            transform: rotate(45deg);
+            top: 6px;
+        }
+        .demix-header .menu-toggle.active span:nth-child(2) {
+            opacity: 0;
+        }
+        .demix-header .menu-toggle.active span:nth-child(3) {
+            transform: rotate(-45deg);
+            top: -6px;
+        }
+        .demix-header .header-calculator {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 60px;
+            background: #2a2a2a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .demix-header .header-calculator img,
+        .demix-header .header-calculator svg {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+            stroke: #cccccc;
+            transition: stroke 0.3s ease;
+        }
+        .demix-header .header-calculator:hover svg {
+            stroke: #4CAF50;
+        }
+
+        /* Адаптив для ноутбуков и планшетов (компактный режим) */
+        @media (min-width: 1025px) and (max-width: 1366px) {
+            .demix-header .container {
+                padding: 10px 40px 10px 40px;
+                gap: 20px;
+                justify-content: space-between;
+            }
+            .demix-header .logo img {
+                height: 32px;
+            }
+            .demix-header .nav {
+                gap: 20px;
+            }
+            .demix-header .nav-link {
+                font-size: 0.85rem;
+            }
+            .demix-header .header-contact {
+                gap: 20px;
+            }
+            .demix-header .phone-number {
+                font-size: 0.9rem;
+            }
+            .demix-header .header-address-block {
+                font-size: 0.75rem;
+                min-width: auto;
+                max-width: 160px;
+            }
+        }
+
+        /* Промежуточный режим для Full HD с зумом или больших ноутбуков (шрифт нормальный, отступы чуть меньше) */
+        @media (min-width: 1367px) and (max-width: 1750px) {
+             .demix-header .container {
+                padding: 12px 80px 12px 60px; /* Чуть меньше паддинги чем в оригинале */
+                gap: 40px;
+            }
+            .demix-header .nav {
+                gap: 30px; /* Чуть меньше отступы между пунктами */
+            }
+             /* Шрифт остается стандартным 0.95rem */
+        }
+
+        @media (max-width: 1024px) {
+            .demix-header .container {
+                padding: 16px 20px;
+                justify-content: space-between;
+            }
+            .demix-header .logo {
+                flex: 0 0 auto;
+                order: 1;
+            }
+            .demix-header .nav {
+                position: fixed;
+                inset: 0;
+                background: #1a1a1a;
+                flex-direction: column;
+                padding: 50px 20px 30px;
+                display: none;
+                overflow-y: auto;
+                z-index: 999;
+                align-items: flex-start;
+            }
+            .demix-header .container > .header-contact {
+                display: none !important;
+            }
+            .demix-header .menu-toggle {
+                flex: 0 0 auto;
+                order: 2;
+                display: flex;
+                position: relative;
+                z-index: 1000;
+            }
+            .demix-header .nav {
+                position: fixed;
+                inset: 0;
+                background: #1a1a1a;
+                flex-direction: column;
+                padding: 50px 20px 30px;
+                display: none;
+                overflow-y: auto;
+                z-index: 999;
+                align-items: flex-start;
+            }
+            .demix-header .nav.active {
+                display: flex;
+            }
+            .demix-header .dropdown-menu {
+                position: static;
+                opacity: 1;
+                visibility: visible;
+                transform: none;
+                background: rgba(0, 0, 0, 0.35);
+                margin: 8px 0;
+                display: none;
+                width: 100%;
+                text-align: left;
+            }
+            .demix-header .nav-item-dropdown.active .dropdown-menu {
+                display: block;
+            }
+            .demix-header .nav .mobile-contact {
+                display: none !important;
+            }
+            .demix-header .nav.active .mobile-contact {
+                display: flex !important;
+                flex-direction: column;
+                width: 100%;
+                border-top: 1px solid rgba(255, 255, 255, 0.12);
+                margin-top: 30px;
+                padding-top: 20px;
+                align-items: flex-start;
+                gap: 16px;
+            }
+            .demix-header .nav.active .mobile-contact .header-phone-block {
+                align-items: flex-start;
+                width: 100%;
+            }
+            .demix-header .nav.active .mobile-contact .header-address-block {
+                min-width: auto;
+                max-width: none;
+                align-items: flex-start;
+                text-align: left;
+                width: 100%;
+            }
+            .demix-header .nav-link {
+                text-align: left;
+                width: 100%;
+            }
+            .demix-header .nav-item-dropdown {
+                width: 100%;
+            }
+            .demix-header .nav-item-dropdown > .nav-link {
+                width: 100%;
+            }
+            .demix-header .menu-toggle {
+                display: flex;
+                position: relative;
+                z-index: 1000;
+            }
+            .demix-header .header-calculator {
+                display: none;
+            }
+        }
+    </style>
+    <header class="demix-header">
+        <div class="container">
+            <div class="logo">
+                <a href="https://demexrus.ru/home">
+                    <img src="https://i.postimg.cc/YChc1FDY/Logo-belye-bukvy.png" alt="DEMEX">
+                </a>
+            </div>
+            <nav class="nav">
+                <div class="nav-item-dropdown">
+                    <span class="nav-link">О нас <span class="dropdown-arrow">▼</span></span>
+                    <ul class="dropdown-menu">
+                        <li><a href="https://demexrus.ru/about_company" class="dropdown-link">Миссия и цели</a></li>
+                        <li><a href="https://demexrus.ru/proizvodstvo" class="dropdown-link">Производство</a></li>
+                        <li><a href="https://demexrus.ru/sertificate" class="dropdown-link">Сертификаты</a></li>
+                        <li><a href="https://demexrus.ru/smi" class="dropdown-link">СМИ о нас</a></li>
+                        <li><a href="https://demexrus.ru/blog" class="dropdown-link">Блог</a></li>
+                    </ul>
+                </div>
+                <a href="https://demexrus.ru/product" class="nav-link">Каталог</a>
+                <div class="nav-item-dropdown">
+                    <span class="nav-link">Покупателям <span class="dropdown-arrow">▼</span></span>
+                    <ul class="dropdown-menu">
+                        <li><a href="https://demexrus.ru/dostavka" class="dropdown-link">Доставка</a></li>
+                        <li><a href="https://demexrus.ru/calculator" class="dropdown-link">Калькулятор</a></li>
+                        <li><a href="https://demexrus.ru/videootzyvy" class="dropdown-link">Отзывы</a></li>
+                        <li><a href="https://demexrus.ru/videogallery" class="dropdown-link">Видеогалерея</a></li>
+                    </ul>
+                </div>
+                <a href="https://demexrus.ru/partners" class="nav-link">Партнерам</a>
+                <a href="https://demexrus.ru/gde_kupit" class="nav-link">Где купить</a>
+                <a href="https://demexrus.ru/contacts" class="nav-link">Контакты</a>
+            </nav>
+            <div class="header-contact">
+                <div class="header-phone-block">
+                    <a href="tel:88005338618" class="phone-number">8 800 533 8618</a>
+                    <div class="social-icons">
+                        <a href="https://api.whatsapp.com/send/?phone=79056756507&text&type=phone_number&app_absent=0" class="social-icon" aria-label="WhatsApp" target="_blank" rel="noopener noreferrer">
+                            <img src="https://img.icons8.com/ios-filled/24/ffffff/whatsapp.png" alt="WhatsApp">
+                        </a>
+                        <a href="https://vk.com/demexrus" class="social-icon" aria-label="VKontakte" target="_blank" rel="noopener noreferrer">
+                            <img src="https://img.icons8.com/ios-filled/24/ffffff/vk-circled.png" alt="VK">
+                        </a>
+                        <a href="https://t.me/demex_rus" class="social-icon" aria-label="Telegram" target="_blank" rel="noopener noreferrer">
+                            <img src="https://img.icons8.com/ios-filled/24/ffffff/telegram.png" alt="Telegram">
+                        </a>
+                    </div>
+                </div>
+                <div class="header-address-block">
+                    <p>г. Москва, ул. Золоторожский Вал,<br>11с22, офис 373</p>
+                    <p>9:00–19:00</p>
+                </div>
+            </div>
+            <button class="menu-toggle" aria-label="Меню">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+        <div class="header-calculator">
+            <a href="#openmembersbar" class="calculator-btn" aria-label="Войти">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                    <polyline points="10 17 15 12 10 7"></polyline>
+                    <line x1="15" y1="12" x2="3" y2="12"></line>
+                </svg>
+            </a>
+        </div>
+    </header>
+    <div class="demix-header-spacer"></div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const block = document.querySelector('.demix-nav-block');
+    const nav = block.querySelector('.nav');
+    const menuToggle = block.querySelector('.menu-toggle');
+
+    const updateSpacer = () => {
+        const header = block.querySelector('.demix-header');
+        const spacer = block.querySelector('.demix-header-spacer');
+        if (header && spacer) {
+            spacer.style.height = header.offsetHeight + 'px';
+        }
+    };
+    window.addEventListener('load', updateSpacer);
+    window.addEventListener('resize', updateSpacer);
+    updateSpacer();
+    setTimeout(updateSpacer, 500);
+    const headerContact = block.querySelector('.header-contact');
+    let mobileContactClone = null;
+
+    if (menuToggle) {
+        menuToggle.addEventListener('click', () => {
+            nav.classList.toggle('active');
+            menuToggle.classList.toggle('active');
+            document.body.classList.toggle('menu-open');
+            
+            if (window.innerWidth <= 1024) {
+                if (nav.classList.contains('active')) {
+                    if (!mobileContactClone && headerContact) {
+                        mobileContactClone = headerContact.cloneNode(true);
+                        mobileContactClone.classList.add('mobile-contact');
+                        nav.appendChild(mobileContactClone);
+                    }
+                } else {
+                    if (mobileContactClone) {
+                        mobileContactClone.remove();
+                        mobileContactClone = null;
+                    }
+                }
+            }
+        });
+    }
+
+    block.querySelectorAll('.nav-item-dropdown > .nav-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+            const dropdown = link.closest('.nav-item-dropdown');
+            if (!dropdown) return;
+            if (window.innerWidth <= 1024) {
+                e.preventDefault();
+                dropdown.classList.toggle('active');
+                block.querySelectorAll('.nav-item-dropdown').forEach(d => {
+                    if (d !== dropdown) d.classList.remove('active');
+                });
+            }
+        });
+    });
+
+    block.querySelectorAll('.dropdown-link').forEach(link => {
+        link.addEventListener('click', () => {
+            nav.classList.remove('active');
+            menuToggle.classList.remove('active');
+            document.body.classList.remove('menu-open');
+        });
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && nav.classList.contains('active')) {
+            nav.classList.remove('active');
+            menuToggle.classList.remove('active');
+            document.body.classList.remove('menu-open');
+        }
+    });
+});
+</script>

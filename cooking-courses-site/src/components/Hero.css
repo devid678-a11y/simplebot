@@ -90,31 +90,6 @@
   animation: fadeInUp 0.8s ease-out 0.4s both;
 }
 
-.hero-stats {
-  display: flex;
-  justify-content: center;
-  gap: var(--spacing-xl);
-  margin-bottom: var(--spacing-xl);
-  animation: fadeInUp 0.8s ease-out 0.6s both;
-}
-
-.stat-item {
-  text-align: center;
-}
-
-.stat-number {
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: var(--color-primary);
-  margin-bottom: 0.25rem;
-}
-
-.stat-label {
-  font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.8);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
 
 .hero-form {
   margin-bottom: var(--spacing-lg);
@@ -154,25 +129,41 @@
 }
 
 .form-note {
-  font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.8);
+  font-size: 1rem;
+  color: var(--color-white);
   margin-top: var(--spacing-sm);
+  font-weight: 500;
+  text-align: center;
+}
+
+.hero-trust-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+  animation: fadeInUp 0.8s ease-out 1s both;
+  margin-bottom: var(--spacing-lg);
 }
 
 .hero-trust {
   display: flex;
   justify-content: center;
-  gap: var(--spacing-xl);
-  flex-wrap: wrap;
-  animation: fadeInUp 0.8s ease-out 1s both;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  padding: 0.875rem 1.25rem;
+  border-radius: 50px;
+  flex: 0 0 auto;
 }
 
 .trust-item {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.9375rem;
+  color: var(--color-white);
+  font-weight: 500;
 }
 
 .trust-icon {
@@ -180,13 +171,13 @@
 }
 
 .trust-text strong {
-  color: var(--color-primary);
-  font-weight: 600;
+  color: var(--color-white);
+  font-weight: 700;
 }
 
 .hero-scroll {
   position: absolute;
-  bottom: 2rem;
+  bottom: 1.5rem;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -196,6 +187,7 @@
   color: rgba(255, 255, 255, 0.7);
   font-size: 0.875rem;
   animation: bounce 2s infinite;
+  z-index: 10;
 }
 
 .scroll-arrow {

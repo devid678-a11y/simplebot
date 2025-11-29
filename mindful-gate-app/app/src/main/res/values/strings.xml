@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Mindful Gate</string>
+    <string name="continue_button">ПРОДОЛЖИТЬ</string>
+    <string name="close_button">ЗАКРЫТЬ</string>
+    <string name="hold_to_continue">Зажмите, чтобы продолжить</string>
+    <string name="editor_title">Редактор экрана</string>
+    <string name="settings_title">Настройки</string>
+    <string name="hold_duration">Длительность удержания (сек)</string>
+    <string name="select_apps">Выбрать приложения</string>
+    <string name="add_text">Добавить текст</string>
+    <string name="add_image">Добавить изображение</string>
+    <string name="draw_mode">Режим рисования</string>
+    <string name="save">Сохранить</string>
+    <string name="cancel">Отмена</string>
+    <string name="app_monitor_service">Служба мониторинга приложений</string>
+</resources>
+

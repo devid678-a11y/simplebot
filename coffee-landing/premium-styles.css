@@ -1,0 +1,270 @@
+/* ПРЕМИАЛЬНЫЕ УЛУЧШЕНИЯ ДЛЯ ЛЕНДИНГА */
+
+/* ===== 1. ТИПОГРАФИКА ===== */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+
+:root {
+    /* Премиальная цветовая палитра */
+    --gold-primary: #D4AF37;
+    --gold-light: #F4E4BC;
+    --gold-dark: #B8941F;
+    --dark-bg: #0A0A0A;
+    --dark-surface: #1A1A1A;
+    --text-gold: #D4AF37;
+    
+    /* Премиальные шрифты */
+    --font-display: 'Playfair Display', serif;
+    --font-body: 'Inter', sans-serif;
+}
+
+/* Обновление типографики */
+body {
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, .section-title, .hero-title {
+    font-family: var(--font-display);
+    letter-spacing: 0.05em;
+    font-weight: 600;
+}
+
+.hero-title {
+    font-size: 64px !important;
+    line-height: 1.2;
+    letter-spacing: 0.02em;
+}
+
+.section-title {
+    font-size: 42px;
+    line-height: 1.3;
+    letter-spacing: 0.03em;
+}
+
+/* ===== 2. ЗОЛОТЫЕ АКЦЕНТЫ ===== */
+.gold-accent {
+    color: var(--gold-primary);
+}
+
+.gold-border {
+    border-color: var(--gold-primary);
+}
+
+.gold-gradient {
+    background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
+}
+
+/* Цены с золотым акцентом */
+.masterclass-price,
+.tasting-price,
+.certificate-price {
+    color: var(--gold-primary);
+    font-weight: 600;
+    font-size: 24px;
+    letter-spacing: 0.05em;
+}
+
+/* ===== 3. ПРЕМИАЛЬНЫЕ КНОПКИ ===== */
+.btn-primary {
+    background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
+    border: 1px solid var(--gold-primary);
+    color: #000;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    padding: 16px 32px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 20px rgba(212, 175, 55, 0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(212, 175, 55, 0.5);
+}
+
+.btn-secondary {
+    border: 1px solid rgba(212, 175, 55, 0.5);
+    color: var(--gold-primary);
+    background: transparent;
+    padding: 16px 32px;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+    background: rgba(212, 175, 55, 0.1);
+    border-color: var(--gold-primary);
+}
+
+/* ===== 4. ПРЕМИАЛЬНЫЕ КАРТОЧКИ ===== */
+.masterclass-card,
+.tasting-card {
+    background: var(--dark-surface);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.masterclass-card:hover,
+.tasting-card:hover {
+    transform: translateY(-8px);
+    border-color: rgba(212, 175, 55, 0.3);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4),
+                0 0 0 1px rgba(212, 175, 55, 0.2),
+                0 0 40px rgba(212, 175, 55, 0.1);
+}
+
+/* ===== 5. УЛУЧШЕННЫЕ ОТСТУПЫ ===== */
+section {
+    padding: 120px 0;
+}
+
+.container {
+    padding: 0 60px;
+}
+
+/* ===== 6. ДЕКОРАТИВНЫЕ ЭЛЕМЕНТЫ ===== */
+.section-divider {
+    width: 80px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold-primary), transparent);
+    margin: 60px auto;
+}
+
+/* Золотые акценты на заголовках */
+.section-title::after {
+    content: '';
+    display: block;
+    width: 60px;
+    height: 3px;
+    background: var(--gold-primary);
+    margin: 20px 0;
+}
+
+/* ===== 7. HERO СЕКЦИЯ ===== */
+.hero {
+    position: relative;
+}
+
+.hero-overlay {
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.2) 100%);
+}
+
+.hero-subtitle {
+    font-size: 20px;
+    letter-spacing: 0.03em;
+    opacity: 0.9;
+}
+
+/* ===== 8. ПРЕМИАЛЬНЫЕ ЦЕНЫ ===== */
+.price-wrapper {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.price-currency {
+    font-size: 18px;
+    color: var(--gold-primary);
+}
+
+.price-amount {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--gold-primary);
+    font-family: var(--font-display);
+}
+
+/* ===== 9. АНИМАЦИИ ===== */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeInUp 0.8s ease-out;
+}
+
+/* ===== 10. УЛУЧШЕНИЯ КОМАНДЫ ===== */
+.team-member-image {
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.team-member:hover .team-member-image {
+    border-color: var(--gold-primary);
+    box-shadow: 0 0 30px rgba(212, 175, 55, 0.3);
+}
+
+.team-member-name {
+    color: var(--gold-primary);
+    font-family: var(--font-display);
+    font-size: 20px;
+}
+
+/* ===== 11. SMOOTH SCROLL ===== */
+html {
+    scroll-behavior: smooth;
+}
+
+/* ===== 12. УЛУЧШЕННЫЙ FOOTER ===== */
+.footer {
+    border-top: 1px solid rgba(212, 175, 55, 0.2);
+    background: var(--dark-bg);
+}
+
+/* ===== 13. ПРЕМИАЛЬНЫЕ БЕЙДЖИ ===== */
+.premium-badge {
+    display: inline-block;
+    padding: 6px 16px;
+    background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
+    color: #000;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border-radius: 20px;
+    margin-bottom: 12px;
+}
+
+/* ===== 14. УЛУЧШЕННЫЕ ТАБЫ ===== */
+.tab-btn {
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.tab-btn.active {
+    border-bottom-color: var(--gold-primary);
+    color: var(--gold-primary);
+}
+
+.tab-btn:hover {
+    color: var(--gold-primary);
+}
+
+/* ===== 15. ОТЗЫВЧИВОСТЬ ===== */
+@media (max-width: 768px) {
+    .hero-title {
+        font-size: 36px !important;
+    }
+    
+    .section-title {
+        font-size: 28px;
+    }
+    
+    section {
+        padding: 80px 0;
+    }
+}
+
+
+
+

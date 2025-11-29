@@ -70,8 +70,8 @@ input { width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid 
 
 .range { width: 100%; accent-color: var(--accent); }
 
-.segmented { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; background: rgba(255,255,255,0.06); padding: 6px; border-radius: 12px; overflow: hidden; }
-.seg-bg { position: absolute; top: 6px; left: 6px; width: calc(25% - 0px); height: calc(100% - 12px); background: var(--accent); border-radius: 8px; transition: transform 240ms ease; z-index: 0; }
+.segmented { position: relative; display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; background: rgba(255,255,255,0.06); padding: 6px; border-radius: 12px; overflow: hidden; }
+.seg-bg { position: absolute; top: 6px; left: 6px; width: calc(20% - 0px); height: calc(100% - 12px); background: var(--accent); border-radius: 8px; transition: transform 240ms ease; z-index: 0; }
 .seg-opt { position: relative; z-index: 1; text-align: center; font-weight: 700; padding: 10px 0; cursor: pointer; user-select: none; }
 .seg-opt.active { color: #000; }
 

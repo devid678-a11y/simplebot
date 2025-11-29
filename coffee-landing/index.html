@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Департамент Бариста | MyCoffee</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body { 
+            background-color: #1A1A1A !important; 
+            color: #FFFFFF !important; 
+            margin: 0;
+            padding: 0;
+        }
+        .hero { 
+            min-height: 100vh !important; 
+            background: #1A1A1A !important; 
+        }
+        img { 
+            max-width: 100%; 
+            height: auto; 
+            display: block;
+        }
+        .hero-image {
+            background: linear-gradient(135deg, #2c1810 0%, #1a1a1a 100%);
+        }
+        .hero-image[src=""],
+        .hero-image:not([src]) {
+            display: none;
+        }
+        .introduction-image img,
+        .masterclass-image img,
+        .tasting-image img,
+        .certificate-image img {
+            background: #f5f5f5;
+            min-height: 200px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <span class="logo-icon">ПР</span>
+                </div>
+                <nav class="nav">
+                    <a href="#team" class="nav-link">КОМАНДА</a>
+                    <a href="#masterclasses" class="nav-link">МАСТЕР-КЛАССЫ</a>
+                    <a href="#tastings" class="nav-link">ДЕГУСТАЦИИ</a>
+                    <a href="#certificates" class="nav-link">ПОДАРОЧНЫЕ СЕРТИФИКАТЫ</a>
+                    <a href="#faq" class="nav-link">F.A.Q.</a>
+                    <a href="#contacts" class="nav-link">КОНТАКТЫ</a>
+                </nav>
+                <div class="header-actions">
+                    <a href="tel:+79867768765" class="phone">+7 986 776 87 65</a>
+                    <a href="mailto:info@mycoffee.ru" class="icon-link">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M2.5 5L10 10L17.5 5M3.33333 15H16.6667C17.5871 15 18.3333 14.2538 18.3333 13.3333V6.66667C18.3333 5.74619 17.5871 5 16.6667 5H3.33333C2.41286 5 1.66667 5.74619 1.66667 6.66667V13.3333C1.66667 14.2538 2.41286 15 3.33333 15Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </a>
+                    <a href="#" class="icon-link">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M17.5 9.58333C17.5037 10.6833 17.2459 11.7683 16.75 12.75C16.162 13.8847 15.2581 14.8216 14.1505 15.4489C13.0429 16.0762 11.7799 16.367 10.5083 16.2917C9.23678 16.2163 8.01256 15.7774 6.98333 15.025L2.5 17.5L5.00833 13.05C4.25594 12.0208 3.81702 10.7966 3.74167 9.525C3.66633 8.2534 3.95713 6.99042 4.58442 5.88281C5.21171 4.7752 6.14865 3.87133 7.28333 3.28333C8.265 2.78741 9.35 2.52963 10.45 2.53333H10.8333C12.3432 2.56078 13.8037 3.06696 14.9992 3.97833C16.1947 4.8897 17.0638 6.16119 17.5 7.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </a>
+                    <button class="btn-apply">ПОДАТЬ ЗАЯВКУ</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-background" style="background: linear-gradient(135deg, #2c1810 0%, #1a1a1a 100%);">
+            <img src="images/peter-pivak-Iiqo64hiwZo-unsplash.jpg" alt="Coffee" class="hero-image" style="width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0;">
+            <div class="hero-overlay"></div>
+        </div>
+        <div class="container">
+            <div class="hero-content" style="position: relative; z-index: 10; color: #FFFFFF !important;">
+                <h1 class="hero-title" style="color: #FFFFFF !important; font-size: 48px; font-weight: 300; margin-bottom: 20px;">Искусство приготовления кофе от команды «MyCoffee»</h1>
+                <p class="hero-subtitle" style="color: #FFFFFF !important; font-size: 18px; font-weight: 300;">Авторские мастер-классы от легендарного Департамента Бариста</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Introduction Section -->
+    <section class="introduction">
+        <div class="container">
+            <h2 class="section-title">Кофе – это культурный код «MyCoffee», который развивает наш Департамент Бариста</h2>
+            <div class="introduction-content">
+                <div class="introduction-image">
+                    <img src="images/jason-betz-klub_Ke-268-unsplash.jpg" alt="Coffee Machine" style="width: 100%; height: auto; border-radius: 4px; display: block;">
+                </div>
+                <div class="introduction-text">
+                    <p>С гордостью скажем, что наша команда первая привезла в Россию профессию бариста в ее современном представлении и продолжает активно развивать индустрию сегодня</p>
+                    <p>Мы хотим делиться своим опытом, поэтому создали уникальные авторские мастер-классы и будем рады видеть вас на них</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Team Section -->
+    <section class="team" id="team">
+        <div class="container">
+            <h2 class="section-title">Наша команда</h2>
+            <p class="section-description">– это настоящие профессионалы, которые доказывают свою экспертность на международных и российских чемпионатах и соревнованиях</p>
+            <div class="team-carousel-wrapper">
+                <div class="team-carousel" id="teamCarousel">
+                    <div class="team-member">
+                        <div class="team-member-image">
+                            <img src="https://i.pravatar.cc/400?img=1" alt="Глеб Невейкин">
+                        </div>
+                        <h3 class="team-member-name">Глеб Невейкин</h3>
+                        <p class="team-member-role">Директор Департамента Бариста, Чемпион мира 2008, Автор раф-кофе</p>
+                    </div>
+                    <div class="team-member">
+                        <div class="team-member-image">
+                            <img src="https://i.pravatar.cc/400?img=5" alt="Варвара Стукало">
+                        </div>
+                        <h3 class="team-member-name">Варвара Стукало</h3>
+                        <p class="team-member-role">Директор тренинг-центра Бариста</p>
+                    </div>
+                    <div class="team-member">
+                        <div class="team-member-image">
+                            <img src="https://i.pravatar.cc/400?img=10" alt="Ирина Пузачкова">
+                        </div>
+                        <h3 class="team-member-name">Ирина Пузачкова</h3>
+                        <p class="team-member-role">R&D руководитель «MyCoffee»</p>
+                    </div>
+                    <div class="team-member">
+                        <div class="team-member-image">
+                            <img src="https://i.pravatar.cc/400?img=12" alt="Андрей Колесников">
+                        </div>
+                        <h3 class="team-member-name">Андрей Колесников</h3>
+                        <p class="team-member-role">Руководитель направления Bar Engineering</p>
+                    </div>
+                    <div class="team-member">
+                        <div class="team-member-image">
+                            <img src="https://i.pravatar.cc/400?img=20" alt="Дарья Гарькава">
+                        </div>
+                        <h3 class="team-member-name">Дарья Гарькава</h3>
+                        <p class="team-member-role">Green Coffee Buyer, Quality Grader</p>
+                    </div>
+                </div>
+                <div class="carousel-controls">
+                    <button class="carousel-btn prev" id="teamPrev">‹</button>
+                    <button class="carousel-btn next" id="teamNext">›</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Master Classes Section -->
+    <section class="masterclasses" id="masterclasses">
+        <div class="container">
+            <h2 class="section-title">Мастер-классы</h2>
+            <p class="section-description">Подходят как начинающим, так и профессиональным бариста, желающим углубить свои знания и освоить новые техники. Мы разделили их на два направления:</p>
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="tea-ice-coffee">ЧАЙ, ЛЁД, КОФЕ</button>
+                <button class="tab-btn" data-tab="barista">БАРИСТА</button>
+            </div>
+            <div class="tab-content active" id="tea-ice-coffee">
+                <div class="masterclasses-grid">
+                    <div class="masterclass-card">
+                        <div class="masterclass-image">
+                            <img src="images/fahmi-fakhrudin-nzyzAUsbV0M-unsplash.jpg" alt="Masterclass" style="width: 100%; height: 200px; object-fit: cover; display: block;">
+                        </div>
+                        <h3 class="masterclass-title">Плечом к плечу</h3>
+                        <p class="masterclass-description">Интенсивный мастер-класс для команды</p>
+                        <p class="masterclass-price">Стоимость от 85 000 ₽</p>
+                        <div class="masterclass-actions">
+                            <button class="btn-primary">ЗАПИСАТЬСЯ</button>
+                            <button class="btn-secondary">ПОДРОБНЕЕ</button>
+                        </div>
+                    </div>
+                    <div class="masterclass-card">
+                        <div class="masterclass-image">
+                            <img src="images/andriy-nestruiev-30dIgeCoImE-unsplash.jpg" alt="Tea" style="width: 100%; height: 200px; object-fit: cover; display: block;">
+                        </div>
+                        <h3 class="masterclass-title">Чай. Нос к носу</h3>
+                        <p class="masterclass-description">Мастер-класс по искусству заваривания чая</p>
+                        <p class="masterclass-price">Стоимость от 82 000 ₽</p>
+                        <div class="masterclass-actions">
+                            <button class="btn-primary">ЗАПИСАТЬСЯ</button>
+                            <button class="btn-secondary">ПОДРОБНЕЕ</button>
+                        </div>
+                    </div>
+                    <div class="masterclass-card">
+                        <div class="masterclass-image">
+                            <img src="images/jason-betz-klub_Ke-268-unsplash.jpg" alt="Coffee" style="width: 100%; height: 200px; object-fit: cover; display: block;">
+                        </div>
+                        <h3 class="masterclass-title">Кофе. Лицом к лицу</h3>
+                        <p class="masterclass-description">Углубленный курс по приготовлению кофе</p>
+                        <p class="masterclass-price">Стоимость от 82 000 ₽</p>
+                        <div class="masterclass-actions">
+                            <button class="btn-primary">ЗАПИСАТЬСЯ</button>
+                            <button class="btn-secondary">ПОДРОБНЕЕ</button>
+                        </div>
+                    </div>
+                    <div class="masterclass-card">
+                        <div class="masterclass-image">
+                            <img src="images/michael-surazhsky-CkkGmLY5Ix0-unsplash.jpg" alt="Ice Drink" style="width: 100%; height: 200px; object-fit: cover; display: block;">
+                        </div>
+                        <h3 class="masterclass-title">Лёд. Глаза в глаза</h3>
+                        <p class="masterclass-description">Мастер-класс по холодным напиткам</p>
+                        <p class="masterclass-price">Стоимость от 82 000 ₽</p>
+                        <div class="masterclass-actions">
+                            <button class="btn-primary">ЗАПИСАТЬСЯ</button>
+                            <button class="btn-secondary">ПОДРОБНЕЕ</button>
+                        </div>
+                    </div>
+                    <div class="masterclass-card">
+                        <div class="masterclass-image">
+                            <img src="images/tim-mossholder-YC6RVdoTtIk-unsplash.jpg" alt="Coffee" style="width: 100%; height: 200px; object-fit: cover; display: block;">
+                        </div>
+                        <h3 class="masterclass-title">Кофейное производство</h3>
+                        <p class="masterclass-description">Погружение в процесс производства кофе</p>
+                        <p class="masterclass-price">Стоимость от 20 000 ₽</p>
+                        <div class="masterclass-actions">
+                            <button class="btn-primary">ЗАПИСАТЬСЯ</button>
+                            <button class="btn-secondary">ПОДРОБНЕЕ</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-content" id="barista">
+                <div class="masterclasses-grid">
+                    <div class="masterclass-card">
+                        <div class="masterclass-image">
+                            <img src="images/fahmi-fakhrudin-nzyzAUsbV0M-unsplash.jpg" alt="Barista" style="width: 100%; height: 200px; object-fit: cover; display: block;">
+                        </div>
+                        <h3 class="masterclass-title">Базовый курс бариста</h3>
+                        <p class="masterclass-description">Основы профессии бариста для начинающих</p>
+                        <p class="masterclass-price">Стоимость от 25 000 ₽</p>
+                        <div class="masterclass-actions">
+                            <button class="btn-primary">ЗАПИСАТЬСЯ</button>
+                            <button class="btn-secondary">ПОДРОБНЕЕ</button>
+                        </div>
+                    </div>
+                    <div class="masterclass-card">
+                        <div class="masterclass-image">
+                            <img src="images/crew-9rTEwV_G0Do-unsplash.jpg" alt="Barista" style="width: 100%; height: 200px; object-fit: cover; display: block;">
+                        </div>
+                        <h3 class="masterclass-title">Продвинутый курс</h3>
+                        <p class="masterclass-description">Для опытных бариста, желающих совершенствоваться</p>
+                        <p class="masterclass-price">Стоимость от 45 000 ₽</p>
+                        <div class="masterclass-actions">
+                            <button class="btn-primary">ЗАПИСАТЬСЯ</button>
+                            <button class="btn-secondary">ПОДРОБНЕЕ</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tastings Section -->
+    <section class="tastings" id="tastings">
+        <div class="container">
+            <h2 class="section-title">Дегустации</h2>
+            <p class="section-description">Для тех, кто хочет узнать больше о напитках «MyCoffee» и продегустировать все позиции под руководством наших амбассадоров</p>
+            <div class="tastings-grid">
+                <div class="tasting-card">
+                    <div class="tasting-image">
+                        <img src="images/jason-betz-klub_Ke-268-unsplash.jpg" alt="Tasting" style="width: 100%; height: 200px; object-fit: cover; display: block;">
+                    </div>
+                    <h3 class="tasting-title">Кофе</h3>
+                    <p class="tasting-description">Дегустация кофейного меню «MyCoffee»</p>
+                    <p class="tasting-price">Стоимость от 50 000 ₽</p>
+                    <div class="tasting-actions">
+                        <button class="btn-primary">ЗАПИСАТЬСЯ</button>
+                        <button class="btn-secondary">ПОДРОБНЕЕ</button>
+                    </div>
+                </div>
+                <div class="tasting-card">
+                    <div class="tasting-image">
+                        <img src="images/andriy-nestruiev-30dIgeCoImE-unsplash.jpg" alt="Tasting" style="width: 100%; height: 200px; object-fit: cover; display: block;">
+                    </div>
+                    <h3 class="tasting-title">Чай</h3>
+                    <p class="tasting-description">Дегустация чайного меню «MyCoffee»</p>
+                    <p class="tasting-price">Стоимость от 30 000 ₽</p>
+                    <div class="tasting-actions">
+                        <button class="btn-primary">ЗАПИСАТЬСЯ</button>
+                        <button class="btn-secondary">ПОДРОБНЕЕ</button>
+                    </div>
+                </div>
+                <div class="tasting-card">
+                    <div class="tasting-image">
+                        <img src="images/michael-surazhsky-CkkGmLY5Ix0-unsplash.jpg" alt="Tasting" style="width: 100%; height: 200px; object-fit: cover; display: block;">
+                    </div>
+                    <h3 class="tasting-title">Коктейли</h3>
+                    <p class="tasting-description">Дегустация коктейльного меню «MyCoffee»</p>
+                    <p class="tasting-price">Стоимость от 30 000 ₽</p>
+                    <div class="tasting-actions">
+                        <button class="btn-primary">ЗАПИСАТЬСЯ</button>
+                        <button class="btn-secondary">ПОДРОБНЕЕ</button>
+                    </div>
+                </div>
+                <div class="tasting-card">
+                    <div class="tasting-image">
+                        <img src="images/tim-st-martin-IjnAc0vyqGs-unsplash.jpg" alt="Juices" style="width: 100%; height: 200px; object-fit: cover; display: block;">
+                    </div>
+                    <h3 class="tasting-title">Соки, лимонады, смузи</h3>
+                    <p class="tasting-description">Дегустация лимонадов и смузи «MyCoffee»</p>
+                    <p class="tasting-price">Стоимость от 30 000 ₽</p>
+                    <div class="tasting-actions">
+                        <button class="btn-primary">ЗАПИСАТЬСЯ</button>
+                        <button class="btn-secondary">ПОДРОБНЕЕ</button>
+                    </div>
+                </div>
+                <div class="tasting-card">
+                    <div class="tasting-image">
+                        <img src="images/jason-betz-klub_Ke-268-unsplash.jpg" alt="Tasting" style="width: 100%; height: 200px; object-fit: cover; display: block;">
+                    </div>
+                    <h3 class="tasting-title">Дегустационный сет</h3>
+                    <p class="tasting-description">Тщательно составленный сет из напитков, которые лучше всего раскрывают философию «MyCoffee»</p>
+                    <p class="tasting-price">Стоимость от 30 000 ₽</p>
+                    <div class="tasting-actions">
+                        <button class="btn-primary">ЗАПИСАТЬСЯ</button>
+                        <button class="btn-secondary">ПОДРОБНЕЕ</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Gift Certificates Section -->
+    <section class="certificates" id="certificates">
+        <div class="container">
+            <h2 class="section-title">Подарите эмоции</h2>
+            <p class="section-description">Подарочные сертификаты на мастер-классы и тренинги Департамента Бариста</p>
+            <div class="certificate-card">
+                <div class="certificate-image">
+                    <img src="images/yanapi-senaud-6HR8vpjYUHo-unsplash.jpg" alt="Сертификат" style="width: 100%; height: 300px; object-fit: cover; border-radius: 4px; display: block;">
+                </div>
+                <div class="certificate-content">
+                    <p class="certificate-price">20 000 ₽</p>
+                    <form class="certificate-form">
+                        <input type="text" placeholder="Имя" class="certificate-input">
+                        <button type="submit" class="btn-primary">КУПИТЬ</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer" id="contacts">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <span class="logo-icon">ПР</span>
+                </div>
+                <div class="footer-info">
+                    <p>+7 986 776 87 65</p>
+                    <p>info@mycoffee.ru</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
+

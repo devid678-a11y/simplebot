@@ -30,7 +30,8 @@ import java.util.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyEventsScreen(
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onEventClick: (Event) -> Unit = {} // Добавляем callback
 ) {
     val vm: HomeViewModel = viewModel()
     // AttendanceRepository - это object, не нужно создавать экземпляр
@@ -147,7 +148,7 @@ fun MyEventsScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(myEvents) { event ->
-                        MyEventItem(event = event)
+                        MyEventItem(event = event, onClick = { onEventClick(event) })
                     }
                 }
             }
@@ -156,11 +157,11 @@ fun MyEventsScreen(
 }
 
 @Composable
-private fun MyEventItem(event: Event) {
+private fun MyEventItem(event: Event, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { /* TODO: Открыть детали события */ },
+            .clickable { onClick() },
         colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1A1A)),
         shape = RoundedCornerShape(12.dp)
     ) {

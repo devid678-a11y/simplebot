@@ -10,7 +10,9 @@ import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.delay
 import com.company.dvizhtrue.R
 
 object EventsRepository {
@@ -193,39 +195,45 @@ object EventsRepository {
             .update("imageUrls", FieldValue.arrayUnion(imageUrl))
     }
 
-    fun listenEvents(): Flow<List<Event>> = callbackFlow {
-        val currentTime = System.currentTimeMillis()
-        val listener = eventsCollection
-            .whereGreaterThan("startAtMillis", currentTime) // Только будущие события
-            // Сортируем только по полю фильтра, чтобы не требовать композитного индекса
-            .orderBy("startAtMillis", Query.Direction.ASCENDING)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-
-                    android.util.Log.e("EventsRepository", "Error listening to events", error)
-                    close(error)
-                    return@addSnapshotListener
-                }
-
-
-                val events = snapshot?.documents?.mapNotNull { doc ->
-                    try {
-                        val data = doc.data ?: emptyMap<String, Any>()
-                        Event.fromMap(data, doc.id)
-                    } catch (e: Exception) {
-                        android.util.Log.e("EventsRepository", "Error parsing event ${doc.id}", e)
-                        null
-                    }
-                } ?: emptyList()
-
-                android.util.Log.d("EventsRepository", "Loaded ${events.size} events from Firestore")
-                events.forEach { event ->
-                    android.util.Log.d("EventsRepository", "Event: ${event.title}, imageUrls: ${event.imageUrls.size}")
-                }
-                trySend(events)
+    /**
+     * Получение событий через API (новый метод)
+     */
+    suspend fun getEventsFromApi(limit: Int = 100, orderBy: String = "start_at_millis", order: String = "desc"): Result<List<Event>> {
+        return try {
+            val response = ApiClient.apiService.getEvents(limit, orderBy, order)
+            if (response.isSuccessful) {
+                val events = response.body()?.map { it.toEvent() } ?: emptyList()
+                android.util.Log.d("EventsRepository", "Loaded ${events.size} events from API")
+                Result.success(events)
+            } else {
+                android.util.Log.e("EventsRepository", "API error: ${response.code()} - ${response.message()}")
+                Result.failure(Exception("API error: ${response.code()}"))
             }
+        } catch (e: Exception) {
+            android.util.Log.e("EventsRepository", "Error loading events from API", e)
+            Result.failure(e)
+        }
+    }
 
-        awaitClose { listener.remove() }
+    /**
+     * Поток событий через API (периодическое обновление)
+     */
+    fun listenEvents(): Flow<List<Event>> = flow {
+        while (true) {
+            try {
+                val result = getEventsFromApi()
+                result.onSuccess { events ->
+                    emit(events)
+                }.onFailure { error ->
+                    android.util.Log.e("EventsRepository", "Error in listenEvents flow", error)
+                    emit(emptyList()) // Возвращаем пустой список при ошибке
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("EventsRepository", "Exception in listenEvents flow", e)
+                emit(emptyList())
+            }
+            delay(30000) // Обновляем каждые 30 секунд
+        }
     }
 
     fun getEvent(eventId: String): Task<DocumentSnapshot> {
@@ -266,16 +274,109 @@ object EventsRepository {
     }
     
     suspend fun getEventById(eventId: String): Result<Event> {
+        // Сначала пробуем через API
         return try {
-            val doc = eventsCollection.document(eventId).get().await()
-            if (doc.exists()) {
-                val event = Event.fromMap(doc.data ?: emptyMap(), doc.id)
-                Result.success(event)
+            val response = ApiClient.apiService.getEvent(eventId)
+            if (response.isSuccessful) {
+                val eventResponse = response.body()
+                if (eventResponse != null) {
+                    Result.success(eventResponse.toEvent())
+                } else {
+                    Result.failure(Exception("Event not found"))
+                }
             } else {
-                Result.failure(Exception("Event not found"))
+                // Fallback на Firestore если API не работает
+                android.util.Log.w("EventsRepository", "API failed, falling back to Firestore")
+                val doc = eventsCollection.document(eventId).get().await()
+                if (doc.exists()) {
+                    val event = Event.fromMap(doc.data ?: emptyMap(), doc.id)
+                    Result.success(event)
+                } else {
+                    Result.failure(Exception("Event not found"))
+                }
             }
         } catch (e: Exception) {
             android.util.Log.e("EventsRepository", "Error getting event by ID: $eventId", e)
+            Result.failure(e)
+        }
+    }
+    
+    /**
+     * Создание события через API
+     */
+    suspend fun createEventViaApi(event: Event, createdBy: String? = null, createdByDisplayName: String? = null, createdByPhotoUrl: String? = null): Result<String> {
+        return try {
+            val geo = if (event.location != null) {
+                // Можно добавить геокодирование позже
+                null
+            } else null
+            
+            val request = CreateEventRequest(
+                title = event.title,
+                description = event.description,
+                startAtMillis = event.startAtMillis,
+                endAtMillis = null,
+                isFree = event.isFree,
+                price = event.price?.toInt() ?: 0,
+                isOnline = event.isOnline,
+                location = event.location,
+                geo = geo,
+                imageUrls = event.imageUrls,
+                categories = event.categories,
+                source = mapOf("type" to "android_app"),
+                createdBy = createdBy,
+                createdByDisplayName = createdByDisplayName,
+                createdByPhotoUrl = createdByPhotoUrl
+            )
+            
+            val response = ApiClient.apiService.createEvent(request)
+            if (response.isSuccessful) {
+                val eventId = response.body()?.id
+                if (eventId != null) {
+                    android.util.Log.d("EventsRepository", "Event created via API: $eventId")
+                    Result.success(eventId)
+                } else {
+                    Result.failure(Exception("Event ID not returned"))
+                }
+            } else {
+                android.util.Log.e("EventsRepository", "API error creating event: ${response.code()}")
+                Result.failure(Exception("API error: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("EventsRepository", "Error creating event via API", e)
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun checkAttending(eventId: String, userId: String): Result<Boolean> {
+        return try {
+            val response = ApiClient.apiService.checkAttending(eventId, userId)
+            if (response.isSuccessful) {
+                Result.success(response.body()?.going ?: false)
+            } else {
+                Result.failure(Exception("API error: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("EventsRepository", "Error checking attending", e)
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun setAttending(eventId: String, userId: String, isAttending: Boolean): Result<Boolean> {
+        return try {
+            val response = if (isAttending) {
+                ApiClient.apiService.addAttendee(eventId, userId)
+            } else {
+                ApiClient.apiService.removeAttendee(eventId, userId)
+            }
+            
+            if (response.isSuccessful) {
+                Result.success(true)
+            } else {
+                Result.failure(Exception("API error: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("EventsRepository", "Error setting attending", e)
             Result.failure(e)
         }
     }

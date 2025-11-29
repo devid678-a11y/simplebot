@@ -27,6 +27,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.company.dvizhtrue.data.Event
+import com.company.dvizhtrue.data.EventsRepository
+import com.company.dvizhtrue.data.UserRepository
 import com.company.dvizhtrue.ui.components.EventMapboxView
 import com.company.dvizhtrue.ui.components.GeocodingService
 import com.company.dvizhtrue.ui.components.GradientCard
@@ -41,6 +43,19 @@ fun EventDetailScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    
+    // Состояние подписки
+    var isGoing by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(true) } // Начинаем с true пока грузим
+    
+    LaunchedEffect(event.id) {
+        val uid = UserRepository.getCurrentUserId()
+        if (uid != null) {
+            val result = EventsRepository.checkAttending(event.id, uid)
+            isGoing = result.getOrDefault(false)
+        }
+        isLoading = false
+    }
     
     Scaffold(
         topBar = {
@@ -244,6 +259,12 @@ fun EventDetailScreen(
             // Кнопки действий
             Spacer(modifier = Modifier.height(24.dp))
             
+            // Состояние подписки
+            var isGoing by remember { mutableStateOf(false) }
+            var isLoading by remember { mutableStateOf(false) }
+            
+            // TODO: Загрузить реальное состояние из API
+            
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -252,14 +273,35 @@ fun EventDetailScreen(
             ) {
                 Button(
                     onClick = {
-                        // Логика "Я иду"
+                        val uid = UserRepository.getCurrentUserId()
+                        if (uid == null) {
+                            // TODO: Показать диалог входа
+                            return@Button
+                        }
+                        
+                        isLoading = true
+                        scope.launch {
+                            val newState = !isGoing
+                            val result = EventsRepository.setAttending(event.id, uid, newState)
+                            if (result.isSuccess) {
+                                isGoing = newState
+                            } else {
+                                // TODO: Показать ошибку
+                            }
+                            isLoading = false
+                        }
                     },
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF00E5FF)
-                    )
+                        containerColor = if (isGoing) Color.Gray else Color(0xFF00E5FF)
+                    ),
+                    enabled = !isLoading
                 ) {
-                    Text("Пойду", color = Color.White)
+                    if (isLoading) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White)
+                    } else {
+                        Text(if (isGoing) "Не пойду" else "Пойду", color = Color.White)
+                    }
                 }
                 
                 OutlinedButton(

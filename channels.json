@@ -1,0 +1,121 @@
+{
+  "channels": {
+    "channel-1": {
+      "name": "На Фанере",
+      "username": "Na_Fanere",
+      "url": "https://t.me/s/Na_Fanere",
+      "category": "events",
+      "enabled": true,
+      "lastParsed": 0,
+      "createdAt": "2025-09-19T18:00:00.000Z"
+    },
+    "channel-2": {
+      "name": "Гиг За Сотку",
+      "username": "gzsmsk",
+      "url": "https://t.me/s/gzsmsk",
+      "category": "events",
+      "enabled": true,
+      "lastParsed": 0,
+      "createdAt": "2025-09-19T18:00:00.000Z"
+    },
+    "channel-3": {
+      "name": "Московский гуляка",
+      "username": "mosgul",
+      "url": "https://t.me/s/mosgul",
+      "category": "events",
+      "enabled": true,
+      "lastParsed": 0,
+      "createdAt": "2025-09-19T18:00:00.000Z"
+    },
+    "channel-4": {
+      "name": "Бесплатные события",
+      "username": "freeskidos",
+      "url": "https://t.me/s/freeskidos",
+      "category": "events",
+      "enabled": true,
+      "lastParsed": 0,
+      "createdAt": "2025-09-19T18:00:00.000Z"
+    },
+    "channel-5": {
+      "name": "Ноябрьский кинотеатр",
+      "username": "novembercinema",
+      "url": "https://t.me/s/novembercinema",
+      "category": "events",
+      "enabled": true,
+      "lastParsed": 0,
+      "createdAt": "2025-09-19T18:00:00.000Z"
+    },
+    "channel-6": {
+      "name": "МОСКВИЧ ъ | ДОСУГ | Москва | АФИША | СОБЫТИЯ | БЕСПЛАТНО",
+      "username": "NovostiMoskvbl",
+      "url": "https://t.me/s/NovostiMoskvbl",
+      "category": "events",
+      "enabled": true,
+      "lastParsed": 0,
+      "createdAt": "2025-09-19T18:00:00.000Z"
+    },
+    "channel-7": {
+      "name": "Только парк",
+      "username": "only_park",
+      "url": "https://t.me/s/only_park",
+      "category": "events",
+      "enabled": true,
+      "lastParsed": 0,
+      "createdAt": "2025-09-19T18:00:00.000Z"
+    },
+    "channel-8": {
+      "name": "Афиша бесплатных событий Москвы",
+      "username": "mosafishka",
+      "url": "https://t.me/s/mosafishka",
+      "category": "events",
+      "enabled": true,
+      "lastParsed": 0,
+      "createdAt": "2025-01-15T00:00:00.000Z"
+    },
+    "channel-9": {
+      "name": "Бесплатная Москва",
+      "username": "moscowafishi",
+      "url": "https://t.me/s/moscowafishi",
+      "category": "events",
+      "enabled": true,
+      "lastParsed": 0,
+      "createdAt": "2025-01-15T00:00:00.000Z"
+    },
+    "channel-10": {
+      "name": "Дк Фрактал",
+      "username": "dkfractal",
+      "url": "https://t.me/s/dkfractal",
+      "category": "events",
+      "enabled": true,
+      "lastParsed": 0,
+      "createdAt": "2025-01-15T00:00:00.000Z"
+    },
+    "channel-11": {
+      "name": "Экономная Москва",
+      "username": "besplatnoekino",
+      "url": "https://t.me/s/besplatnoekino",
+      "category": "events",
+      "enabled": true,
+      "lastParsed": 0,
+      "createdAt": "2025-01-15T00:00:00.000Z"
+    },
+    "channel-12": {
+      "name": "Айда гулять",
+      "username": "gotrail",
+      "url": "https://t.me/s/gotrail",
+      "category": "events",
+      "enabled": true,
+      "lastParsed": 0,
+      "createdAt": "2025-01-15T00:00:00.000Z"
+    },
+    "channel-13": {
+      "name": "РанДом Культуры",
+      "username": "random_culture",
+      "url": "https://t.me/s/random_culture",
+      "category": "events",
+      "enabled": true,
+      "lastParsed": 0,
+      "createdAt": "2025-01-15T00:00:00.000Z"
+    }
+  }
+}

@@ -1,0 +1,446 @@
+<!-- Блок "Характеристики продукта" для Tilda -->
+<!-- Вставьте этот код в блок "HTML-код" в Tilda -->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<div class="features-block-tilda">
+    <style>
+        * {
+            font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        
+        .features-block-tilda {
+            padding: 100px 0;
+            background: linear-gradient(180deg, #f9fafc 0%, #ffffff 100%);
+        }
+
+        .features-block-tilda .features-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 20px;
+        }
+
+        .features-block-tilda .product-showcase {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 20px;
+            align-items: center;
+            margin-bottom: 80px;
+        }
+
+        .features-block-tilda .showcase-media {
+            grid-column: 1 / 7;
+            position: relative;
+        }
+
+        .features-block-tilda .media-frame {
+            background: #ffffff;
+            border-radius: 30px;
+            box-shadow: 0 25px 60px rgba(9, 32, 77, 0.18);
+            overflow: hidden;
+        }
+
+        .features-block-tilda .media-frame img {
+            width: 100%;
+            display: block;
+            object-fit: cover;
+            max-height: 520px;
+        }
+
+        .features-block-tilda .certificate-strip {
+            margin-top: 24px;
+            padding: 16px 22px;
+            border-radius: 18px;
+            background: #ffffff;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            border: 1px solid rgba(18, 20, 27, 0.06);
+        }
+
+        .features-block-tilda .certificate-label {
+            font-size: 0.9rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #4CAF50;
+            font-weight: 700;
+        }
+
+        .features-block-tilda .certificate-icons {
+            display: flex;
+            gap: 18px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .features-block-tilda .certificate-icons img {
+            height: 42px;
+            width: auto;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.12));
+            opacity: 0.9;
+        }
+
+        .features-block-tilda .showcase-content {
+            grid-column: 7 / -1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .features-block-tilda .showcase-content .eyebrow {
+            font-size: 0.95rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #4CAF50;
+            font-weight: 700;
+            margin-bottom: 18px;
+        }
+
+        .features-block-tilda .showcase-content h2 {
+            font-size: clamp(2rem, 4vw, 3.2rem);
+            font-weight: 700;
+            color: #12141b;
+            margin-bottom: 24px;
+            line-height: 1.2;
+        }
+
+        .features-block-tilda .showcase-content p {
+            font-size: 1.05rem;
+            color: #5f6573;
+            line-height: 1.8;
+            margin-bottom: 18px;
+        }
+
+        .features-block-tilda .showcase-content p:last-of-type {
+            margin-bottom: 28px;
+        }
+
+        .features-block-tilda .showcase-badges {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .features-block-tilda .showcase-badges span {
+            padding: 10px 16px;
+            border-radius: 999px;
+            background: rgba(76, 175, 80, 0.12);
+            color: #1f7b2b;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .features-block-tilda .features-header {
+            grid-column: 1 / -1;
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .features-block-tilda .features-header h2 {
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 700;
+            color: #12141b;
+            margin-bottom: 16px;
+        }
+
+        .features-block-tilda .features-header p {
+            font-size: 1.2rem;
+            color: #5f6573;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .features-block-tilda .features-grid {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 20px;
+            margin-top: 60px;
+        }
+
+        .features-block-tilda .feature-card {
+            grid-column: span 3;
+            background: #ffffff;
+            padding: 40px 30px;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .features-block-tilda .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #4CAF50, #81c784);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.4s ease;
+        }
+
+        .features-block-tilda .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 40px rgba(76, 175, 80, 0.15);
+            border-color: rgba(76, 175, 80, 0.2);
+        }
+
+        .features-block-tilda .feature-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .features-block-tilda .feature-icon {
+            font-size: 4.5rem;
+            margin-bottom: 24px;
+            display: block;
+            line-height: 1;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+            transition: transform 0.4s ease;
+        }
+
+        .features-block-tilda .feature-card:hover .feature-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .features-block-tilda .feature-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #12141b;
+            margin-bottom: 16px;
+            line-height: 1.3;
+        }
+
+        .features-block-tilda .feature-description {
+            font-size: 1rem;
+            color: #5f6573;
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        @media (max-width: 1200px) {
+            .features-block-tilda .features-container {
+                max-width: 100%;
+                padding: 0 20px;
+            }
+
+            .features-block-tilda .showcase-media {
+                grid-column: 1 / 7;
+            }
+
+            .features-block-tilda .showcase-content {
+                grid-column: 7 / -1;
+            }
+
+            .features-block-tilda .feature-card {
+                grid-column: span 4;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .features-block-tilda {
+                padding: 80px 0;
+            }
+
+            .features-block-tilda .product-showcase {
+                grid-template-columns: repeat(12, 1fr);
+            }
+
+            .features-block-tilda .showcase-media {
+                grid-column: 1 / -1;
+                margin-bottom: 30px;
+            }
+
+            .features-block-tilda .showcase-content {
+                grid-column: 1 / -1;
+            }
+
+            .features-block-tilda .certificate-icons {
+                gap: 14px;
+            }
+
+            .features-block-tilda .feature-card {
+                grid-column: span 6;
+            }
+
+            .features-block-tilda .feature-card {
+                padding: 32px 24px;
+            }
+
+            .features-block-tilda .feature-icon {
+                font-size: 3.5rem;
+            }
+
+            .features-block-tilda .feature-title {
+                font-size: 1.2rem;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .features-block-tilda {
+                padding: 60px 0;
+            }
+
+            .features-block-tilda .features-container {
+                gap: 16px;
+            }
+
+            .features-block-tilda .product-showcase {
+                gap: 16px;
+                margin-bottom: 50px;
+            }
+
+            .features-block-tilda .showcase-media {
+                grid-column: 1 / -1;
+            }
+
+            .features-block-tilda .showcase-content {
+                grid-column: 1 / -1;
+            }
+
+            .features-block-tilda .media-frame {
+                border-radius: 22px;
+            }
+
+            .features-block-tilda .certificate-strip {
+                padding: 14px 18px;
+            }
+
+            .features-block-tilda .certificate-icons img {
+                height: 32px;
+            }
+
+            .features-block-tilda .showcase-content h2 {
+                font-size: 2rem;
+            }
+
+            .features-block-tilda .showcase-content p {
+                font-size: 1rem;
+            }
+
+            .features-block-tilda .features-header {
+                margin-bottom: 40px;
+            }
+
+            .features-block-tilda .features-grid {
+                gap: 16px;
+                margin-top: 40px;
+            }
+
+            .features-block-tilda .feature-card {
+                grid-column: span 12;
+                padding: 28px 20px;
+            }
+
+            .features-block-tilda .feature-icon {
+                font-size: 3rem;
+                margin-bottom: 20px;
+            }
+
+            .features-block-tilda .feature-title {
+                font-size: 1.1rem;
+                margin-bottom: 12px;
+            }
+
+            .features-block-tilda .feature-description {
+                font-size: 0.95rem;
+            }
+        }
+    </style>
+
+    <div class="features-container">
+        <div class="product-showcase">
+            <div class="showcase-media">
+                <div class="media-frame">
+                    <img src="images/demix-application.jpg" alt="Процесс нанесения эпоксидной затирки DEMEX" loading="lazy">
+                </div>
+                <div class="certificate-strip">
+                    <span class="certificate-label">Сертификация и качество</span>
+                    <div class="certificate-icons">
+                        <img src="cert-icons/cert-1.png" alt="Сертификат DEMEX 1" loading="lazy">
+                        <img src="cert-icons/cert-2.png" alt="Сертификат DEMEX 2" loading="lazy">
+                        <img src="cert-icons/cert-3.png" alt="Сертификат DEMEX 3" loading="lazy">
+                    </div>
+                </div>
+            </div>
+            <div class="showcase-content">
+                <p class="eyebrow">О продукте</p>
+                <h2>DEMEX — это инновационная эпоксидная затирка нового поколения</h2>
+                <p>DEMEX создана для профессионалов и домашних мастеров. Формула сочетает высочайшее качество, простоту применения и выдающуюся долговечность, поэтому с продуктом комфортно работать даже при сложных сценариях отделки.</p>
+                <p>Благодаря уникальной формуле материал обеспечивает идеальное заполнение швов, надежную защиту от влаги и загрязнений и сохраняет первоначальный вид годами без выцветания и трещин.</p>
+                <div class="showcase-badges">
+                    <span>Профессиональный стандарт</span>
+                    <span>Для DIY и мастеров</span>
+                    <span>Гарантия качества</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="features-header">
+            <h2>Преимущества DEMIX</h2>
+            <p>Инновационные характеристики, которые делают нашу затирку лучшим выбором для профессионалов</p>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">&#128142;</div>
+                <h3 class="feature-title">Прочная</h3>
+                <p class="feature-description">Не дает усадки и трещин после отверждения в разных условиях эксплуатации</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#128167;</div>
+                <h3 class="feature-title">Влагостойкая</h3>
+                <p class="feature-description">Высокая влагостойкость обеспечивает герметизацию и легкую уборку</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#128465;</div>
+                <h3 class="feature-title">Устойчивая к химии</h3>
+                <p class="feature-description">Не разрушается и не меняет цвет под воздействием химии</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#127807;</div>
+                <h3 class="feature-title">Экологичная</h3>
+                <p class="feature-description">Экологически чистая, без запаха, без вреда для здоровья и окружающей среды</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#128737;</div>
+                <h3 class="feature-title">Защищена от плесени</h3>
+                <p class="feature-description">Прочная и гладкая поверхность препятствует росту бактерий и плесени</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#9203;</div>
+                <h3 class="feature-title">Долговечная</h3>
+                <p class="feature-description">Сохраняет цвет и эксплуатационные характеристики до 50 лет</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#10024;</div>
+                <h3 class="feature-title">Не загрязняется</h3>
+                <p class="feature-description">Не впитывает запахи и грязь благодаря водоотталкивающим свойствам</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#9889;</div>
+                <h3 class="feature-title">Эффективная</h3>
+                <p class="feature-description">Наносится быстро, затвердевает за 7 часов</p>
+            </div>
+        </div>
+    </div>
+</div>
+

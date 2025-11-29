@@ -48,21 +48,6 @@ const Hero = () => {
             Готовьте ресторанные блюда дома, в удобное время.
           </p>
           
-          <div className="hero-stats">
-            <div className="stat-item">
-              <div className="stat-number">500+</div>
-              <div className="stat-label">Рецептов</div>
-            </div>
-            <div className="stat-item">
-              <div className="stat-number">50+</div>
-              <div className="stat-label">Часов видео</div>
-            </div>
-            <div className="stat-item">
-              <div className="stat-number">4.9</div>
-              <div className="stat-label">Рейтинг</div>
-            </div>
-          </div>
-          
           <form className="hero-form" onSubmit={handleSubmit}>
             <div className="form-group">
               <input
@@ -82,16 +67,20 @@ const Hero = () => {
             </p>
           </form>
           
-          <div className="hero-trust">
-            <div className="trust-item">
-              <span className="trust-icon">👥</span>
-              <span className="trust-text">
-                <strong>{subscribers.toLocaleString()}</strong> учеников уже готовят
-              </span>
+          <div className="hero-trust-container">
+            <div className="hero-trust">
+              <div className="trust-item">
+                <span className="trust-icon">👥</span>
+                <span className="trust-text">
+                  <strong>{subscribers.toLocaleString()}</strong> учеников уже готовят
+                </span>
+              </div>
             </div>
-            <div className="trust-item">
-              <span className="trust-icon">✅</span>
-              <span className="trust-text">Гарантия возврата 30 дней</span>
+            <div className="hero-trust">
+              <div className="trust-item">
+                <span className="trust-icon">✅</span>
+                <span className="trust-text">Гарантия возврата 30 дней</span>
+              </div>
             </div>
           </div>
         </div>

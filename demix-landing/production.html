@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Производство — DEMEX</title>
+    <meta name="description" content="Производственные мощности DEMEX. Современные заводы в Китае с автоматизированным производством.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .production-page {
+            min-height: 100vh;
+            background: var(--bg-light);
+            padding-top: 100px;
+            padding-bottom: 80px;
+        }
+
+        .production-header {
+            text-align: center;
+            margin-bottom: 60px;
+            padding: 0 20px;
+        }
+
+        .production-header h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--text);
+        }
+
+        .production-header p {
+            font-size: 1.1rem;
+            color: var(--text-light);
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .factories-section {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            margin-bottom: 80px;
+        }
+
+        .factories-section h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 40px;
+            color: var(--text);
+            text-align: center;
+        }
+
+        .factories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 60px;
+        }
+
+        .factory-card {
+            background: white;
+            padding: 30px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+
+        .factory-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .factory-card h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text);
+        }
+
+        .factory-card .location {
+            font-size: 1.1rem;
+            color: var(--primary);
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .factory-card p {
+            color: var(--text-light);
+            line-height: 1.6;
+        }
+
+        .stats-section {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            margin-bottom: 80px;
+            box-sizing: border-box;
+        }
+
+        .stats-section h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 40px;
+            color: var(--text);
+            text-align: center;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 40px 30px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            text-align: center;
+            transition: var(--transition);
+            box-sizing: border-box;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .stat-number {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 10px;
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 1.1rem;
+            color: var(--text-light);
+            font-weight: 500;
+        }
+
+        .representatives-section {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            margin-bottom: 80px;
+        }
+
+        .representatives-section h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 40px;
+            color: var(--text);
+            text-align: center;
+        }
+
+        .representatives-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 30px;
+        }
+
+        .representative-card {
+            background: white;
+            padding: 30px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            text-align: center;
+            transition: var(--transition);
+        }
+
+        .representative-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .representative-card .flag {
+            font-size: 3rem;
+            margin-bottom: 16px;
+        }
+
+        .representative-card h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+
+        .representative-card p {
+            color: var(--text-light);
+            font-size: 0.95rem;
+        }
+
+        .gallery-section {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .gallery-section h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 40px;
+            color: var(--text);
+            text-align: center;
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        .gallery-item {
+            position: relative;
+            overflow: hidden;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            aspect-ratio: 4/3;
+            background: #f5f5f5;
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+            display: block;
+        }
+
+        .gallery-item:hover img {
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 1024px) {
+            .gallery-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .production-page {
+                padding-top: 80px;
+                padding-bottom: 60px;
+            }
+
+            .stats-section {
+                padding: 0 16px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 16px;
+            }
+
+            .stat-card {
+                padding: 24px 16px;
+            }
+
+            .stat-number {
+                font-size: 2rem;
+            }
+
+            .stat-label {
+                font-size: 0.9rem;
+            }
+
+            .gallery-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .factories-section,
+            .representatives-section,
+            .gallery-section {
+                padding: 0 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-wrapper">
+            <div class="container">
+                <div class="header-content">
+                    <div class="logo">
+                        <a href="index.html">
+                            <img src="logo.png" alt="DEMEX" class="logo-img">
+                        </a>
+                    </div>
+                    <nav class="nav">
+                        <div class="nav-item-dropdown">
+                            <a href="index.html#about" class="nav-link">
+                                О нас
+                                <span class="dropdown-arrow">▼</span>
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a href="index.html#mission" class="dropdown-link">Миссия и цели</a></li>
+                                <li><a href="production.html" class="dropdown-link">Производство</a></li>
+                                <li><a href="certificates.html" class="dropdown-link">Сертификаты</a></li>
+                                <li><a href="index.html#media" class="dropdown-link">СМИ о нас</a></li>
+                                <li><a href="index.html#blog" class="dropdown-link">Блог</a></li>
+                            </ul>
+                        </div>
+                        <a href="index.html#catalog" class="nav-link">Каталог</a>
+                        <div class="nav-item-dropdown">
+                            <a href="index.html#buyers" class="nav-link">
+                                Покупателям
+                                <span class="dropdown-arrow">▼</span>
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a href="index.html#delivery" class="dropdown-link">Доставка</a></li>
+                                <li><a href="index.html#calculator" class="dropdown-link">Калькулятор</a></li>
+                                <li><a href="index.html#video-reviews" class="dropdown-link">Видеоотзывы</a></li>
+                                <li><a href="index.html#video-instructions" class="dropdown-link">Видеоинструкции</a></li>
+                            </ul>
+                        </div>
+                        <a href="index.html#partners" class="nav-link">Партнерам</a>
+                        <a href="index.html#where-to-buy" class="nav-link">Где купить</a>
+                        <a href="index.html#contacts" class="nav-link">Контакты</a>
+                        <div class="header-contact mobile-contact">
+                            <div class="header-contact-row">
+                                <div class="header-phone-block">
+                                    <a href="tel:88005338618" class="phone-number">8 800 533 8618</a>
+                                    <div class="social-icons">
+                                        <a href="#" class="social-icon" aria-label="WhatsApp">
+                                            <img src="icons/whatsapp.svg" alt="WhatsApp">
+                                        </a>
+                                        <a href="#" class="social-icon" aria-label="Telegram">
+                                            <img src="icons/telegram.svg" alt="Telegram">
+                                        </a>
+                                        <a href="#" class="social-icon" aria-label="VK">
+                                            <img src="icons/vk.svg" alt="VK">
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="header-address-block">
+                                    <p class="address-text">г. Москва, ул. Золоторожский Вал,<br>11с22, офис 373</p>
+                                    <p class="work-hours">9:00-19:00</p>
+                                </div>
+                            </div>
+                        </div>
+                    </nav>
+                    <div class="header-contact desktop-contact">
+                        <div class="header-contact-row">
+                            <div class="header-phone-block">
+                                <a href="tel:88005338618" class="phone-number">8 800 533 8618</a>
+                                <div class="social-icons">
+                                    <a href="#" class="social-icon" aria-label="WhatsApp">
+                                        <img src="icons/whatsapp.svg" alt="WhatsApp">
+                                    </a>
+                                    <a href="#" class="social-icon" aria-label="Telegram">
+                                        <img src="icons/telegram.svg" alt="Telegram">
+                                    </a>
+                                    <a href="#" class="social-icon" aria-label="VK">
+                                        <img src="icons/vk.svg" alt="VK">
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="header-address-block">
+                                <p class="address-text">г. Москва, ул. Золоторожский Вал,<br>11с22, офис 373</p>
+                                <p class="work-hours">9:00-19:00</p>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="menu-toggle" aria-label="Меню">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                </div>
+            </div>
+            <div class="header-calculator">
+                <button class="calculator-btn" aria-label="Калькулятор">
+                    <img src="icons/calculator.svg" alt="Калькулятор">
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Production Page -->
+    <section class="production-page">
+        <div class="production-header">
+            <h1>Производство</h1>
+            <p>Современные производственные мощности с автоматизированным оборудованием и строгим контролем качества</p>
+        </div>
+
+        <!-- Factories -->
+        <div class="factories-section">
+            <h2>Наши заводы</h2>
+            <div class="factories-grid">
+                <div class="factory-card">
+                    <h3>Завод №1</h3>
+                    <div class="location">Цзиньхуа, Чжэцзян</div>
+                    <p>Основное производственное предприятие, оснащенное современным автоматизированным оборудованием и системами контроля качества.</p>
+                </div>
+                <div class="factory-card">
+                    <h3>Завод №2</h3>
+                    <div class="location">Шицзячжуан, Хэбэй</div>
+                    <p>Второй производственный комплекс, расширяющий наши возможности по выпуску продукции и обеспечивающий высокую производительность.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="stats-section">
+            <h2>Производственные показатели</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">50 000</div>
+                    <div class="stat-label">м² — площадь производственных помещений</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">30 000</div>
+                    <div class="stat-label">м² — площадь складских помещений</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">300</div>
+                    <div class="stat-label">автоматизированных производственных машин</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">100 млн</div>
+                    <div class="stat-label">единиц продукции выпускается в год</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Representatives -->
+        <div class="representatives-section">
+            <h2>Страны-представители</h2>
+            <p style="text-align: center; color: var(--text-light); margin-bottom: 40px;">Прямые представительства:</p>
+            <div class="representatives-grid">
+                <div class="representative-card">
+                    <div class="flag">&#127479;&#127482;</div>
+                    <h3>Россия</h3>
+                    <p>Прямое представительство</p>
+                </div>
+                <div class="representative-card">
+                    <div class="flag">&#127482;&#127480;</div>
+                    <h3>США</h3>
+                    <p>Прямое представительство</p>
+                </div>
+                <div class="representative-card">
+                    <div class="flag">&#127483;&#127475;</div>
+                    <h3>Вьетнам</h3>
+                    <p>Прямое представительство</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gallery -->
+        <div class="gallery-section">
+            <h2>Фотогалерея производства</h2>
+            <div class="gallery-grid">
+                <div class="gallery-item">
+                    <img src="https://i.postimg.cc/MTZtf1bn/1.png" alt="Производство DEMEX" loading="lazy">
+                </div>
+                <div class="gallery-item">
+                    <img src="https://i.postimg.cc/MTs57X9S/11.png" alt="Производство DEMEX" loading="lazy">
+                </div>
+                <div class="gallery-item">
+                    <img src="https://i.postimg.cc/cHDhR6Fq/2.png" alt="Производство DEMEX" loading="lazy">
+                </div>
+                <div class="gallery-item">
+                    <img src="https://i.postimg.cc/W398GtXC/5.png" alt="Производство DEMEX" loading="lazy">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <div class="logo">
+                        <a href="index.html">
+                            <img src="logo.png" alt="DEMEX" class="logo-img" style="height: 40px;">
+                        </a>
+                    </div>
+                    <p>Эпоксидная затирка нового поколения</p>
+                </div>
+                <div class="footer-links">
+                    <a href="index.html#about">О продукте</a>
+                    <a href="index.html#applications">Применение</a>
+                    <a href="certificates.html">Сертификаты</a>
+                    <a href="production.html">Производство</a>
+                    <a href="index.html#contacts">Контакты</a>
+                </div>
+                <div class="footer-meta">
+                    <p>© 2025 DEMIX. Все права защищены.</p>
+                </div>
+            </div>
+        </div>
+        <button class="scroll-top" aria-label="Наверх">↑</button>
+    </footer>
+
+    <!-- Lightbox для просмотра фотографий -->
+    <div id="lightbox" class="lightbox">
+        <div class="lightbox-content">
+            <button class="lightbox-close" aria-label="Закрыть">×</button>
+            <img id="lightbox-image" class="lightbox-image" src="" alt="">
+        </div>
+    </div>
+
+    <style>
+        /* Lightbox */
+        .lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .lightbox.active {
+            display: flex;
+        }
+
+        .lightbox-content {
+            position: relative;
+            max-width: 90vw;
+            max-height: 90vh;
+        }
+
+        .lightbox-image {
+            max-width: 100%;
+            max-height: 90vh;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 3rem;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            transition: transform 0.3s ease;
+        }
+
+        .lightbox-close:hover {
+            transform: scale(1.2);
+        }
+    </style>
+
+    <script src="script.js"></script>
+    <script>
+        // Lightbox для просмотра фотографий галереи
+        const galleryItems = document.querySelectorAll('.gallery-item img');
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImage = document.getElementById('lightbox-image');
+        const lightboxClose = document.querySelector('.lightbox-close');
+
+        galleryItems.forEach(img => {
+            img.addEventListener('click', () => {
+                lightboxImage.src = img.src;
+                lightboxImage.alt = img.alt || '';
+                lightbox.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            });
+        });
+
+        if (lightboxClose) {
+            lightboxClose.addEventListener('click', () => {
+                lightbox.classList.remove('active');
+                document.body.style.overflow = '';
+            });
+        }
+
+        lightbox.addEventListener('click', (e) => {
+            if (e.target === lightbox) {
+                lightbox.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        });
+
+        // Закрытие по Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && lightbox.classList.contains('active')) {
+                lightbox.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        });
+    </script>
+</body>
+</html>
+

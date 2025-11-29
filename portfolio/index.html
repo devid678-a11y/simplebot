@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Портфолио | Creative Developer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="container">
+            <div class="nav-content">
+                <div class="logo">
+                    <span class="logo-text">Portfolio</span>
+                </div>
+                <ul class="nav-menu" id="navMenu">
+                    <li><a href="#about" class="nav-link" data-i18n="nav.about">О себе</a></li>
+                    <li><a href="#projects" class="nav-link" data-i18n="nav.projects">Проекты</a></li>
+                    <li><a href="#skills" class="nav-link" data-i18n="nav.skills">Навыки</a></li>
+                    <li><a href="#contact" class="nav-link" data-i18n="nav.contact">Контакты</a></li>
+                </ul>
+                <div class="nav-controls">
+                    <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                        <svg class="theme-icon sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                        <svg class="theme-icon moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </button>
+                    <button class="lang-toggle" id="langToggle" aria-label="Toggle language">
+                        <span class="lang-text">RU</span>
+                    </button>
+                    <button class="menu-toggle" id="menuToggle">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="hero-background">
+            <div class="gradient-overlay"></div>
+            <div class="animated-shapes">
+                <div class="shape shape-1"></div>
+                <div class="shape shape-2"></div>
+                <div class="shape shape-3"></div>
+            </div>
+        </div>
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-text">
+                    <h1 class="hero-title">
+                        <span class="title-line">Привет, я</span>
+                        <span class="title-name">Creative Developer</span>
+                        <span class="title-subtitle">Создаю цифровые решения</span>
+                    </h1>
+                    <p class="hero-description">
+                        Разработчик с фокусом на создание современных, интуитивных и элегантных веб-приложений. 
+                        Превращаю идеи в цифровую реальность.
+                    </p>
+                    <div class="hero-buttons">
+                        <a href="#projects" class="btn btn-primary">Мои проекты</a>
+                        <a href="#contact" class="btn btn-secondary">Связаться</a>
+                    </div>
+                </div>
+                <div class="hero-image">
+                    <div class="image-wrapper">
+                        <div class="floating-card card-1">
+                            <div class="card-icon">💻</div>
+                            <div class="card-text">Web Dev</div>
+                        </div>
+                        <div class="floating-card card-2">
+                            <div class="card-icon">🎨</div>
+                            <div class="card-text">Design</div>
+                        </div>
+                        <div class="floating-card card-3">
+                            <div class="card-icon">⚡</div>
+                            <div class="card-text">Performance</div>
+                        </div>
+                        <div class="main-avatar">
+                            <div class="avatar-glow"></div>
+                            <div class="avatar-content">
+                                <img src="https://i.pinimg.com/736x/a0/2a/9d/a02a9dfa2833ed0b9319e63b57ebb68d.jpg" alt="Profile" class="avatar-image">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="scroll-indicator">
+                <div class="mouse">
+                    <div class="wheel"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section class="about" id="about">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Кто я</h2>
+            </div>
+            <div class="about-content">
+                <div class="about-text">
+                    <p class="about-intro">
+                        Я увлеченный разработчик с опытом создания современных веб-приложений и цифровых решений. 
+                        Моя цель — создавать продукты, которые не только функциональны, но и доставляют удовольствие от использования.
+                    </p>
+                    <div class="about-stats">
+                        <div class="stat-item">
+                            <div class="stat-number" data-target="120">0</div>
+                            <div class="stat-label">Проектов</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" data-target="5">0</div>
+                            <div class="stat-label">Лет опыта</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" data-target="70" data-suffix="+">0</div>
+                            <div class="stat-label">Довольных клиентов</div>
+                        </div>
+                    </div>
+                    <div class="about-features">
+                        <div class="feature-item">
+                            <div class="feature-icon">✨</div>
+                            <div class="feature-content">
+                                <h3>Современные технологии</h3>
+                                <p>Использую актуальные инструменты и фреймворки</p>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-icon">🎯</div>
+                            <div class="feature-content">
+                                <h3>Фокус на результат</h3>
+                                <p>Каждый проект довожу до идеального состояния</p>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-icon">🚀</div>
+                            <div class="feature-content">
+                                <h3>Быстрая разработка</h3>
+                                <p>Эффективные процессы без потери качества</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="about-image">
+                    <div class="image-card">
+                        <img src="https://i.pinimg.com/736x/d3/a9/dc/d3a9dcce8e70b27c03e37c1726415caa.jpg" alt="About" class="about-img">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Experience Section -->
+    <section class="experience" id="experience">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label" data-i18n="experience.label">Опыт работы</span>
+                <h2 class="section-title" data-i18n="experience.title">Профессиональный путь</h2>
+            </div>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-marker"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-date" data-i18n="experience.item1.date">2022 - настоящее время</div>
+                        <h3 class="timeline-title" data-i18n="experience.item1.title">Senior Frontend Developer</h3>
+                        <div class="timeline-company" data-i18n="experience.item1.company">Tech Innovations Inc.</div>
+                        <p class="timeline-description" data-i18n="experience.item1.description">
+                            Руководство командой разработчиков, создание архитектуры крупных веб-приложений, 
+                            внедрение современных практик разработки. Увеличение производительности приложений на 40%.
+                        </p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-marker"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-date" data-i18n="experience.item2.date">2020 - 2022</div>
+                        <h3 class="timeline-title" data-i18n="experience.item2.title">Full Stack Developer</h3>
+                        <div class="timeline-company" data-i18n="experience.item2.company">Digital Solutions</div>
+                        <p class="timeline-description" data-i18n="experience.item2.description">
+                            Разработка full-stack приложений на React и Node.js. Создание RESTful API, 
+                            работа с базами данных, интеграция сторонних сервисов.
+                        </p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-marker"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-date" data-i18n="experience.item3.date">2019 - 2020</div>
+                        <h3 class="timeline-title" data-i18n="experience.item3.title">Frontend Developer</h3>
+                        <div class="timeline-company" data-i18n="experience.item3.company">StartupHub</div>
+                        <p class="timeline-description" data-i18n="experience.item3.description">
+                            Разработка пользовательских интерфейсов для стартапов. Работа с Vue.js и React, 
+                            создание адаптивных дизайнов, оптимизация производительности.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Projects Section -->
+    <section class="projects" id="projects">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label" data-i18n="projects.label">Портфолио</span>
+                <h2 class="section-title" data-i18n="projects.title">Избранные проекты</h2>
+            </div>
+            <div class="project-filters">
+                <button class="filter-btn active" data-filter="all" data-i18n="projects.filter.all">Все</button>
+                <button class="filter-btn" data-filter="web" data-i18n="projects.filter.web">Web</button>
+                <button class="filter-btn" data-filter="design" data-i18n="projects.filter.design">Design</button>
+                <button class="filter-btn" data-filter="mobile" data-i18n="projects.filter.mobile">Mobile</button>
+            </div>
+            <div class="projects-grid">
+                <div class="project-card" data-category="web" data-project="1">
+                    <div class="project-image">
+                        <div class="project-overlay">
+                            <div class="project-links">
+                                <button class="project-link view-project" data-project="1" data-i18n="projects.view">Посмотреть</button>
+                                <a href="#" class="project-link" data-i18n="projects.code">Код</a>
+                            </div>
+                        </div>
+                        <div class="project-icon-wrapper">
+                            <svg class="project-icon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <linearGradient id="iconGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+                                    </linearGradient>
+                                </defs>
+                                <rect x="10" y="20" width="80" height="60" rx="8" fill="url(#iconGradient1)" opacity="0.2"/>
+                                <rect x="15" y="25" width="70" height="50" rx="6" fill="url(#iconGradient1)"/>
+                                <circle cx="30" cy="40" r="8" fill="white" opacity="0.9"/>
+                                <rect x="45" y="35" width="35" height="6" rx="3" fill="white" opacity="0.9"/>
+                                <rect x="45" y="45" width="25" height="6" rx="3" fill="white" opacity="0.7"/>
+                                <rect x="15" y="60" width="70" height="8" rx="4" fill="white" opacity="0.5"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="project-content">
+                        <span class="project-category" data-i18n="projects.item1.category">Web Application</span>
+                        <h3 class="project-title" data-i18n="projects.item1.title">E-Commerce Platform</h3>
+                        <p class="project-description" data-i18n="projects.item1.description">
+                            Современная платформа для электронной коммерции с интуитивным интерфейсом 
+                            и мощной системой управления заказами.
+                        </p>
+                        <div class="project-tags">
+                            <span class="tag">React</span>
+                            <span class="tag">Node.js</span>
+                            <span class="tag">MongoDB</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="project-card" data-category="design" data-project="2">
+                    <div class="project-image">
+                        <div class="project-overlay">
+                            <div class="project-links">
+                                <button class="project-link view-project" data-project="2" data-i18n="projects.view">Посмотреть</button>
+                                <a href="#" class="project-link" data-i18n="projects.code">Код</a>
+                            </div>
+                        </div>
+                        <div class="project-icon-wrapper">
+                            <svg class="project-icon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <linearGradient id="iconGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#f093fb;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#f5576c;stop-opacity:1" />
+                                    </linearGradient>
+                                </defs>
+                                <circle cx="50" cy="35" r="20" fill="url(#iconGradient2)" opacity="0.2"/>
+                                <circle cx="50" cy="35" r="15" fill="url(#iconGradient2)"/>
+                                <path d="M 30 50 Q 50 45 70 50 Q 50 55 30 50" fill="url(#iconGradient2)" opacity="0.3"/>
+                                <rect x="25" y="60" width="50" height="25" rx="4" fill="url(#iconGradient2)" opacity="0.2"/>
+                                <rect x="30" y="65" width="40" height="15" rx="3" fill="url(#iconGradient2)"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="project-content">
+                        <span class="project-category" data-i18n="projects.item2.category">UI/UX Design</span>
+                        <h3 class="project-title" data-i18n="projects.item2.title">Brand Identity</h3>
+                        <p class="project-description" data-i18n="projects.item2.description">
+                            Полный редизайн бренда с созданием уникальной визуальной идентичности 
+                            и системы дизайна.
+                        </p>
+                        <div class="project-tags">
+                            <span class="tag">Figma</span>
+                            <span class="tag">Design System</span>
+                            <span class="tag">Branding</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="project-card" data-category="mobile" data-project="3">
+                    <div class="project-image">
+                        <div class="project-overlay">
+                            <div class="project-links">
+                                <button class="project-link view-project" data-project="3" data-i18n="projects.view">Посмотреть</button>
+                                <a href="#" class="project-link" data-i18n="projects.code">Код</a>
+                            </div>
+                        </div>
+                        <div class="project-icon-wrapper">
+                            <svg class="project-icon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <linearGradient id="iconGradient3" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#4facfe;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#00f2fe;stop-opacity:1" />
+                                    </linearGradient>
+                                </defs>
+                                <rect x="35" y="15" width="30" height="50" rx="15" fill="url(#iconGradient3)" opacity="0.2"/>
+                                <rect x="40" y="20" width="20" height="40" rx="10" fill="url(#iconGradient3)"/>
+                                <circle cx="50" cy="30" r="4" fill="white"/>
+                                <rect x="45" y="38" width="10" height="15" rx="5" fill="white" opacity="0.8"/>
+                                <circle cx="50" cy="58" r="3" fill="white" opacity="0.6"/>
+                                <path d="M 20 70 Q 50 75 80 70" stroke="url(#iconGradient3)" stroke-width="3" fill="none" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="project-content">
+                        <span class="project-category" data-i18n="projects.item3.category">Mobile App</span>
+                        <h3 class="project-title" data-i18n="projects.item3.title">Fitness Tracker</h3>
+                        <p class="project-description" data-i18n="projects.item3.description">
+                            Мобильное приложение для отслеживания тренировок с интеграцией 
+                            носимых устройств и аналитикой прогресса.
+                        </p>
+                        <div class="project-tags">
+                            <span class="tag">React Native</span>
+                            <span class="tag">Firebase</span>
+                            <span class="tag">API</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="project-card" data-category="web" data-project="4">
+                    <div class="project-image">
+                        <div class="project-overlay">
+                            <div class="project-links">
+                                <button class="project-link view-project" data-project="4" data-i18n="projects.view">Посмотреть</button>
+                                <a href="#" class="project-link" data-i18n="projects.code">Код</a>
+                            </div>
+                        </div>
+                        <div class="project-icon-wrapper">
+                            <svg class="project-icon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <linearGradient id="iconGradient4" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#fa709a;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#fee140;stop-opacity:1" />
+                                    </linearGradient>
+                                </defs>
+                                <rect x="15" y="20" width="70" height="60" rx="6" fill="url(#iconGradient4)" opacity="0.2"/>
+                                <rect x="20" y="25" width="60" height="50" rx="4" fill="url(#iconGradient4)"/>
+                                <rect x="25" y="35" width="15" height="35" rx="2" fill="white" opacity="0.9"/>
+                                <rect x="45" y="25" width="15" height="45" rx="2" fill="white" opacity="0.9"/>
+                                <rect x="65" y="40" width="15" height="30" rx="2" fill="white" opacity="0.9"/>
+                                <circle cx="32" cy="75" r="2" fill="white" opacity="0.7"/>
+                                <circle cx="52" cy="75" r="2" fill="white" opacity="0.7"/>
+                                <circle cx="72" cy="75" r="2" fill="white" opacity="0.7"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="project-content">
+                        <span class="project-category" data-i18n="projects.item4.category">Web Application</span>
+                        <h3 class="project-title" data-i18n="projects.item4.title">Dashboard Analytics</h3>
+                        <p class="project-description" data-i18n="projects.item4.description">
+                            Интерактивная панель аналитики с реальным временем обновления данных 
+                            и настраиваемыми виджетами.
+                        </p>
+                        <div class="project-tags">
+                            <span class="tag">Vue.js</span>
+                            <span class="tag">D3.js</span>
+                            <span class="tag">WebSocket</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="project-card" data-category="design" data-project="5">
+                    <div class="project-image">
+                        <div class="project-overlay">
+                            <div class="project-links">
+                                <button class="project-link view-project" data-project="5" data-i18n="projects.view">Посмотреть</button>
+                                <a href="#" class="project-link" data-i18n="projects.code">Код</a>
+                            </div>
+                        </div>
+                        <div class="project-icon-wrapper">
+                            <svg class="project-icon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <linearGradient id="iconGradient5" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#30cfd0;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#330867;stop-opacity:1" />
+                                    </linearGradient>
+                                </defs>
+                                <rect x="20" y="25" width="60" height="50" rx="8" fill="url(#iconGradient5)" opacity="0.2"/>
+                                <path d="M 30 30 L 70 30 L 65 50 L 35 50 Z" fill="url(#iconGradient5)"/>
+                                <circle cx="50" cy="40" r="8" fill="white" opacity="0.9"/>
+                                <path d="M 25 60 Q 50 70 75 60" stroke="url(#iconGradient5)" stroke-width="4" fill="none" stroke-linecap="round"/>
+                                <rect x="35" y="70" width="30" height="8" rx="4" fill="url(#iconGradient5)" opacity="0.5"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="project-content">
+                        <span class="project-category" data-i18n="projects.item5.category">Landing Page</span>
+                        <h3 class="project-title" data-i18n="projects.item5.title">Creative Agency</h3>
+                        <p class="project-description" data-i18n="projects.item5.description">
+                            Современный лендинг для креативного агентства с анимациями 
+                            и интерактивными элементами.
+                        </p>
+                        <div class="project-tags">
+                            <span class="tag">HTML5</span>
+                            <span class="tag">CSS3</span>
+                            <span class="tag">GSAP</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="project-card" data-category="web" data-project="6">
+                    <div class="project-image">
+                        <div class="project-overlay">
+                            <div class="project-links">
+                                <button class="project-link view-project" data-project="6" data-i18n="projects.view">Посмотреть</button>
+                                <a href="#" class="project-link" data-i18n="projects.code">Код</a>
+                            </div>
+                        </div>
+                        <div class="project-icon-wrapper">
+                            <svg class="project-icon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <linearGradient id="iconGradient6" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#a8edea;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#fed6e3;stop-opacity:1" />
+                                    </linearGradient>
+                                </defs>
+                                <rect x="20" y="20" width="60" height="60" rx="6" fill="url(#iconGradient6)" opacity="0.2"/>
+                                <rect x="25" y="25" width="50" height="50" rx="4" fill="url(#iconGradient6)"/>
+                                <rect x="30" y="30" width="20" height="15" rx="2" fill="white" opacity="0.9"/>
+                                <rect x="55" y="30" width="15" height="15" rx="2" fill="white" opacity="0.7"/>
+                                <rect x="30" y="50" width="40" height="8" rx="2" fill="white" opacity="0.8"/>
+                                <rect x="30" y="62" width="30" height="8" rx="2" fill="white" opacity="0.6"/>
+                                <circle cx="75" cy="60" r="5" fill="white" opacity="0.9"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="project-content">
+                        <span class="project-category" data-i18n="projects.item6.category">SaaS Platform</span>
+                        <h3 class="project-title" data-i18n="projects.item6.title">Project Management</h3>
+                        <p class="project-description" data-i18n="projects.item6.description">
+                            Комплексная платформа для управления проектами с командной работой 
+                            и интеграцией с популярными сервисами.
+                        </p>
+                        <div class="project-tags">
+                            <span class="tag">Next.js</span>
+                            <span class="tag">PostgreSQL</span>
+                            <span class="tag">Stripe</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="testimonials" id="testimonials">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label" data-i18n="testimonials.label">Отзывы</span>
+                <h2 class="section-title" data-i18n="testimonials.title">Что говорят клиенты</h2>
+            </div>
+            <div class="testimonials-carousel">
+                <div class="testimonials-wrapper" id="testimonialsWrapper">
+                    <div class="testimonial-card">
+                        <div class="testimonial-content">
+                            <div class="testimonial-quote">"</div>
+                            <p class="testimonial-text" data-i18n="testimonials.item1.text">
+                                Работа с этим разработчиком была потрясающим опытом. Профессионализм, 
+                                внимание к деталям и способность превращать идеи в реальность — все на высшем уровне.
+                            </p>
+                            <div class="testimonial-author">
+                                <img src="https://i.pravatar.cc/150?img=12" alt="Алексей Петров" class="testimonial-avatar">
+                                <div class="testimonial-info">
+                                    <h4 class="testimonial-name" data-i18n="testimonials.item1.name">Алексей Петров</h4>
+                                    <p class="testimonial-role" data-i18n="testimonials.item1.role">CEO, TechStart</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="testimonial-card">
+                        <div class="testimonial-content">
+                            <div class="testimonial-quote">"</div>
+                            <p class="testimonial-text" data-i18n="testimonials.item2.text">
+                                Выдающийся специалист! Проект был выполнен в срок, качество превзошло ожидания. 
+                                Рекомендую как надежного партнера для любых веб-проектов.
+                            </p>
+                            <div class="testimonial-author">
+                                <img src="https://i.pravatar.cc/150?img=47" alt="Мария Иванова" class="testimonial-avatar">
+                                <div class="testimonial-info">
+                                    <h4 class="testimonial-name" data-i18n="testimonials.item2.name">Мария Иванова</h4>
+                                    <p class="testimonial-role" data-i18n="testimonials.item2.role">Дизайнер, CreativeLab</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="testimonial-card">
+                        <div class="testimonial-content">
+                            <div class="testimonial-quote">"</div>
+                            <p class="testimonial-text" data-i18n="testimonials.item3.text">
+                                Отличная работа! Разработчик не только создал прекрасный продукт, 
+                                но и предложил множество улучшений, которые мы не рассматривали ранее.
+                            </p>
+                            <div class="testimonial-author">
+                                <img src="https://i.pravatar.cc/150?img=33" alt="Дмитрий Смирнов" class="testimonial-avatar">
+                                <div class="testimonial-info">
+                                    <h4 class="testimonial-name" data-i18n="testimonials.item3.name">Дмитрий Смирнов</h4>
+                                    <p class="testimonial-role" data-i18n="testimonials.item3.role">CTO, InnovateCo</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="carousel-controls">
+                    <button class="carousel-btn prev" id="testimonialsPrev">‹</button>
+                    <button class="carousel-btn next" id="testimonialsNext">›</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Skills Section -->
+    <section class="skills" id="skills">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label">Навыки</span>
+                <h2 class="section-title">Технологии и инструменты</h2>
+            </div>
+            <div class="skills-content">
+                <div class="skills-category">
+                    <h3 class="category-title">Frontend</h3>
+                    <div class="skills-list">
+                        <div class="skill-item">
+                            <div class="skill-info">
+                                <span class="skill-name">React</span>
+                                <span class="skill-level">95%</span>
+                            </div>
+                            <div class="skill-bar">
+                                <div class="skill-progress" data-width="95"></div>
+                            </div>
+                        </div>
+                        <div class="skill-item">
+                            <div class="skill-info">
+                                <span class="skill-name">Vue.js</span>
+                                <span class="skill-level">90%</span>
+                            </div>
+                            <div class="skill-bar">
+                                <div class="skill-progress" data-width="90"></div>
+                            </div>
+                        </div>
+                        <div class="skill-item">
+                            <div class="skill-info">
+                                <span class="skill-name">TypeScript</span>
+                                <span class="skill-level">88%</span>
+                            </div>
+                            <div class="skill-bar">
+                                <div class="skill-progress" data-width="88"></div>
+                            </div>
+                        </div>
+                        <div class="skill-item">
+                            <div class="skill-info">
+                                <span class="skill-name">Next.js</span>
+                                <span class="skill-level">92%</span>
+                            </div>
+                            <div class="skill-bar">
+                                <div class="skill-progress" data-width="92"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="skills-category">
+                    <h3 class="category-title">Backend</h3>
+                    <div class="skills-list">
+                        <div class="skill-item">
+                            <div class="skill-info">
+                                <span class="skill-name">Node.js</span>
+                                <span class="skill-level">90%</span>
+                            </div>
+                            <div class="skill-bar">
+                                <div class="skill-progress" data-width="90"></div>
+                            </div>
+                        </div>
+                        <div class="skill-item">
+                            <div class="skill-info">
+                                <span class="skill-name">Python</span>
+                                <span class="skill-level">85%</span>
+                            </div>
+                            <div class="skill-bar">
+                                <div class="skill-progress" data-width="85"></div>
+                            </div>
+                        </div>
+                        <div class="skill-item">
+                            <div class="skill-info">
+                                <span class="skill-name">PostgreSQL</span>
+                                <span class="skill-level">88%</span>
+                            </div>
+                            <div class="skill-bar">
+                                <div class="skill-progress" data-width="88"></div>
+                            </div>
+                        </div>
+                        <div class="skill-item">
+                            <div class="skill-info">
+                                <span class="skill-name">MongoDB</span>
+                                <span class="skill-level">82%</span>
+                            </div>
+                            <div class="skill-bar">
+                                <div class="skill-progress" data-width="82"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="skills-category">
+                    <h3 class="category-title">Design & Tools</h3>
+                    <div class="skills-grid">
+                        <div class="skill-badge">
+                            <div class="badge-icon">🎨</div>
+                            <span class="badge-name">Figma</span>
+                        </div>
+                        <div class="skill-badge">
+                            <div class="badge-icon">⚡</div>
+                            <span class="badge-name">Git</span>
+                        </div>
+                        <div class="skill-badge">
+                            <div class="badge-icon">🔧</div>
+                            <span class="badge-name">Docker</span>
+                        </div>
+                        <div class="skill-badge">
+                            <div class="badge-icon">☁️</div>
+                            <span class="badge-name">AWS</span>
+                        </div>
+                        <div class="skill-badge">
+                            <div class="badge-icon">📱</div>
+                            <span class="badge-name">React Native</span>
+                        </div>
+                        <div class="skill-badge">
+                            <div class="badge-icon">🎯</div>
+                            <span class="badge-name">Jest</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Education Section -->
+    <section class="education" id="education">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label" data-i18n="education.label">Образование</span>
+                <h2 class="section-title" data-i18n="education.title">Образование и сертификаты</h2>
+            </div>
+            <div class="education-content">
+                <div class="education-list">
+                    <div class="education-item">
+                        <div class="education-year">2015 - 2019</div>
+                        <div class="education-details">
+                            <h3 class="education-degree" data-i18n="education.item1.degree">Бакалавр компьютерных наук</h3>
+                            <div class="education-institution" data-i18n="education.item1.institution">Московский государственный университет</div>
+                            <p class="education-description" data-i18n="education.item1.description">
+                                Специализация в области веб-разработки и программной инженерии. 
+                                Диплом с отличием.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="education-item">
+                        <div class="education-year">2019</div>
+                        <div class="education-details">
+                            <h3 class="education-degree" data-i18n="education.item2.degree">React Advanced Patterns</h3>
+                            <div class="education-institution" data-i18n="education.item2.institution">Udemy</div>
+                            <p class="education-description" data-i18n="education.item2.description">
+                                Продвинутые паттерны React, оптимизация производительности, 
+                                архитектура крупных приложений.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="certificates-grid">
+                    <div class="certificate-card">
+                        <div class="certificate-icon">🏆</div>
+                        <h3 class="certificate-title" data-i18n="certificates.item1.title">AWS Certified Developer</h3>
+                        <p class="certificate-issuer" data-i18n="certificates.item1.issuer">Amazon Web Services</p>
+                        <p class="certificate-date" data-i18n="certificates.item1.date">2023</p>
+                    </div>
+                    <div class="certificate-card">
+                        <div class="certificate-icon">🎓</div>
+                        <h3 class="certificate-title" data-i18n="certificates.item2.title">Full Stack JavaScript</h3>
+                        <p class="certificate-issuer" data-i18n="certificates.item2.issuer">freeCodeCamp</p>
+                        <p class="certificate-date" data-i18n="certificates.item2.date">2021</p>
+                    </div>
+                    <div class="certificate-card">
+                        <div class="certificate-icon">⭐</div>
+                        <h3 class="certificate-title" data-i18n="certificates.item3.title">UI/UX Design Specialization</h3>
+                        <p class="certificate-issuer" data-i18n="certificates.item3.issuer">Coursera</p>
+                        <p class="certificate-date" data-i18n="certificates.item3.date">2020</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Blog Section -->
+    <section class="blog" id="blog">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label" data-i18n="blog.label">Блог</span>
+                <h2 class="section-title" data-i18n="blog.title">Последние статьи</h2>
+            </div>
+            <div class="blog-grid">
+                <article class="blog-card">
+                    <div class="blog-image">
+                        <div class="blog-icon-wrapper">
+                            <svg class="blog-icon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <linearGradient id="blogGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+                                    </linearGradient>
+                                </defs>
+                                <rect x="20" y="20" width="60" height="60" rx="8" fill="url(#blogGradient1)" opacity="0.2"/>
+                                <rect x="25" y="25" width="50" height="50" rx="6" fill="url(#blogGradient1)"/>
+                                <circle cx="40" cy="35" r="5" fill="white" opacity="0.9"/>
+                                <rect x="50" y="30" width="20" height="5" rx="2" fill="white" opacity="0.9"/>
+                                <rect x="30" y="45" width="40" height="4" rx="2" fill="white" opacity="0.8"/>
+                                <rect x="30" y="53" width="35" height="4" rx="2" fill="white" opacity="0.7"/>
+                                <rect x="30" y="61" width="30" height="4" rx="2" fill="white" opacity="0.6"/>
+                                <path d="M 35 70 Q 50 75 65 70" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.5"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="blog-content">
+                        <div class="blog-meta">
+                            <span class="blog-date" data-i18n="blog.item1.date">15 марта 2024</span>
+                            <span class="blog-category" data-i18n="blog.item1.category">React</span>
+                        </div>
+                        <h3 class="blog-title" data-i18n="blog.item1.title">Лучшие практики React в 2024</h3>
+                        <p class="blog-excerpt" data-i18n="blog.item1.excerpt">
+                            Обзор современных подходов к разработке на React, включая хуки, 
+                            оптимизацию производительности и лучшие практики.
+                        </p>
+                        <a href="#" class="blog-link" data-i18n="blog.readMore">Читать далее →</a>
+                    </div>
+                </article>
+                <article class="blog-card">
+                    <div class="blog-image">
+                        <div class="blog-icon-wrapper">
+                            <svg class="blog-icon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <linearGradient id="blogGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#4facfe;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#00f2fe;stop-opacity:1" />
+                                    </linearGradient>
+                                </defs>
+                                <rect x="15" y="25" width="70" height="50" rx="6" fill="url(#blogGradient2)" opacity="0.2"/>
+                                <rect x="20" y="30" width="60" height="40" rx="4" fill="url(#blogGradient2)"/>
+                                <circle cx="35" cy="40" r="4" fill="white" opacity="0.9"/>
+                                <line x1="45" y1="40" x2="70" y2="40" stroke="white" stroke-width="3" stroke-linecap="round" opacity="0.9"/>
+                                <circle cx="35" cy="50" r="4" fill="white" opacity="0.7"/>
+                                <line x1="45" y1="50" x2="65" y2="50" stroke="white" stroke-width="3" stroke-linecap="round" opacity="0.7"/>
+                                <circle cx="35" cy="60" r="4" fill="white" opacity="0.5"/>
+                                <line x1="45" y1="60" x2="60" y2="60" stroke="white" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+                                <path d="M 25 75 Q 50 80 75 75" stroke="url(#blogGradient2)" stroke-width="2" fill="none" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="blog-content">
+                        <div class="blog-meta">
+                            <span class="blog-date" data-i18n="blog.item2.date">8 марта 2024</span>
+                            <span class="blog-category" data-i18n="blog.item2.category">Performance</span>
+                        </div>
+                        <h3 class="blog-title" data-i18n="blog.item2.title">Оптимизация веб-производительности</h3>
+                        <p class="blog-excerpt" data-i18n="blog.item2.excerpt">
+                            Практические советы по улучшению скорости загрузки и производительности 
+                            веб-приложений.
+                        </p>
+                        <a href="#" class="blog-link" data-i18n="blog.readMore">Читать далее →</a>
+                    </div>
+                </article>
+                <article class="blog-card">
+                    <div class="blog-image">
+                        <div class="blog-icon-wrapper">
+                            <svg class="blog-icon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <linearGradient id="blogGradient3" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#f093fb;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#f5576c;stop-opacity:1" />
+                                    </linearGradient>
+                                </defs>
+                                <rect x="20" y="20" width="60" height="60" rx="8" fill="url(#blogGradient3)" opacity="0.2"/>
+                                <rect x="25" y="25" width="50" height="50" rx="6" fill="url(#blogGradient3)"/>
+                                <rect x="30" y="30" width="40" height="30" rx="4" fill="white" opacity="0.2"/>
+                                <path d="M 35 35 L 60 35 L 60 50 L 35 50 Z" fill="white" opacity="0.9"/>
+                                <rect x="38" y="38" width="19" height="9" rx="2" fill="url(#blogGradient3)"/>
+                                <rect x="30" y="55" width="40" height="3" rx="1" fill="white" opacity="0.8"/>
+                                <rect x="30" y="61" width="30" height="3" rx="1" fill="white" opacity="0.6"/>
+                                <circle cx="70" cy="60" r="5" fill="white" opacity="0.9"/>
+                                <path d="M 68 60 L 70 62 L 72 58" stroke="url(#blogGradient3)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="blog-content">
+                        <div class="blog-meta">
+                            <span class="blog-date" data-i18n="blog.item3.date">1 марта 2024</span>
+                            <span class="blog-category" data-i18n="blog.item3.category">TypeScript</span>
+                        </div>
+                        <h3 class="blog-title" data-i18n="blog.item3.title">TypeScript для начинающих</h3>
+                        <p class="blog-excerpt" data-i18n="blog.item3.excerpt">
+                            Полное руководство по TypeScript: от основ до продвинутых техник 
+                            типизации и лучших практик.
+                        </p>
+                        <a href="#" class="blog-link" data-i18n="blog.readMore">Читать далее →</a>
+                    </div>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section class="contact" id="contact">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label">Контакты</span>
+                <h2 class="section-title">Давайте работать вместе</h2>
+            </div>
+            <div class="contact-content">
+                <div class="contact-info">
+                    <p class="contact-intro">
+                        Готов обсудить ваш проект и помочь воплотить идеи в жизнь. 
+                        Свяжитесь со мной любым удобным способом.
+                    </p>
+                    <div class="contact-methods">
+                        <a href="mailto:hello@portfolio.dev" class="contact-method">
+                            <div class="method-icon">✉️</div>
+                            <div class="method-content">
+                                <span class="method-label">Email</span>
+                                <span class="method-value">hello@portfolio.dev</span>
+                            </div>
+                        </a>
+                        <a href="tel:+79991234567" class="contact-method">
+                            <div class="method-icon">📱</div>
+                            <div class="method-content">
+                                <span class="method-label">Телефон</span>
+                                <span class="method-value">+7 999 123 45 67</span>
+                            </div>
+                        </a>
+                        <div class="contact-method">
+                            <div class="method-icon">📍</div>
+                            <div class="method-content">
+                                <span class="method-label">Локация</span>
+                                <span class="method-value">Москва, Россия</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="social-links">
+                        <a href="#" class="social-link" aria-label="GitHub">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                            </svg>
+                        </a>
+                        <a href="#" class="social-link" aria-label="LinkedIn">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                            </svg>
+                        </a>
+                        <a href="#" class="social-link" aria-label="Telegram">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+                <form class="contact-form" id="contactForm">
+                    <div class="form-group">
+                        <input type="text" id="name" name="name" placeholder="Ваше имя" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="email" id="email" name="email" placeholder="Email" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="subject" name="subject" placeholder="Тема" required>
+                    </div>
+                    <div class="form-group">
+                        <textarea id="message" name="message" rows="6" placeholder="Сообщение" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-submit">
+                        <span>Отправить сообщение</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polyline points="22 2 15 22 11 13 2 9 22 2"></polyline>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <p class="footer-text">&copy; 2024 Portfolio. Все права защищены.</p>
+                <p class="footer-text">Создано с ❤️ и вниманием к деталям</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Project Modal -->
+    <div class="modal" id="projectModal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <button class="modal-close" id="modalClose">&times;</button>
+            <div class="modal-body" id="modalBody">
+                <!-- Content will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+

@@ -33,11 +33,10 @@ import com.company.dvizhtrue.ui.components.GradientCard
 import com.company.dvizhtrue.ui.components.LocationPickerDialog
 import com.company.dvizhtrue.ui.formatTime
 import com.company.dvizhtrue.ui.formatRelativeTime
+import com.google.accompanist.swiperefresh.SwipeRefresh
+import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
-import com.google.android.gms.maps.model.LatLng
 import androidx.compose.ui.platform.LocalContext
-import java.util.Calendar
-import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,6 +50,15 @@ fun HomeScreenNew(
         systemUiController.setStatusBarColor(Color.Black, darkIcons = false)
     }
 
+    val vm: HomeViewModel = viewModel()
+    val events by vm.events.collectAsState()
+    val isRefreshing by vm.refreshing.collectAsState()
+
+    // Инициализируем обновление при запуске
+    LaunchedEffect(Unit) {
+        vm.refreshEvents()
+    }
+
     var searchQuery by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf("Все") }
     var showLocationPicker by remember { mutableStateOf(false) }
@@ -59,20 +67,18 @@ fun HomeScreenNew(
 
     val categories = listOf("Все", "Технологии", "Фотография", "Бизнес", "Здоровье", "Социальные")
 
-    val filteredEvents by remember(searchQuery, selectedCategory, selectedLocation) {
+    val filteredEvents by remember(events, searchQuery, selectedCategory, selectedLocation) {
         derivedStateOf {
-            // TODO: Replace with actual events from repository
-            emptyList<Event>()
-                .filter { event ->
-                    val matchesSearch = searchQuery.isBlank() || 
-                        event.title.contains(searchQuery, ignoreCase = true) ||
-                        event.description?.contains(searchQuery, ignoreCase = true) == true
-                    val matchesCategory = selectedCategory == "Все" || 
-                        event.categories.contains(selectedCategory)
-                    val matchesLocation = selectedLocation == "Москва" || 
-                        event.location?.contains(selectedLocation, ignoreCase = true) == true
-                    matchesSearch && matchesCategory && matchesLocation
-                }
+            events.filter { event ->
+                val matchesSearch = searchQuery.isBlank() || 
+                    event.title.contains(searchQuery, ignoreCase = true) ||
+                    event.description?.contains(searchQuery, ignoreCase = true) == true
+                val matchesCategory = selectedCategory == "Все" || 
+                    event.categories.contains(selectedCategory)
+                // Локация пока опциональна, так как многие события без города
+                val matchesLocation = true // selectedLocation == "Москва" || event.location?.contains(selectedLocation, ignoreCase = true) == true
+                matchesSearch && matchesCategory && matchesLocation
+            }
         }
     }
 
@@ -237,7 +243,12 @@ fun HomeScreenNew(
         
         Spacer(modifier = Modifier.height(16.dp))
         
-            // Events List
+        // Events List with Pull to Refresh
+        SwipeRefresh(
+            state = rememberSwipeRefreshState(isRefreshing),
+            onRefresh = { vm.refreshEvents() },
+            modifier = Modifier.weight(1f)
+        ) {
             EventsListNew(
                 events = filteredEvents,
                 onNavigateToEventDetail = onNavigateToEventDetail,
@@ -245,6 +256,7 @@ fun HomeScreenNew(
             )
         }
     }
+}
 
     // Диалог выбора локации
     LocationPickerDialog(

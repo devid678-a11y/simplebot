@@ -25,4 +25,8 @@ object UserRepository {
     fun deleteUser(uid: String): Task<Void> {
         return usersCollection.document(uid).delete()
     }
+
+    fun getCurrentUserId(): String? {
+        return com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
+    }
 }

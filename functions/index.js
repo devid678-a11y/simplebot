@@ -32,6 +32,89 @@ const { TextGenerationServiceClient } = require('@yandex-cloud/nodejs-sdk/dist/g
 const miniapp = require('./miniapp');
 Object.assign(exports, miniapp);
 
+// ===== PostgreSQL connection для сохранения событий =====
+let pgPool = null;
+function getPostgresPool() {
+    if (!pgPool) {
+        const { Pool } = require('pg');
+        pgPool = new Pool({
+            host: '7cedb753215efecb1de53f8c.twc1.net',
+            port: 5432,
+            database: 'default_db',
+            user: 'gen_user',
+            password: 'c%-5Yc01xe*Bdf',
+            ssl: { rejectUnauthorized: false },
+            max: 5,
+            idleTimeoutMillis: 30000
+        });
+    }
+    return pgPool;
+}
+
+// Вспомогательная функция для сохранения события в PostgreSQL
+async function saveEventToPostgres(eventData) {
+    const pool = getPostgresPool();
+    const crypto = require('crypto');
+    
+    // Генерируем ID и dedupe_key
+    const eventId = eventData.id || crypto.randomUUID();
+    const dedupeKey = eventData.dedupeKey || crypto.createHash('sha256')
+        .update(`${eventData.title || ''}_${eventData.startAtMillis || Date.now()}`)
+        .digest('hex')
+        .substring(0, 64);
+    
+    const insertSQL = `
+        INSERT INTO events (
+            id, title, description, start_at_millis, end_at_millis,
+            is_free, price, is_online, location, geo_lat, geo_lng, geohash,
+            categories, image_urls, links, source, dedupe_key, created_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW())
+        ON CONFLICT (dedupe_key) DO UPDATE SET
+            title = EXCLUDED.title,
+            description = EXCLUDED.description,
+            start_at_millis = EXCLUDED.start_at_millis,
+            end_at_millis = EXCLUDED.end_at_millis,
+            location = EXCLUDED.location,
+            geo_lat = EXCLUDED.geo_lat,
+            geo_lng = EXCLUDED.geo_lng,
+            geohash = EXCLUDED.geohash,
+            categories = EXCLUDED.categories,
+            image_urls = EXCLUDED.image_urls
+        RETURNING id
+    `;
+    
+    try {
+        const geo = eventData.geo || null;
+        const links = eventData.links ? JSON.stringify(eventData.links) : null;
+        const source = eventData.source ? JSON.stringify(eventData.source) : null;
+        
+        const result = await pool.query(insertSQL, [
+            eventId,
+            (eventData.title || 'Событие').slice(0, 200),
+            (eventData.description || '').slice(0, 5000),
+            eventData.startAtMillis || (Date.now() + 86400000),
+            eventData.endAtMillis || null,
+            eventData.isFree !== undefined ? eventData.isFree : true,
+            eventData.price || null,
+            eventData.isOnline || false,
+            eventData.location || null,
+            geo?.lat || null,
+            geo?.lng || null,
+            eventData.geohash || null,
+            Array.isArray(eventData.categories) && eventData.categories.length > 0 ? eventData.categories : null,
+            Array.isArray(eventData.imageUrls) && eventData.imageUrls.length > 0 ? eventData.imageUrls : null,
+            links,
+            source,
+            dedupeKey
+        ]);
+        
+        return { id: result.rows[0]?.id || eventId, success: true };
+    } catch (e) {
+        console.error('❌ Ошибка сохранения события в PostgreSQL:', e.message);
+        throw e;
+    }
+}
+
 // URL Ollama: жёстко предпочитаем конфиг функций/ENV, без устаревшего fallback
 let OLLAMA_BASE_URL = null;
 try {
@@ -1222,10 +1305,11 @@ exports.parsemessage = functions.https.onCall(async (data, context) => {
     
     if (parsedEvent && parsedEvent.confidence > 0.7) {
         // Сохраняем в Firestore (база данных dvizheon)
-        await admin.firestore().collection('events').add({
+        // Сохраняем в PostgreSQL вместо Firestore
+        await saveEventToPostgres({
             ...parsedEvent,
-            source: 'yandexgpt_parser',
-            telegramUrl: messageLink || '',
+            source: { type: 'yandexgpt_parser', telegramUrl: messageLink || '' },
+            links: messageLink ? [{ type: 'telegram_post', url: messageLink }] : null
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             parsedAt: new Date().toISOString()
         });
@@ -1546,34 +1630,42 @@ async function parseTelegramChannels() {
                                 // Создаем правильную ссылку на Telegram пост
                                 const telegramUrl = createTelegramPostLink(channel.username, message.messageId);
                                 
-                                // Сохраняем в Firestore
-                                const eventData = {
-                                    title: parsedEvent.title,
-                                    description: parsedEvent.description || '',
-                                    startAtMillis: parsedEvent.startAtMillis,
-                                    isOnline: parsedEvent.isOnline,
-                                    isFree: parsedEvent.isFree,
-                                    price: parsedEvent.price,
-                                    location: parsedEvent.location,
-                                    imageUrls: parsedEvent.imageUrls,
-                                    categories: parsedEvent.categories,
-                                    telegramUrl: telegramUrl,
-                                    source: 'yandexgpt_parser',
-                                    channelName: channel.name,
-                                    channelUsername: channel.username,
-                                    channelCategory: channel.category,
-                                    messageId: message.messageId,
-                                    originalText: message.text,
-                                    messageDate: message.date,
-                                    confidence: parsedEvent.confidence,
-                                    createdAt: admin.firestore.FieldValue.serverTimestamp(),
-                                    parsedAt: new Date().toISOString()
-                                };
+                                // Сохраняем в PostgreSQL вместо Firestore
+                                const dedupeKey = crypto.createHash('sha256')
+                                    .update(`telegram_${channel.username}_${message.messageId}`)
+                                    .digest('hex')
+                                    .substring(0, 64);
                                 
-                                await db.collection('events').add(eventData);
-                                
-                                totalEvents++;
-                                console.log(`✅ Событие сохранено: ${parsedEvent.title} из @${channel.username}`);
+                                // Проверяем существование в PostgreSQL
+                                const pool = getPostgresPool();
+                                const dupCheck = await pool.query('SELECT id FROM events WHERE dedupe_key = $1 LIMIT 1', [dedupeKey]);
+                                if (dupCheck.rows.length === 0) {
+                                    await saveEventToPostgres({
+                                        title: parsedEvent.title,
+                                        description: parsedEvent.description || '',
+                                        startAtMillis: parsedEvent.startAtMillis,
+                                        isOnline: parsedEvent.isOnline,
+                                        isFree: parsedEvent.isFree,
+                                        price: parsedEvent.price,
+                                        location: parsedEvent.location,
+                                        imageUrls: parsedEvent.imageUrls,
+                                        categories: parsedEvent.categories,
+                                        source: { 
+                                            type: 'yandexgpt_parser',
+                                            channelName: channel.name,
+                                            channelUsername: channel.username,
+                                            channelCategory: channel.category,
+                                            messageId: message.messageId
+                                        },
+                                        links: [{ type: 'telegram_post', url: telegramUrl }],
+                                        dedupeKey
+                                    });
+                                    
+                                    totalEvents++;
+                                    console.log(`✅ Событие сохранено: ${parsedEvent.title} из @${channel.username}`);
+                                } else {
+                                    console.log(`⏭️ Событие уже существует: ${parsedEvent.title} из @${channel.username}`);
+                                }
                             } else {
                                 console.log(`⏭️ Событие уже существует: ${parsedEvent.title} из @${channel.username}`);
                             }
@@ -2347,13 +2439,13 @@ exports.importTelegramByUrl = onRequest({ memory: '1GiB', timeoutSeconds: 120 },
                 };
             }
         }
-        const eventRef = admin.firestore().collection('events').doc();
-        await eventRef.set({
+        // Сохраняем в PostgreSQL вместо Firestore
+        const saved = await saveEventToPostgres({
             ...event,
-            createdAt: Timestamp.now(),
-            externalId: `telegram_${post.messageId}`
+            dedupeKey: crypto.createHash('sha256').update(`telegram_${post.messageId}`).digest('hex').substring(0, 64),
+            source: { type: 'telegram', url: post.link || req.query.url || '', messageId: post.messageId }
         });
-        return res.json({ success: true, found: 1, saved: 1, id: eventRef.id, draft: !event.categories || event.categories.includes('draft') });
+        return res.json({ success: true, found: 1, saved: 1, id: saved.id, draft: !event.categories || event.categories.includes('draft') });
     } catch (error) {
         console.error('Error in importTelegramByUrl:', error);
         return res.status(500).json({ success: false, error: error.message });
@@ -3536,25 +3628,22 @@ async function importTimepadEvents(preview = false) {
                         url: fullLink
                     });
                 } else {
-                    // Upsert по детерминированному docId
-                    const docId = externalId;
-                    await db.collection('events').doc(docId).set({
+                    // Сохраняем в PostgreSQL вместо Firestore
+                    const dedupeKey = crypto.createHash('sha256').update(`timepad_${externalId}`).digest('hex').substring(0, 64);
+                    await saveEventToPostgres({
                         title: it.title || titleFromPage || 'Событие',
-                        description: (description || '').toString().trim().slice(0, 600),
+                        description: (description || '').toString().trim().slice(0, 5000),
                         startAtMillis,
                         isOnline: false,
                         isFree,
-                        price: priceText,
+                        price: priceText ? parseInt(priceText.replace(/\D/g, '')) : null,
                         location: place || 'Москва',
                         imageUrls: imgList,
                         categories: [],
-                        source: 'timepad',
-                        externalId,
-                        originalUrl: fullLink,
-                        externalUrl: fullLink,
-                        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-                        updatedAt: admin.firestore.FieldValue.serverTimestamp()
-                    }, { merge: true });
+                        source: { type: 'timepad', url: fullLink },
+                        links: [{ type: 'url', url: fullLink }],
+                        dedupeKey
+                    });
                     saved++;
                 }
             } catch (e) {
@@ -3687,9 +3776,14 @@ async function importMosRuEvents() {
                 if (d.getTime() < nowMs + 60 * 60 * 1000) continue;
                 if (d.getTime() > untilMs) continue;
                 const externalId = `mosru_${Buffer.from(l).toString('base64')}`;
-                const dup = await db.collection('events').where('externalId', '==', externalId).limit(1).get();
-                if (!dup.empty) continue;
-                await db.collection('events').add({
+                // Проверяем существование в PostgreSQL
+                const pool = getPostgresPool();
+                const dedupeKey = crypto.createHash('sha256').update(`mosru_${externalId}`).digest('hex').substring(0, 64);
+                const dupCheck = await pool.query('SELECT id FROM events WHERE dedupe_key = $1 LIMIT 1', [dedupeKey]);
+                if (dupCheck.rows.length > 0) continue;
+                
+                // Сохраняем в PostgreSQL
+                await saveEventToPostgres({
                     title,
                     description: '',
                     startAtMillis: d.getTime(),
@@ -3699,10 +3793,9 @@ async function importMosRuEvents() {
                     location: 'Москва',
                     imageUrls: [],
                     categories: [],
-                    source: 'mosru',
-                    externalId,
-                    originalUrl: l,
-                    createdAt: admin.firestore.FieldValue.serverTimestamp()
+                    source: { type: 'mosru', url: l },
+                    links: [{ type: 'url', url: l }],
+                    dedupeKey
                 });
                 saved++;
             } catch(_) {}
@@ -3752,9 +3845,14 @@ async function importAfishaRuEvents() {
                 if (d.getTime() < nowMs + 60 * 60 * 1000) continue;
                 if (d.getTime() > untilMs) continue;
                 const externalId = `afisharu_${Buffer.from(l).toString('base64')}`;
-                const dup = await db.collection('events').where('externalId', '==', externalId).limit(1).get();
-                if (!dup.empty) continue;
-                await db.collection('events').add({
+                // Проверяем существование в PostgreSQL
+                const pool = getPostgresPool();
+                const dedupeKey = crypto.createHash('sha256').update(`afisharu_${externalId}`).digest('hex').substring(0, 64);
+                const dupCheck = await pool.query('SELECT id FROM events WHERE dedupe_key = $1 LIMIT 1', [dedupeKey]);
+                if (dupCheck.rows.length > 0) continue;
+                
+                // Сохраняем в PostgreSQL
+                await saveEventToPostgres({
                     title,
                     description: '',
                     startAtMillis: d.getTime(),
@@ -3764,10 +3862,9 @@ async function importAfishaRuEvents() {
                     location: 'Москва',
                     imageUrls: [],
                     categories: [],
-                    source: 'afisha.ru',
-                    externalId,
-                    originalUrl: l,
-                    createdAt: admin.firestore.FieldValue.serverTimestamp()
+                    source: { type: 'afisha.ru', url: l },
+                    links: [{ type: 'url', url: l }],
+                    dedupeKey
                 });
                 saved++;
             } catch(_) {}

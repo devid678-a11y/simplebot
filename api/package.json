@@ -1,0 +1,20 @@
+{
+  "name": "dvizh-api-server",
+  "version": "1.0.0",
+  "description": "API Server for PostgreSQL Timeweb",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "cors": "^2.8.5",
+    "pg": "^8.16.3",
+    "dotenv": "^17.2.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

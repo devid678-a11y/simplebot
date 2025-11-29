@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { getPosts, getCategories } from '../services/wordpress'
+import { blogPostsData } from '../data/blogPosts'
 import './Blog.css'
 
 const Blog = () => {
@@ -16,21 +17,41 @@ const Blog = () => {
     const loadPosts = async () => {
       try {
         setLoading(true)
+        
+        // Проверяем, есть ли URL WordPress API
+        const wpApiUrl = import.meta.env.VITE_WORDPRESS_API_URL
+        if (!wpApiUrl || wpApiUrl.includes('your-wordpress-site')) {
+          // WordPress не настроен, используем fallback
+          console.log('WordPress API не настроен, используем fallback данные')
+          setPosts(fallbackPosts)
+          setCategories(['ALL', 'ПРОЕКТЫ', 'ИДЕИ', 'НОВОСТИ', 'ИНТЕРВЬЮ'])
+          setLoading(false)
+          return
+        }
+        
         const [wpPosts, wpCategories] = await Promise.all([
           getPosts(),
           getCategories()
         ])
         
-        setPosts(wpPosts)
+        if (Array.isArray(wpPosts)) {
+          setPosts(wpPosts)
+        } else {
+          throw new Error('Invalid posts data')
+        }
         
         // Формируем список категорий
-        const cats = ['ALL', ...wpCategories.map(cat => cat.name.toUpperCase())]
-        setCategories(cats)
+        if (Array.isArray(wpCategories) && wpCategories.length > 0) {
+          const cats = ['ALL', ...wpCategories.map(cat => cat.name?.toUpperCase() || 'БЕЗ КАТЕГОРИИ')]
+          setCategories(cats)
+        } else {
+          setCategories(['ALL'])
+        }
       } catch (error) {
         console.error('Error loading posts:', error)
-        // Fallback на пустой массив при ошибке
-        setPosts([])
-        setCategories(['ALL'])
+        // Fallback на статические данные при ошибке
+        setPosts(fallbackPosts)
+        setCategories(['ALL', 'ПРОЕКТЫ', 'ИДЕИ', 'НОВОСТИ', 'ИНТЕРВЬЮ'])
       } finally {
         setLoading(false)
       }
@@ -40,72 +61,20 @@ const Blog = () => {
   }, [])
   
   // Статические посты для fallback (если WordPress недоступен)
-  const fallbackPosts = [
-    {
-      id: 1,
-      title: 'БУДУЩЕЕ ГОРОДСКОЙ АРХИТЕКТУРЫ',
-      category: 'ИДЕИ',
-      date: '15 ЯНВАРЯ 2024',
-      excerpt: 'Размышления о том, как брутализм может решить проблемы современного города. Функциональность и эстетика в балансе.',
-      image: 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800&h=600&fit=crop',
-      readTime: '5 МИН'
-    },
-    {
-      id: 2,
-      title: 'ПРОЕКТ ЖИЛОГО КОМПЛЕКСА "ПАРК"',
-      category: 'ПРОЕКТЫ',
-      date: '10 ЯНВАРЯ 2024',
-      excerpt: 'Детальный разбор проекта жилого комплекса в центре Москвы. От концепции до реализации. Материалы, технологии, решения.',
-      image: 'https://images.unsplash.com/photo-1487958449943-2429e8be8625?w=800&h=600&fit=crop',
-      readTime: '8 МИН'
-    },
-    {
-      id: 3,
-      title: 'ИНТЕРВЬЮ С ГЛАВНЫМ АРХИТЕКТОРОМ',
-      category: 'ИНТЕРВЬЮ',
-      date: '5 ЯНВАРЯ 2024',
-      excerpt: 'Разговор о философии проектирования, влиянии материалов на восприятие пространства и будущем архитектуры.',
-      image: 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=800&h=600&fit=crop',
-      readTime: '12 МИН'
-    },
-    {
-      id: 4,
-      title: 'НОВЫЕ ТЕХНОЛОГИИ В СТРОИТЕЛЬСТВЕ',
-      category: 'НОВОСТИ',
-      date: '28 ДЕКАБРЯ 2023',
-      excerpt: 'Обзор инновационных материалов и технологий, которые меняют подход к строительству. Экологичность и долговечность.',
-      image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&h=600&fit=crop',
-      readTime: '6 МИН'
-    },
-    {
-      id: 5,
-      title: 'МИНИМАЛИЗМ КАК ОСНОВА ДИЗАЙНА',
-      category: 'ИДЕИ',
-      date: '20 ДЕКАБРЯ 2023',
-      excerpt: 'Почему меньше значит больше. Как принципы минимализма помогают создавать более функциональные пространства.',
-      image: 'https://images.unsplash.com/photo-1511818966892-d7d671e672a2?w=800&h=600&fit=crop',
-      readTime: '7 МИН'
-    },
-    {
-      id: 6,
-      title: 'КУЛЬТУРНЫЙ ЦЕНТР В ЕКАТЕРИНБУРГЕ',
-      category: 'ПРОЕКТЫ',
-      date: '15 ДЕКАБРЯ 2023',
-      excerpt: 'Проект культурного центра, объединяющего библиотеку, выставочные залы и общественные пространства. Архитектура как социальный инструмент.',
-      image: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&h=600&fit=crop',
-      readTime: '10 МИН'
-    }
-  ]
+  const fallbackPosts = blogPostsData
+
+  // Используем WordPress посты или fallback
+  const displayPosts = posts.length > 0 ? posts : fallbackPosts
 
   // Фильтрация постов по категории
   useEffect(() => {
-    if (!displayPosts.length) {
+    if (!displayPosts || displayPosts.length === 0) {
       setFilteredPosts([])
       return
     }
     
     // Проверяем, это WordPress посты или fallback
-    const isWordPressPost = displayPosts[0]?.title?.rendered
+    const isWordPressPost = displayPosts[0]?.title?.rendered !== undefined
     
     if (selectedCategory === 'ALL') {
       setFilteredPosts(displayPosts)
@@ -179,22 +148,33 @@ const Blog = () => {
             <div className="blog-posts" ref={postsRef}>
               {filteredPosts.length > 0 ? (
                 filteredPosts.map((post, index) => {
-                  // Получаем изображение из WordPress
-                  const featuredImage = post._embedded?.['wp:featuredmedia']?.[0]?.source_url || 
-                                       'https://images.unsplash.com/photo-1487958449943-2429e8be8625?w=800&h=600&fit=crop'
+                  // Проверяем, это WordPress пост или fallback
+                  const isWordPressPost = post.title?.rendered !== undefined
+                  
+                  // Получаем изображение
+                  const featuredImage = isWordPressPost
+                    ? (post._embedded?.['wp:featuredmedia']?.[0]?.source_url || 
+                       'https://images.unsplash.com/photo-1487958449943-2429e8be8625?w=800&h=600&fit=crop')
+                    : post.image
                   
                   // Форматируем дату
-                  const postDate = new Date(post.date).toLocaleDateString('ru-RU', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  }).toUpperCase()
+                  const postDate = isWordPressPost
+                    ? new Date(post.date).toLocaleDateString('ru-RU', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      }).toUpperCase()
+                    : post.date
                   
                   // Получаем категорию
-                  const postCategory = post._embedded?.['wp:term']?.[0]?.[0]?.name?.toUpperCase() || 'НОВОСТИ'
+                  const postCategory = isWordPressPost
+                    ? (post._embedded?.['wp:term']?.[0]?.[0]?.name?.toUpperCase() || 'НОВОСТИ')
+                    : post.category
                   
                   // Получаем slug для ссылки
-                  const postSlug = post.slug || `post-${post.id}`
+                  const postSlug = isWordPressPost 
+                    ? (post.slug || `post-${post.id}`)
+                    : (post.slug || `post-${post.id}`)
                   
                   return (
                     <Link
@@ -214,11 +194,22 @@ const Blog = () => {
                         <div className="post-meta">
                           <span className="post-date">{postDate}</span>
                         </div>
-                        <h2 className="post-title" dangerouslySetInnerHTML={{ __html: post.title.rendered }}></h2>
-                        <div 
-                          className="post-excerpt" 
-                          dangerouslySetInnerHTML={{ __html: post.excerpt.rendered || post.content.rendered.substring(0, 150) + '...' }}
-                        ></div>
+                        <h2 className="post-title">
+                          {isWordPressPost ? (
+                            <span dangerouslySetInnerHTML={{ __html: post.title?.rendered || '' }}></span>
+                          ) : (
+                            post.title
+                          )}
+                        </h2>
+                        <div className="post-excerpt">
+                          {isWordPressPost ? (
+                            <span dangerouslySetInnerHTML={{ 
+                              __html: post.excerpt?.rendered || post.content?.rendered?.substring(0, 150) + '...' || ''
+                            }}></span>
+                          ) : (
+                            post.excerpt
+                          )}
+                        </div>
                         <span className="post-read-more">
                           ЧИТАТЬ →
                         </span>

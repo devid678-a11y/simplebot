@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Сертификаты — DEMEX</title>
+    <meta name="description" content="Сертификаты качества продукции DEMEX. Международные стандарты и гарантия безопасности.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .certificates-page {
+            min-height: 100vh;
+            background: var(--bg-light);
+            padding-top: 100px;
+            padding-bottom: 80px;
+        }
+
+        .certificates-header {
+            text-align: center;
+            margin-bottom: 60px;
+            padding: 0 20px;
+        }
+
+        .certificates-header h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--text);
+        }
+
+        .certificates-header p {
+            font-size: 1.1rem;
+            color: var(--text-light);
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .certificates-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .certificate-card {
+            background: white;
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .certificate-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .certificate-image {
+            width: 100%;
+            height: 400px;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .certificate-placeholder {
+            text-align: center;
+            color: #999;
+            font-size: 0.9rem;
+            z-index: 1;
+            padding: 20px;
+        }
+
+        .certificate-placeholder-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            opacity: 0.5;
+        }
+
+        .certificate-content {
+            padding: 24px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .certificate-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text);
+            line-height: 1.4;
+        }
+
+        .certificate-description {
+            color: var(--text-light);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            flex: 1;
+        }
+
+        .certificate-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .certificate-btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: var(--transition);
+            border: none;
+            cursor: pointer;
+        }
+
+        .certificate-btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .certificate-btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .certificate-btn-secondary {
+            background: transparent;
+            color: var(--primary);
+            border: 1px solid var(--primary);
+        }
+
+        .certificate-btn-secondary:hover {
+            background: var(--accent-soft);
+        }
+
+        .certificate-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        .certificate-image-clickable {
+            cursor: pointer;
+            position: relative;
+        }
+
+        .certificate-image-clickable:has(.certificate-placeholder) {
+            cursor: default;
+        }
+
+        .certificate-image-clickable:has(.certificate-placeholder)::after {
+            display: none;
+        }
+
+        .certificate-image-clickable::after {
+            content: '🔍';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            font-size: 1.2rem;
+        }
+
+        .certificate-image-clickable:hover::after {
+            opacity: 1;
+        }
+
+        /* Lightbox */
+        .lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .lightbox.active {
+            display: flex;
+        }
+
+        .lightbox-content {
+            position: relative;
+            max-width: 90vw;
+            max-height: 90vh;
+        }
+
+        .lightbox-image {
+            max-width: 100%;
+            max-height: 90vh;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            border: none;
+            color: white;
+            font-size: 2.5rem;
+            cursor: pointer;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            transition: all 0.3s ease;
+            border-radius: 50%;
+            z-index: 10001;
+        }
+
+        .lightbox-close:hover {
+            background: rgba(0, 0, 0, 0.9);
+            transform: scale(1.1);
+        }
+
+        .lightbox-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            border: none;
+            color: white;
+            font-size: 3rem;
+            cursor: pointer;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            transition: all 0.3s ease;
+            border-radius: 50%;
+            z-index: 10001;
+            opacity: 0.8;
+        }
+
+        .lightbox-nav:hover {
+            background: rgba(0, 0, 0, 0.9);
+            opacity: 1;
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .lightbox-prev {
+            left: 20px;
+        }
+
+        .lightbox-next {
+            right: 20px;
+        }
+
+        .lightbox-nav.hidden {
+            display: none;
+        }
+
+        .lightbox-nav:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .lightbox-nav:disabled:hover {
+            background: rgba(0, 0, 0, 0.7);
+            transform: translateY(-50%);
+        }
+
+        .lightbox-page-info {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        /* Popup */
+        .popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .popup-overlay.active {
+            display: flex;
+        }
+
+        .popup-content {
+            background: white;
+            border-radius: var(--radius);
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .popup-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 2rem;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            color: var(--text);
+            transition: transform 0.3s ease;
+            z-index: 1;
+        }
+
+        .popup-close:hover {
+            transform: scale(1.2);
+        }
+
+        .popup-image {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .popup-image img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .popup-text h2 {
+            font-size: 1.8rem;
+            margin-bottom: 16px;
+            color: var(--text);
+        }
+
+        .popup-text p {
+            font-size: 1.05rem;
+            color: var(--text-light);
+            line-height: 1.6;
+            margin-bottom: 16px;
+        }
+
+        .popup-text ul {
+            margin: 16px 0;
+            padding-left: 24px;
+            list-style-type: disc;
+        }
+
+        .popup-text li {
+            margin-bottom: 10px;
+            line-height: 1.6;
+            color: var(--text-light);
+        }
+
+        .popup-text strong {
+            color: var(--text);
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .certificates-grid {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+
+            .certificate-image {
+                height: 300px;
+            }
+
+            .popup-content {
+                padding: 30px 20px;
+            }
+
+            .popup-text h2 {
+                font-size: 1.4rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-wrapper">
+            <div class="container">
+                <div class="header-content">
+                    <div class="logo">
+                        <a href="index.html">
+                            <img src="logo.png" alt="DEMEX" class="logo-img">
+                        </a>
+                    </div>
+                    <nav class="nav">
+                        <div class="nav-item-dropdown">
+                            <a href="index.html#about" class="nav-link">
+                                О нас
+                                <span class="dropdown-arrow">▼</span>
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a href="index.html#mission" class="dropdown-link">Миссия и цели</a></li>
+                                <li><a href="index.html#production" class="dropdown-link">Производство</a></li>
+                                <li><a href="certificates.html" class="dropdown-link">Сертификаты</a></li>
+                                <li><a href="index.html#media" class="dropdown-link">СМИ о нас</a></li>
+                                <li><a href="index.html#blog" class="dropdown-link">Блог</a></li>
+                            </ul>
+                        </div>
+                        <a href="index.html#catalog" class="nav-link">Каталог</a>
+                        <div class="nav-item-dropdown">
+                            <a href="index.html#buyers" class="nav-link">
+                                Покупателям
+                                <span class="dropdown-arrow">▼</span>
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a href="index.html#delivery" class="dropdown-link">Доставка</a></li>
+                                <li><a href="index.html#calculator" class="dropdown-link">Калькулятор</a></li>
+                                <li><a href="index.html#video-reviews" class="dropdown-link">Видеоотзывы</a></li>
+                                <li><a href="index.html#video-instructions" class="dropdown-link">Видеоинструкции</a></li>
+                            </ul>
+                        </div>
+                        <a href="index.html#partners" class="nav-link">Партнерам</a>
+                        <a href="index.html#where-to-buy" class="nav-link">Где купить</a>
+                        <a href="index.html#contacts" class="nav-link">Контакты</a>
+                        <div class="header-contact mobile-contact">
+                            <div class="header-contact-row">
+                                <div class="header-phone-block">
+                                    <a href="tel:88005338618" class="phone-number">8 800 533 8618</a>
+                                    <div class="social-icons">
+                                        <a href="#" class="social-icon" aria-label="WhatsApp">
+                                            <img src="icons/whatsapp.svg" alt="WhatsApp">
+                                        </a>
+                                        <a href="#" class="social-icon" aria-label="Telegram">
+                                            <img src="icons/telegram.svg" alt="Telegram">
+                                        </a>
+                                        <a href="#" class="social-icon" aria-label="VK">
+                                            <img src="icons/vk.svg" alt="VK">
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="header-address-block">
+                                    <p class="address-text">г. Москва, ул. Золоторожский Вал,<br>11с22, офис 373</p>
+                                    <p class="work-hours">9:00-19:00</p>
+                                </div>
+                            </div>
+                        </div>
+                    </nav>
+                    <div class="header-contact desktop-contact">
+                        <div class="header-contact-row">
+                            <div class="header-phone-block">
+                                <a href="tel:88005338618" class="phone-number">8 800 533 8618</a>
+                                <div class="social-icons">
+                                    <a href="#" class="social-icon" aria-label="WhatsApp">
+                                        <img src="icons/whatsapp.svg" alt="WhatsApp">
+                                    </a>
+                                    <a href="#" class="social-icon" aria-label="Telegram">
+                                        <img src="icons/telegram.svg" alt="Telegram">
+                                    </a>
+                                    <a href="#" class="social-icon" aria-label="VK">
+                                        <img src="icons/vk.svg" alt="VK">
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="header-address-block">
+                                <p class="address-text">г. Москва, ул. Золоторожский Вал,<br>11с22, офис 373</p>
+                                <p class="work-hours">9:00-19:00</p>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="menu-toggle" aria-label="Меню">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                </div>
+            </div>
+            <div class="header-calculator">
+                <button class="calculator-btn" aria-label="Калькулятор">
+                    <img src="icons/calculator.svg" alt="Калькулятор">
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Certificates Page -->
+    <section class="certificates-page">
+        <div class="certificates-header">
+            <h1>Гарантия качества: наши сертификаты</h1>
+            <p>Наш продукт проходит строгие испытания и соответствует престижным международным сертификатам, что обеспечивает исключительную долговечность и абсолютную безопасность в каждом проекте.</p>
+        </div>
+
+        <div class="certificates-grid">
+            <!-- Certificate 1 -->
+            <div class="certificate-card">
+                <div class="certificate-image certificate-image-clickable" data-certificate="cert-1">
+                    <img src="https://static.tildacdn.com/tild3164-6334-4436-b830-383161653262/image.png" alt="Свидетельство о государственной регистрации продукции" loading="lazy">
+                </div>
+                <div class="certificate-content">
+                    <h3 class="certificate-title">Свидетельство о государственной регистрации продукции</h3>
+                    <p class="certificate-description"></p>
+                    <div class="certificate-buttons">
+                        <a href="#popup-cert-1" class="certificate-btn certificate-btn-primary popup-trigger">Подробнее</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Certificate 2 -->
+            <div class="certificate-card">
+                <div class="certificate-image certificate-image-clickable" data-certificate="cert-2">
+                    <img src="https://i.postimg.cc/R0NJKp3G/Sertifikacia-ISO-page-0001.jpg" alt="Сертификация ISO" loading="lazy">
+                </div>
+                <div class="certificate-content">
+                    <h3 class="certificate-title">Сертификация ISO</h3>
+                    <p class="certificate-description"></p>
+                    <div class="certificate-buttons">
+                        <a href="#popup-cert-2" class="certificate-btn certificate-btn-primary popup-trigger">Подробнее</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Certificate 3 -->
+            <div class="certificate-card">
+                <div class="certificate-image certificate-image-clickable" data-certificate="cert-3">
+                    <img src="https://i.postimg.cc/Wb5486cw/Protokol-ispytanij-epoksidnoj-zatirki-DEMEX-page-0001.jpg" alt="Протокол испытаний эпоксидной затирки DEMEX" loading="lazy">
+                </div>
+                <div class="certificate-content">
+                    <h3 class="certificate-title">Протокол испытаний эпоксидной затирки DEMEX</h3>
+                    <p class="certificate-description"></p>
+                    <div class="certificate-buttons">
+                        <a href="#popup-cert-3" class="certificate-btn certificate-btn-primary popup-trigger">Подробнее</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Certificate 4 -->
+            <div class="certificate-card">
+                <div class="certificate-image certificate-image-clickable" data-certificate="cert-4">
+                    <img src="https://i.postimg.cc/HWQcwyLR/Sertifikat-otsutstvia-formal'degida-page-0001.jpg" alt="Сертификат отсутствия формальдегида" loading="lazy">
+                </div>
+                <div class="certificate-content">
+                    <h3 class="certificate-title">Сертификат отсутствия формальдегида</h3>
+                    <p class="certificate-description"></p>
+                    <div class="certificate-buttons">
+                        <a href="#popup-cert-4" class="certificate-btn certificate-btn-primary popup-trigger">Подробнее</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Certificate 5 -->
+            <div class="certificate-card">
+                <div class="certificate-image certificate-image-clickable" data-certificate="cert-5">
+                    <img src="https://i.postimg.cc/RF1SHwT6/Ekspertnoe-zaklucenie-po-rezul'tatam-sanitarno-epidemiologiceskoj-ekspertizy-produkcii-page-0001.jpg" alt="Экспертное заключение по результатам санитарно-эпидемиологической экспертизы продукции" loading="lazy">
+                </div>
+                <div class="certificate-content">
+                    <h3 class="certificate-title">Экспертное заключение по результатам санитарно-эпидемиологической экспертизы продукции</h3>
+                    <p class="certificate-description"></p>
+                    <div class="certificate-buttons">
+                        <a href="#popup-cert-5" class="certificate-btn certificate-btn-primary popup-trigger">Подробнее</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Certificate 6 -->
+            <div class="certificate-card">
+                <div class="certificate-image certificate-image-clickable" data-certificate="cert-6">
+                    <img src="https://static.tildacdn.com/tild3164-6133-4036-a365-323037346534/__02107PDF.jpg" alt="Сертификат соответствия" loading="lazy">
+                </div>
+                <div class="certificate-content">
+                    <h3 class="certificate-title">Сертификат соответствия</h3>
+                    <p class="certificate-description"></p>
+                    <div class="certificate-buttons">
+                        <a href="#popup-cert-6" class="certificate-btn certificate-btn-primary popup-trigger">Подробнее</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <div class="logo">
+                        <a href="index.html">
+                            <img src="logo.png" alt="DEMEX" class="logo-img" style="height: 40px;">
+                        </a>
+                    </div>
+                    <p>Эпоксидная затирка нового поколения</p>
+                </div>
+                <div class="footer-links">
+                    <a href="index.html#about">О продукте</a>
+                    <a href="index.html#applications">Применение</a>
+                    <a href="certificates.html">Сертификаты</a>
+                    <a href="index.html#contacts">Контакты</a>
+                </div>
+                <div class="footer-meta">
+                    <p>© 2025 DEMIX. Все права защищены.</p>
+                </div>
+            </div>
+        </div>
+        <button class="scroll-top" aria-label="Наверх">↑</button>
+    </footer>
+
+    <!-- Lightbox для просмотра сертификатов -->
+    <div id="lightbox" class="lightbox">
+        <button class="lightbox-close" aria-label="Закрыть">×</button>
+        <button class="lightbox-nav lightbox-prev" aria-label="Предыдущая страница">‹</button>
+        <button class="lightbox-nav lightbox-next" aria-label="Следующая страница">›</button>
+        <div class="lightbox-content">
+            <img id="lightbox-image" class="lightbox-image" src="" alt="">
+            <div class="lightbox-page-info">
+                <span id="lightbox-page-current">1</span> / <span id="lightbox-page-total">1</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Popup для сертификата 1 -->
+    <div id="popup-cert-1" class="popup-overlay">
+        <div class="popup-content">
+            <button class="popup-close" aria-label="Закрыть">×</button>
+            <div class="popup-image">
+                <img src="https://static.tildacdn.com/tild3164-6334-4436-b830-383161653262/image.png" alt="Свидетельство о государственной регистрации продукции">
+            </div>
+            <div class="popup-text">
+                <h2>Свидетельство о государственной регистрации продукции</h2>
+                <p>Перед вами <strong>Свидетельство о государственной регистрации продукции в рамках Евразийского экономического союза (ЕАЭС)</strong>, выданное Управлением Роспотребнадзора по Новосибирской области.</p>
+                <p>Это документ, подтверждающий соответствие продукции единым санитарно-эпидемиологическим и гигиеническим требованиям к товарам, подлежащим санитарно-эпидемиологическому надзору (контролю) на территории стран-членов ЕАЭС.</p>
+                <p><strong>Основные сведения из документа:</strong></p>
+                <ul>
+                    <li><strong>Номер Свидетельства:</strong> RU.54.НС.01.008.Е.001177.06.25</li>
+                    <li><strong>Дата регистрации:</strong> 18.09.2025 г.</li>
+                    <li><strong>Продукция:</strong> Эпоксидная затирка для швов двухкомпонентная, торговая марка DEMEX.</li>
+                    <li><strong>Область применения:</strong> герметизация швов в строительных конструкциях.</li>
+                    <li><strong>Изготовлена в соответствии с документами:</strong> паспорт безопасности.</li>
+                    <li><strong>Изготовитель:</strong> "Jinhua Yau New Chemical Material Co., Ltd." (Китай, "Китайская Народная Республика").</li>
+                    <li><strong>Заявитель:</strong> ООО "ДЕМЕКС РУС" (Российская Федерация).</li>
+                    <li><strong>Соответствует:</strong> Единым санитарно-эпидемиологическим и гигиеническим требованиям.</li>
+                    <li><strong>Срок действия:</strong> Не ограничен.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Popup для сертификата 2 -->
+    <div id="popup-cert-2" class="popup-overlay">
+        <div class="popup-content">
+            <button class="popup-close" aria-label="Закрыть">×</button>
+            <div class="popup-image">
+                <img src="https://static.tildacdn.com/tild6432-6265-4465-a439-306133373735/ISO130073_2025_03_31.jpg" alt="Сертификация ISO">
+            </div>
+            <div class="popup-text">
+                <h2>Независимое тестирование качества SGS</h2>
+                <p>Эпоксидная затирка для плитки DEMEX прошла <strong>независимые испытания в международной компании SGS</strong> — мировом лидере в области инспекции и сертификации.</p>
+                <p><strong>Основные сведения:</strong></p>
+                <ul>
+                    <li><strong>Продукт:</strong> Эпоксидная затирка для плитки (Epoxy Tile Grouts).</li>
+                    <li><strong>Орган тестирования:</strong> SGS-CSTC Standards Technical Services Co., Ltd.</li>
+                    <li><strong>Дата отчета:</strong> 19 сентября 2024 г.</li>
+                </ul>
+                <p>Отчет об испытаниях SGS подтверждает, что продукция соответствует высоким стандартам качества и безопасности, обеспечивая надежность использования.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Popup для сертификата 3 -->
+    <div id="popup-cert-3" class="popup-overlay">
+        <div class="popup-content">
+            <button class="popup-close" aria-label="Закрыть">×</button>
+            <div class="popup-image">
+                <img src="https://static.tildacdn.com/tild3031-6566-4965-b030-363439666432/95_-1809_24pdf-0001.jpg" alt="Протокол испытаний эпоксидной затирки DEMEX">
+            </div>
+            <div class="popup-text">
+                <h2>Протокол испытаний эпоксидной затирки DEMEX</h2>
+                <p>Представленный документ — это <strong>Протокол испытаний № 95ЛЭ/3-18.09/24</strong>, выданный Испытательной лабораторией "LIGHT GROUP" (ООО "Трансконсалтинг").</p>
+                <p>Этот протокол является фактическим доказательством успешного прохождения продукцией всех необходимых лабораторных тестов.</p>
+                <p><strong>Ключевая информация из Протокола:</strong></p>
+                <ul>
+                    <li><strong>Дата выдачи Протокола:</strong> 18 сентября 2024 г.</li>
+                    <li><strong>Испытанная продукция:</strong> Эпоксидная затирка для швов двухкомпонентная, торговая марка DEMEX.</li>
+                    <li><strong>Заказчик испытаний (Держатель бренда):</strong> Общество с ограниченной ответственностью "ДЕМЕКС РУС".</li>
+                    <li><strong>Изготовитель:</strong> "Jinhua Yitu New Chemical Material Co., Ltd.", Китай.</li>
+                    <li><strong>Период лабораторной деятельности:</strong> С 31.07.2024 по 18.09.2024.</li>
+                </ul>
+                <p><strong>Требования к продукции (Основа для испытаний):</strong></p>
+                <ul>
+                    <li>Единые санитарно-эпидемиологические и гигиенические требования к товарам.</li>
+                    <li>Позиции Главы II, раздел 9, 6.1, п/п 7 Единого перечня товаров (Требования к полимерным и полимеросодержащим строительным материалам и мебели).</li>
+                </ul>
+                <p><strong>Значение документа:</strong></p>
+                <p>Протокол испытаний подтверждает, что в ходе лабораторных исследований образец эпоксидной затирки DEMEX был протестирован на соответствие установленным санитарно-эпидемиологическим и гигиеническим нормам Евразийского экономического союза (ЕАЭС).</p>
+                <p>Наличие этого протокола является обязательным условием для получения Свидетельства о государственной регистрации.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Popup для сертификата 4 -->
+    <div id="popup-cert-4" class="popup-overlay">
+        <div class="popup-content">
+            <button class="popup-close" aria-label="Закрыть">×</button>
+            <div class="popup-image">
+                <img src="https://static.tildacdn.com/tild3133-3961-4861-b430-636463666338/18583--Formaldehyde-.jpg" alt="Сертификат отсутствия формальдегида">
+            </div>
+            <div class="popup-text">
+                <h2>Результаты тестирования SGS (на формальдегид)</h2>
+                <p>Представленный документ — это <strong>Отчет об испытаниях (Test Report) от SGS</strong>, подтверждающий соответствие эпоксидной затирки высоким стандартам безопасности.</p>
+                <p><strong>Основные сведения:</strong></p>
+                <ul>
+                    <li><strong>Продукт:</strong> Эпоксидная затирка для плитки (Epoxy Tile Grouts).</li>
+                    <li><strong>Испытательный орган:</strong> SGS-CSTC Standards Technical Services (Shanghai) Co., Ltd.</li>
+                    <li><strong>Дата отчета:</strong> 1 августа 2024 г.</li>
+                    <li><strong>Требование к испытанию:</strong> GB 18583-2008 – Отсутствие свободного формальдегида (Free Formaldehyde).</li>
+                    <li><strong>Заключение (Conclusion):</strong> <strong>Пройдено (Pass)</strong>.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Popup для сертификата 5 -->
+    <div id="popup-cert-5" class="popup-overlay">
+        <div class="popup-content">
+            <button class="popup-close" aria-label="Закрыть">×</button>
+            <div class="popup-image">
+                <img src="https://static.tildacdn.com/tild6364-3163-4939-b464-626534343963/_766pdf-0001.jpg" alt="Экспертное заключение по результатам санитарно-эпидемиологической экспертизы продукции">
+            </div>
+            <div class="popup-text">
+                <h2>Экспертное заключение по результатам санитарно-эпидемиологической экспертизы продукции</h2>
+                <p>Представленный документ — это <strong>Экспертное заключение № 14/766</strong>, выданное Органом инспекции ООО "Аккредитованный центр "Санитарно-эпидемиологические экспертизы и лабораторные исследования"" по результатам санитарно-эпидемиологической экспертизы продукции.</p>
+                <p>Это заключение является основанием для выдачи Свидетельства о государственной регистрации, подтверждая, что продукция соответствует всем необходимым санитарным нормам.</p>
+                <p><strong>Ключевая информация:</strong></p>
+                <ul>
+                    <li><strong>Дата заключения:</strong> 30 сентября 2024 года.</li>
+                    <li><strong>Владелец объекта экспертизы (Заказчик):</strong> ООО "ДЕМЕКС РУС".</li>
+                    <li><strong>Объект экспертизы:</strong> Эпоксидная затирка для швов двухкомпонентная, торговая марка DEMEX.</li>
+                    <li><strong>Цель экспертизы:</strong> Соответствие положениям Единых санитарно-эпидемиологических и гигиенических требований к продукции (товарам), подлежащим санитарно-эпидемиологическому надзору (контролю), утвержденных Комиссией Таможенного союза от 28.05.2010 г. № 299.</li>
+                    <li><strong>Место отбора проб (Изготовитель):</strong> "Jinhua Yitu New Chemical Material Co., Ltd.", Китай.</li>
+                    <li><strong>Использованные документы:</strong> Протокол испытаний № 95ЛЭ/3-18.09/24 от 18.09.2024 г.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Popup для сертификата 6 -->
+    <div id="popup-cert-6" class="popup-overlay">
+        <div class="popup-content">
+            <button class="popup-close" aria-label="Закрыть">×</button>
+            <div class="popup-image">
+                <img src="https://static.tildacdn.com/tild3164-6133-4036-a365-323037346534/__02107PDF.jpg" alt="Сертификат соответствия">
+            </div>
+            <div class="popup-text">
+                <h2>Сертификат соответствия ЕАЭС</h2>
+                <p>Представленный документ — это <strong>СЕРТИФИКАТ СООТВЕТСТВИЯ ЕАЭС (Евразийского экономического союза) серии KG</strong>, подтверждающий соответствие продукции Техническим регламентам Таможенного союза (ТР ТС).</p>
+                <p><strong>Основные сведения:</strong></p>
+                <ul>
+                    <li><strong>Продукт:</strong> Электрический клеевой пистолет с литиевой батареей, модели: SGJQ-01, SGJQ-02, SGJQ-03, SGJQ-04.</li>
+                    <li><strong>Торговая марка:</strong> DEMEX, серийный выпуск.</li>
+                    <li><strong>Номер Сертификата:</strong> № ЕАЭС KG417/055.CN.02.02107.</li>
+                    <li><strong>Срок действия:</strong> С 05.12.2024 по 04.12.2029 включительно.</li>
+                    <li><strong>Изготовитель:</strong> "Jinhua Yitu New Chemical Material Co., Ltd.", Китай.</li>
+                    <li><strong>Заявитель (Держатель Сертификата):</strong> ООО "ДЕМЕКС РУС", Россия.</li>
+                </ul>
+                <p><strong>Подтвержденное соответствие (ТР ТС):</strong></p>
+                <p>Сертификат подтверждает, что клеевой пистолет DEMEX соответствует требованиям сразу двух важнейших Технических регламентов Таможенного союза:</p>
+                <ul>
+                    <li><strong>ТР ТС 004/2011</strong> «О безопасности низковольтного оборудования».</li>
+                    <li><strong>ТР ТС 020/2011</strong> «Электромагнитная совместимость технических средств».</li>
+                </ul>
+                <p><strong>Дополнительная информация о безопасности:</strong></p>
+                <p>Сертификат также включает проверку на соответствие ряду международных стандартов (ГОСТ и IEC), что гарантирует высокое качество и надежность:</p>
+                <ul>
+                    <li><strong>ГОСТ IEC 60335-1-2015, ГОСТ IEC 60335-2-45-2014</strong> (Безопасность бытовых и аналогичных электрических приборов).</li>
+                    <li><strong>ГОСТ CISPR 14-1-2016, ГОСТ IEC 61000-3-2-2021, ГОСТ IEC 61000-3-3-2017</strong> (Электромагнитная совместимость).</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // Данные о страницах сертификатов
+        const certificatePages = {
+            'cert-1': [
+                'https://static.tildacdn.com/tild3164-6334-4436-b830-383161653262/image.png'
+            ],
+            'cert-2': [
+                'https://i.postimg.cc/R0NJKp3G/Sertifikacia-ISO-page-0001.jpg',
+                'https://i.postimg.cc/JhGHZYyP/Sertifikacia-ISO-page-0002.jpg',
+                'https://i.postimg.cc/VNd0nZSB/Sertifikacia-ISO-page-0003.jpg'
+            ],
+            'cert-3': [
+                'https://i.postimg.cc/Wb5486cw/Protokol-ispytanij-epoksidnoj-zatirki-DEMEX-page-0001.jpg',
+                'https://i.postimg.cc/65MQcLxc/Protokol-ispytanij-epoksidnoj-zatirki-DEMEX-page-0002.jpg',
+                'https://i.postimg.cc/dt506mcn/Protokol-ispytanij-epoksidnoj-zatirki-DEMEX-page-0003.jpg',
+                'https://i.postimg.cc/X7svLc6w/Protokol-ispytanij-epoksidnoj-zatirki-DEMEX-page-0004.jpg'
+            ],
+            'cert-4': [
+                'https://i.postimg.cc/HWQcwyLR/Sertifikat-otsutstvia-formal\'degida-page-0001.jpg',
+                'https://i.postimg.cc/J7bDNkhS/Sertifikat-otsutstvia-formal\'degida-page-0002.jpg',
+                'https://i.postimg.cc/05pMYwNB/Sertifikat-otsutstvia-formal\'degida-page-0003.jpg'
+            ],
+            'cert-5': [
+                'https://i.postimg.cc/RF1SHwT6/Ekspertnoe-zaklucenie-po-rezul\'tatam-sanitarno-epidemiologiceskoj-ekspertizy-produkcii-page-0001.jpg',
+                'https://i.postimg.cc/cH7xnfcx/Ekspertnoe-zaklucenie-po-rezul\'tatam-sanitarno-epidemiologiceskoj-ekspertizy-produkcii-page-0002.jpg',
+                'https://i.postimg.cc/9MPm7yBw/Ekspertnoe-zaklucenie-po-rezul\'tatam-sanitarno-epidemiologiceskoj-ekspertizy-produkcii-page-0003.jpg'
+            ],
+            'cert-6': [
+                'https://static.tildacdn.com/tild3164-6133-4036-a365-323037346534/__02107PDF.jpg'
+            ]
+        };
+
+        // Lightbox для просмотра сертификатов
+        const certificateImages = document.querySelectorAll('.certificate-image-clickable');
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImage = document.getElementById('lightbox-image');
+        const lightboxClose = document.querySelector('.lightbox-close');
+        const lightboxPrev = document.querySelector('.lightbox-prev');
+        const lightboxNext = document.querySelector('.lightbox-next');
+        const lightboxPageCurrent = document.getElementById('lightbox-page-current');
+        const lightboxPageTotal = document.getElementById('lightbox-page-total');
+
+        let currentCertificate = null;
+        let currentPageIndex = 0;
+
+        function openLightbox(certificateId) {
+            const pages = certificatePages[certificateId];
+            if (!pages || pages.length === 0) return;
+
+            currentCertificate = certificateId;
+            currentPageIndex = 0;
+            updateLightboxImage();
+            updateNavigationButtons();
+            lightbox.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function updateLightboxImage() {
+            const pages = certificatePages[currentCertificate];
+            if (!pages || currentPageIndex < 0 || currentPageIndex >= pages.length) return;
+
+            lightboxImage.src = pages[currentPageIndex];
+            lightboxPageCurrent.textContent = currentPageIndex + 1;
+            lightboxPageTotal.textContent = pages.length;
+        }
+
+        function updateNavigationButtons() {
+            const pages = certificatePages[currentCertificate];
+            if (!pages) return;
+
+            if (pages.length <= 1) {
+                lightboxPrev.classList.add('hidden');
+                lightboxNext.classList.add('hidden');
+            } else {
+                lightboxPrev.classList.remove('hidden');
+                lightboxNext.classList.remove('hidden');
+                lightboxPrev.disabled = currentPageIndex === 0;
+                lightboxNext.disabled = currentPageIndex === pages.length - 1;
+            }
+        }
+
+        function nextPage() {
+            const pages = certificatePages[currentCertificate];
+            if (currentPageIndex < pages.length - 1) {
+                currentPageIndex++;
+                updateLightboxImage();
+                updateNavigationButtons();
+            }
+        }
+
+        function prevPage() {
+            if (currentPageIndex > 0) {
+                currentPageIndex--;
+                updateLightboxImage();
+                updateNavigationButtons();
+            }
+        }
+
+        certificateImages.forEach(imageContainer => {
+            imageContainer.addEventListener('click', () => {
+                const certificateId = imageContainer.getAttribute('data-certificate');
+                const img = imageContainer.querySelector('img');
+                if (img && img.src && !imageContainer.querySelector('.certificate-placeholder')) {
+                    openLightbox(certificateId);
+                }
+            });
+        });
+
+        if (lightboxClose) {
+            lightboxClose.addEventListener('click', () => {
+                lightbox.classList.remove('active');
+                document.body.style.overflow = '';
+            });
+        }
+
+        if (lightboxPrev) {
+            lightboxPrev.addEventListener('click', (e) => {
+                e.stopPropagation();
+                prevPage();
+            });
+        }
+
+        if (lightboxNext) {
+            lightboxNext.addEventListener('click', (e) => {
+                e.stopPropagation();
+                nextPage();
+            });
+        }
+
+        lightbox.addEventListener('click', (e) => {
+            if (e.target === lightbox) {
+                lightbox.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        });
+
+        // Навигация клавиатурой
+        document.addEventListener('keydown', (e) => {
+            if (!lightbox.classList.contains('active')) return;
+
+            if (e.key === 'ArrowLeft') {
+                prevPage();
+            } else if (e.key === 'ArrowRight') {
+                nextPage();
+            } else if (e.key === 'Escape') {
+                lightbox.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        });
+
+        // Popup для подробной информации
+        const popupTriggers = document.querySelectorAll('.popup-trigger');
+        const popups = document.querySelectorAll('.popup-overlay');
+        const popupCloses = document.querySelectorAll('.popup-close');
+
+        popupTriggers.forEach(trigger => {
+            trigger.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = trigger.getAttribute('href');
+                const popup = document.querySelector(targetId);
+                if (popup) {
+                    popup.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                }
+            });
+        });
+
+        popupCloses.forEach(close => {
+            close.addEventListener('click', () => {
+                const popup = close.closest('.popup-overlay');
+                if (popup) {
+                    popup.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+        });
+
+        popups.forEach(popup => {
+            popup.addEventListener('click', (e) => {
+                if (e.target === popup) {
+                    popup.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+        });
+
+        // Закрытие по Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                lightbox.classList.remove('active');
+                popups.forEach(popup => popup.classList.remove('active'));
+                document.body.style.overflow = '';
+            }
+        });
+    </script>
+</body>
+</html>
+

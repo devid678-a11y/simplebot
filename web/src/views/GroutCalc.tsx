@@ -135,7 +135,7 @@ export default function GroutCalc() {
   const [tileWStr, setTileWStr] = useState('0.60')
   const [tileHStr, setTileHStr] = useState('0.60')
   // ширина шва, мм
-  const [seam, setSeam] = useState<1 | 1.5 | 2 | 3>(1.5)
+  const [seam, setSeam] = useState<1 | 1.5 | 2 | 2.5 | 3>(1.5)
 
   const area = useMemo(() => wallW * wallH, [wallW, wallH])
   const key = useMemo(() => {
@@ -201,7 +201,7 @@ export default function GroutCalc() {
 
       <div className="card" style={{ padding: 16 }}>
         <div className="section-title">Ширина шва (мм)</div>
-        <Segmented value={seam} setValue={v => setSeam(v as any)} options={[1, 1.5, 2, 3]} />
+        <Segmented value={seam} setValue={v => setSeam(v as any)} options={[1, 1.5, 2, 2.5, 3]} />
         <div className="muted" style={{ marginTop: 8 }}>Покрытие на тубу: <b>{coverage} м²</b></div>
       </div>
 
