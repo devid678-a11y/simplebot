@@ -1,0 +1,9 @@
+# Игнорируем файлы при деплое на Railway
+*.md
+*.bat
+*.html
+trading_web_bot.py
+IMPROVEMENTS_GUIDE.md
+setup_autostart.md
+QUICK_START.md
+DEPLOY_FREE.md

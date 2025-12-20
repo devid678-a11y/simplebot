@@ -1,0 +1,11 @@
+services:
+  - type: worker
+    name: trading-bot
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python trading_bot_background.py
+    envVars:
+      - key: BYBIT_API_KEY
+        sync: false
+      - key: BYBIT_SECRET_KEY
+        sync: false
